@@ -4,12 +4,60 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"time"
 
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/speaker"
 	"github.com/poolpOrg/earring/parser"
 	"github.com/poolpOrg/earring/types"
 )
+
+type LoTick struct{}
+type HiTick struct{}
+
+func (st *LoTick) Play(duration time.Duration) {
+	sr := beep.SampleRate(44100)
+	done := make(chan bool)
+	speaker.Play(beep.Seq(beep.Take(sr.N(duration), st), beep.Callback(func() {
+		done <- true
+	})))
+	<-done
+}
+
+func (st LoTick) Stream(samples [][2]float64) (n int, ok bool) {
+	for i := range samples {
+		sample := math.Sin((math.Pi * 2 / float64(44100)) * 440.0 * float64(i))
+		samples[i][0] = sample
+		samples[i][1] = sample
+	}
+	return len(samples), true
+}
+func (st LoTick) Err() error {
+	return nil
+}
+
+func (st *HiTick) Play(duration time.Duration) {
+	sr := beep.SampleRate(44100)
+	done := make(chan bool)
+	speaker.Play(beep.Seq(beep.Take(sr.N(duration), st), beep.Callback(func() {
+		done <- true
+	})))
+	<-done
+}
+
+func (st HiTick) Stream(samples [][2]float64) (n int, ok bool) {
+	for i := range samples {
+		sample := math.Sin((math.Pi * 2 / float64(44100)) * 220.0 * float64(i))
+		samples[i][0] = sample
+		samples[i][1] = sample
+	}
+	return len(samples), true
+}
+func (st HiTick) Err() error {
+	return nil
+}
 
 func main() {
 	flag.Parse()
@@ -58,14 +106,32 @@ func main() {
 	t := time.NewTicker(d)
 	i := uint8(0)
 
+	sr := beep.SampleRate(44100)
+	speaker.Init(44100, sr.N(time.Second/10))
+
+	loTick := LoTick{}
+	hiTick := HiTick{}
+
+	done := false
 	for {
 		select {
 		case <-t.C:
-			beat := <-c
-			for _, duration := range beat.GetDurations() {
-				fmt.Println(time.Now().Round(time.Millisecond), duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
+			if (i % project.GetSignature().GetBeats()) == 0 {
+				go loTick.Play(time.Millisecond * 100)
+			} else {
+				go hiTick.Play(time.Millisecond * 100)
 			}
+
+			go func() {
+				beat := <-c
+				for _, duration := range beat.GetDurations() {
+					fmt.Println(time.Now().Round(time.Millisecond), duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
+				}
+			}()
 			i++
+		}
+		if done {
+			break
 		}
 	}
 
