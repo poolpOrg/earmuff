@@ -120,12 +120,13 @@ func (p *Parser) parseProject() (*types.Project, error) {
 			if err != nil {
 				return nil, err
 			}
-			project.SetSignature(*timeSignature)
+			project.SetSignature(timeSignature)
 		case lexer.TRACK:
-			_, err := p.parseTrack(project)
+			track, err := p.parseTrack(project)
 			if err != nil {
 				return nil, err
 			}
+			project.AddTrack(track)
 		default:
 			return nil, fmt.Errorf("found %q, expected TRACK or }", lit)
 		}
@@ -168,10 +169,11 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 				return nil, err
 			}
 		case lexer.BAR:
-			_, err := p.parseBar(track)
+			bar, err := p.parseBar(track)
 			if err != nil {
 				return nil, err
 			}
+			track.AddBar(bar)
 		default:
 			return nil, fmt.Errorf("found %q, expected BAR or }", lit)
 		}
@@ -209,7 +211,7 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 			if err != nil {
 				return nil, err
 			}
-			bar.AddBeat(*beat)
+			bar.AddBeat(beat)
 		default:
 			return nil, fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
 		}
@@ -232,22 +234,25 @@ func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
 		}
 		switch tok {
 		case lexer.WHOLE:
-			_, err := p.parseDuration(beat, 1)
+			duration, err := p.parseDuration(beat, 1)
 			if err != nil {
 				return nil, err
 			}
+			beat.AddDuration(duration)
 		case lexer.HALF:
-			_, err := p.parseDuration(beat, 2)
+			duration, err := p.parseDuration(beat, 2)
 			if err != nil {
 				return nil, err
 			}
+			beat.AddDuration(duration)
 		case lexer.QUARTER:
-			_, err := p.parseDuration(beat, 4)
+			duration, err := p.parseDuration(beat, 4)
 			if err != nil {
 				return nil, err
 			}
+			beat.AddDuration(duration)
 		case lexer.NUMBER:
-			value, err := strconv.ParseUint(lit, 10, 8)
+			value, err := strconv.ParseUint(lit, 10, 16)
 			if err != nil {
 				return nil, err
 			}
@@ -279,10 +284,11 @@ func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
 			} else {
 				return nil, fmt.Errorf("found %q, expected value", lit)
 			}
-			_, err = p.parseDuration(beat, uint8(value))
+			duration, err := p.parseDuration(beat, uint16(value))
 			if err != nil {
 				return nil, err
 			}
+			beat.AddDuration(duration)
 
 		default:
 			return nil, fmt.Errorf("found %q, expected }", lit)
@@ -292,7 +298,8 @@ func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
 	return beat, nil
 }
 
-func (p *Parser) parseDuration(beat *types.Beat, value uint8) (*types.Duration, error) {
+func (p *Parser) parseDuration(beat *types.Beat, value uint16) (*types.Duration, error) {
+	duration := types.NewDuration(value)
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
 		if tok == lexer.SEMICOLON {
@@ -300,51 +307,48 @@ func (p *Parser) parseDuration(beat *types.Beat, value uint8) (*types.Duration, 
 		}
 		switch tok {
 		case lexer.REST:
-			_, err := p.parseRest()
+			rest, err := p.parseRest()
 			if err != nil {
 				return nil, err
 			}
+			duration.SetPlayable(rest)
 		case lexer.CHORD:
-			_, err := p.parseChord()
+			chord, err := p.parseChord()
 			if err != nil {
 				return nil, err
 			}
+			duration.SetPlayable(chord)
 		case lexer.NOTE:
-			_, err := p.parseNote()
+			note, err := p.parseNote()
 			if err != nil {
 				return nil, err
 			}
+			duration.SetPlayable(note)
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
 	}
-	return types.NewDuration(value), nil
+	return duration, nil
 }
 
 func (p *Parser) parseChord() (*types.Chord, error) {
-	chord := &types.Chord{}
-
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected chord name", lit)
+	} else {
+		return types.NewChord(lit), nil
 	}
-
-	return chord, nil
 }
 
 func (p *Parser) parseNote() (*types.Note, error) {
-	note := &types.Note{}
-
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected note name", lit)
+	} else {
+		return types.NewNote(lit), nil
 	}
-
-	return note, nil
 }
 
 func (p *Parser) parseRest() (*types.Rest, error) {
-	rest := &types.Rest{}
-
-	return rest, nil
+	return types.NewRest(), nil
 }
 
 func (p *Parser) Parse() (*types.Project, error) {
