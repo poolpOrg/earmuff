@@ -15,16 +15,29 @@ const (
 	WHITESPACE
 
 	IDENTIFIER
+	NUMBER
+	SEMICOLON
 	BRACKET_OPEN
 	BRACKET_CLOSE
 	PLUS
 	MINUS
 
+	BPM
+	TIME
 	PROJECT
 	TRACK
-	TIME
 	BAR
+	BEAT
+
+	WHOLE
+	HALF
+	QUARTER
+	TH
+	ND
+
+	REST
 	NOTE
+	INTERVAL
 	CHORD
 )
 
@@ -37,7 +50,7 @@ func isLetter(ch rune) bool {
 }
 
 func isDigit(ch rune) bool {
-	return (ch >= '0' && ch <= '0')
+	return (ch >= '0' && ch <= '9')
 }
 
 var eof = rune(0)
@@ -68,6 +81,9 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	if isWhitespace(ch) {
 		s.unread()
 		return s.scanWhitespace()
+	} else if isDigit(ch) {
+		s.unread()
+		return s.scanNumber()
 	} else if isLetter(ch) {
 		s.unread()
 		return s.scanIdent()
@@ -81,10 +97,9 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 		return BRACKET_OPEN, string(ch)
 	case '}':
 		return BRACKET_CLOSE, string(ch)
-	case '+':
-		return PLUS, string(ch)
-	case '-':
-		return MINUS, string(ch)
+	case ';':
+		return SEMICOLON, string(ch)
+
 	}
 
 	return ILLEGAL, string(ch)
@@ -132,16 +147,64 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 
 	// If the string matches a keyword then return that keyword.
 	switch strings.ToUpper(buf.String()) {
+	case "BPM":
+		return BPM, buf.String()
+	case "TIME":
+		return TIME, buf.String()
+
 	case "PROJECT":
 		return PROJECT, buf.String()
 	case "TRACK":
 		return TRACK, buf.String()
-	case "TIME":
-		return TIME, buf.String()
 	case "BAR":
 		return BAR, buf.String()
+	case "BEAT":
+		return BEAT, buf.String()
+
+	case "WHOLE":
+		return WHOLE, buf.String()
+	case "HALF":
+		return HALF, buf.String()
+	case "QUARTER":
+		return QUARTER, buf.String()
+	case "TH":
+		return TH, buf.String()
+	case "ND":
+		return ND, buf.String()
+
+	case "REST":
+		return REST, buf.String()
+	case "NOTE":
+		return NOTE, buf.String()
+	case "INTERVAL":
+		return INTERVAL, buf.String()
+	case "CHORD":
+		return CHORD, buf.String()
+
 	}
 
 	// Otherwise return as a regular identifier.
 	return IDENTIFIER, buf.String()
+}
+
+func (s *Scanner) scanNumber() (tok Token, lit string) {
+	// Create a buffer and read the current character into it.
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	// Read every subsequent ident character into the buffer.
+	// Non-ident characters and EOF will cause the loop to exit.
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if !isDigit(ch) {
+			s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	// Otherwise return as a regular identifier.
+	return NUMBER, buf.String()
 }

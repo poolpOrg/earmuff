@@ -1,7 +1,21 @@
 project {
-    time {}
+    bpm 120;
+    time 4 4;
     track {
         bar {
+            beat {
+                whole chord C;
+            }
+            beat {
+                half note C;
+            }
+            beat {
+                quarter rest;
+            }
+            beat {
+                16th note E;
+                8th note D;
+            }
         }
     }
 }
