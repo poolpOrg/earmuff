@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/poolpOrg/earring/lexer"
+	"github.com/poolpOrg/earring/types"
 )
 
 type Parser struct {
@@ -15,49 +16,6 @@ type Parser struct {
 		lit string
 		n   int
 	}
-}
-
-type Bpm struct {
-	bpm uint8
-}
-
-type TimeSignature struct {
-	beats    uint8
-	duration uint8
-}
-
-type Project struct {
-	bpm           *Bpm
-	timeSignature *TimeSignature
-}
-
-type Track struct {
-	bpm           *Bpm
-	timeSignature *TimeSignature
-}
-
-type Bar struct {
-	bpm           *Bpm
-	timeSignature *TimeSignature
-	beats         []Beat
-}
-
-type Beat struct {
-	bpm           *Bpm
-	timeSignature *TimeSignature
-}
-
-type Duration struct {
-	duration uint8
-}
-
-type Chord struct {
-}
-
-type Note struct {
-}
-
-type Rest struct {
 }
 
 func NewParser(r io.Reader) *Parser {
@@ -94,29 +52,24 @@ func (p *Parser) scanIgnoreWhitespace() (tok lexer.Token, lit string) {
 	return
 }
 
-func (p *Parser) parseBpm() (*Bpm, error) {
-	bpm := &Bpm{}
-
+func (p *Parser) parseBpm() (uint8, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
-		return nil, fmt.Errorf("found %q, expected number", lit)
+		return 0, fmt.Errorf("found %q, expected number", lit)
 	}
+
 	beats, err := strconv.ParseUint(p.buf.lit, 10, 8)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-
-	bpm.bpm = uint8(beats)
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
-		return nil, fmt.Errorf("found %q, expected ;", lit)
+		return 0, fmt.Errorf("found %q, expected ;", lit)
 	}
 
-	return bpm, nil
+	return uint8(beats), nil
 }
 
-func (p *Parser) parseTimeSignature() (*TimeSignature, error) {
-	timeSignature := &TimeSignature{}
-
+func (p *Parser) parseTimeSignature() (*types.Signature, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
 		return nil, fmt.Errorf("found %q, expected number", lit)
 	}
@@ -133,18 +86,14 @@ func (p *Parser) parseTimeSignature() (*TimeSignature, error) {
 		return nil, err
 	}
 
-	timeSignature.beats = uint8(beats)
-	timeSignature.duration = uint8(duration)
-
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
 		return nil, fmt.Errorf("found %q, expected ;", lit)
 	}
-
-	return timeSignature, nil
+	return types.NewSignature(uint8(beats), uint8(duration)), nil
 }
 
-func (p *Parser) parseProject() (*Project, error) {
-	project := &Project{}
+func (p *Parser) parseProject() (*types.Project, error) {
+	project := types.NewProject()
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.PROJECT {
 		return nil, fmt.Errorf("found %q, expected PROJECT", lit)
@@ -165,13 +114,13 @@ func (p *Parser) parseProject() (*Project, error) {
 			if err != nil {
 				return nil, err
 			}
-			project.bpm = bpm
+			project.SetBPM(bpm)
 		case lexer.TIME:
 			timeSignature, err := p.parseTimeSignature()
 			if err != nil {
 				return nil, err
 			}
-			project.timeSignature = timeSignature
+			project.SetSignature(*timeSignature)
 		case lexer.TRACK:
 			_, err := p.parseTrack(project)
 			if err != nil {
@@ -193,10 +142,10 @@ func (p *Parser) parseProject() (*Project, error) {
 	return project, nil
 }
 
-func (p *Parser) parseTrack(project *Project) (*Track, error) {
-	track := &Track{}
-	track.timeSignature = project.timeSignature
-	track.bpm = project.bpm
+func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
+	track := types.NewTrack()
+	track.SetBPM(project.GetBPM())
+	track.SetSignature(project.GetSignature())
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
 		return nil, fmt.Errorf("found %q, expected {", lit)
@@ -230,11 +179,10 @@ func (p *Parser) parseTrack(project *Project) (*Track, error) {
 	return track, nil
 }
 
-func (p *Parser) parseBar(track *Track) (*Bar, error) {
-	bar := &Bar{}
-	bar.bpm = track.bpm
-	bar.timeSignature = track.timeSignature
-	bar.beats = make([]Beat, 0)
+func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
+	bar := types.NewBar()
+	bar.SetBPM(track.GetBPM())
+	bar.SetSignature(track.GetSignature())
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
 		return nil, fmt.Errorf("found %q, expected {", lit)
@@ -261,7 +209,7 @@ func (p *Parser) parseBar(track *Track) (*Bar, error) {
 			if err != nil {
 				return nil, err
 			}
-			bar.beats = append(bar.beats, *beat)
+			bar.AddBeat(*beat)
 		default:
 			return nil, fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
 		}
@@ -270,9 +218,8 @@ func (p *Parser) parseBar(track *Track) (*Bar, error) {
 	return bar, nil
 }
 
-func (p *Parser) parseBeat(bar *Bar) (*Beat, error) {
-	beat := &Beat{}
-	beat.timeSignature = bar.timeSignature
+func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
+	beat := types.NewBeat()
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
 		return nil, fmt.Errorf("found %q, expected {", lit)
@@ -345,10 +292,7 @@ func (p *Parser) parseBeat(bar *Bar) (*Beat, error) {
 	return beat, nil
 }
 
-func (p *Parser) parseDuration(beat *Beat, duration uint8) (*Duration, error) {
-	d := &Duration{}
-	d.duration = duration
-
+func (p *Parser) parseDuration(beat *types.Beat, value uint8) (*types.Duration, error) {
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
 		if tok == lexer.SEMICOLON {
@@ -374,11 +318,11 @@ func (p *Parser) parseDuration(beat *Beat, duration uint8) (*Duration, error) {
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
 	}
-	return d, nil
+	return types.NewDuration(value), nil
 }
 
-func (p *Parser) parseChord() (*Chord, error) {
-	chord := &Chord{}
+func (p *Parser) parseChord() (*types.Chord, error) {
+	chord := &types.Chord{}
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected chord name", lit)
@@ -387,8 +331,8 @@ func (p *Parser) parseChord() (*Chord, error) {
 	return chord, nil
 }
 
-func (p *Parser) parseNote() (*Note, error) {
-	note := &Note{}
+func (p *Parser) parseNote() (*types.Note, error) {
+	note := &types.Note{}
 
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected note name", lit)
@@ -397,12 +341,12 @@ func (p *Parser) parseNote() (*Note, error) {
 	return note, nil
 }
 
-func (p *Parser) parseRest() (*Rest, error) {
-	rest := &Rest{}
+func (p *Parser) parseRest() (*types.Rest, error) {
+	rest := &types.Rest{}
 
 	return rest, nil
 }
 
-func (p *Parser) Parse() (*Project, error) {
+func (p *Parser) Parse() (*types.Project, error) {
 	return p.parseProject()
 }

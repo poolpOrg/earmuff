@@ -28,5 +28,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(project)
+	fmt.Println(project.GetBPM(), project.GetSignature())
 }
