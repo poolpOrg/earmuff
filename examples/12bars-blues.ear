@@ -1,0 +1,19 @@
+project {
+    bpm 120;
+    time 4 4;
+
+    track {
+        bar { whole chord C on beat 1; }
+        bar { whole chord F on beat 1; }
+        bar { whole chord C on beat 1; }
+        bar { whole chord C on beat 1; }
+        bar { whole chord F on beat 1; }
+        bar { whole chord F on beat 1; }
+        bar { whole chord C on beat 1; }
+        bar { whole chord C on beat 1; }
+        bar { whole chord G on beat 1; }
+        bar { whole chord F on beat 1; }
+        bar { whole chord C on beat 1; }
+        bar { whole chord G on beat 1; }
+    }
+}
