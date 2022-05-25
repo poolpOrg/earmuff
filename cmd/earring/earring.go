@@ -14,6 +14,38 @@ import (
 	"github.com/poolpOrg/earring/types"
 )
 
+func ticker(bpm uint, beats uint, duration uint, done <-chan bool) {
+	step := time.Minute / time.Duration(bpm*(duration/beats))
+	fmt.Println("will tick every", step)
+
+	loTick := LoTick{}
+	hiTick := HiTick{}
+
+	now := time.Now()
+	next := now.Add(step)
+
+	i := uint(0)
+	for {
+		time.Sleep(time.Until(next))
+		// do something
+		if (i % beats) == 0 {
+			go hiTick.Play(step / time.Duration(duration))
+		} else {
+			go loTick.Play(step / time.Duration(duration))
+		}
+		i++
+		select { // check whether `done` was closed
+		case <-done:
+			return
+		default:
+			// pass
+		}
+
+		// next is step - delta between now and previous next (catchup lags)
+		next = next.Add(step - time.Now().Sub(next))
+	}
+}
+
 type LoTick struct{}
 type HiTick struct{}
 
@@ -28,7 +60,7 @@ func (st *LoTick) Play(duration time.Duration) {
 
 func (st LoTick) Stream(samples [][2]float64) (n int, ok bool) {
 	for i := range samples {
-		sample := math.Sin((math.Pi * 2 / float64(44100)) * 440.0 * float64(i))
+		sample := math.Sin((math.Pi * 2 / float64(44100)) * 220.0 * float64(i))
 		samples[i][0] = sample
 		samples[i][1] = sample
 	}
@@ -49,7 +81,7 @@ func (st *HiTick) Play(duration time.Duration) {
 
 func (st HiTick) Stream(samples [][2]float64) (n int, ok bool) {
 	for i := range samples {
-		sample := math.Sin((math.Pi * 2 / float64(44100)) * 220.0 * float64(i))
+		sample := math.Sin((math.Pi * 2 / float64(44100)) * 440.0 * float64(i))
 		samples[i][0] = sample
 		samples[i][1] = sample
 	}
@@ -102,49 +134,42 @@ func main() {
 		}
 	}
 
-	d := time.Minute / time.Duration(project.GetBPM()*(project.GetSignature().GetDuration()/project.GetSignature().GetBeats()))
-	t := time.NewTicker(d)
-	i := uint8(0)
-
 	sr := beep.SampleRate(44100)
 	speaker.Init(44100, sr.N(time.Second/10))
 
-	loTick := LoTick{}
-	hiTick := HiTick{}
+	project.Play()
 
-	done := false
-	for {
-		select {
-		case <-t.C:
-			if (i % project.GetSignature().GetBeats()) == 0 {
-				go loTick.Play(time.Millisecond * 100)
-			} else {
-				go hiTick.Play(time.Millisecond * 100)
-			}
+	/*
+		done := make(chan bool)
+		go ticker(uint(project.GetBPM()), uint(project.GetSignature().GetBeats()), uint(project.GetSignature().GetDuration()), done)
 
-			go func() {
-				beat := <-c
-				for _, duration := range beat.GetDurations() {
-					fmt.Println(time.Now().Round(time.Millisecond), duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
+		t := time.NewTimer(time.Second * 30)
+		<-t.C
+		done <- true
+	*/
+
+	/*
+		for {
+			select {
+			case <-t.C:
+				if (i % project.GetSignature().GetBeats()) == 0 {
+					go loTick.Play(time.Millisecond * 100)
+				} else {
+					go hiTick.Play(time.Millisecond * 100)
 				}
-			}()
-			i++
-		}
-		if done {
-			break
-		}
-	}
 
-	/*	for {
-		select {
-		case <-t.C:
-			if i%project.GetSignature().GetBeats() == 0 {
-				fmt.Printf("+")
-			} else {
-				fmt.Printf("-")
+				go func() {
+					beat := <-c
+					for _, duration := range beat.GetDurations() {
+						fmt.Println(time.Now().Round(time.Millisecond), duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
+					}
+				}()
+				i++
 			}
-			i++
+			if done {
+				break
+			}
 		}
-	}*/
+	*/
 
 }

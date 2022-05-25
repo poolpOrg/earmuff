@@ -35,3 +35,19 @@ func (project *Project) AddTrack(track *Track) {
 func (project *Project) GetTracks() []*Track {
 	return project.tracks
 }
+
+func (project *Project) Play() {
+	// first, start a goroutine to ensure that we always know what's up for next beat
+	done := make(chan bool)
+	go func() {
+		for _, track := range project.GetTracks() {
+			go func() {
+
+			}()
+		}
+		done <- true
+	}()
+
+	// then start a ticker, playing playables for that beat
+	<-done
+}

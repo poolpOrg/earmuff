@@ -1,5 +1,5 @@
 project {
-    bpm 120;
+    bpm 80;
     time 3 4;
 
     track {
