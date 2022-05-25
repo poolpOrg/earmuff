@@ -2,9 +2,9 @@ module github.com/poolpOrg/earring
 
 go 1.18
 
+require github.com/faiface/beep v1.1.1-0.20220304214352-60cd18038f16
+
 require (
-	github.com/DylanMeeus/GoAudio v0.13.2-0.20220205212144-1a202c9cd3a3 // indirect
-	github.com/faiface/beep v1.1.0 // indirect
 	github.com/hajimehoshi/oto v0.7.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 // indirect

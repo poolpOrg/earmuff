@@ -1,16 +1,43 @@
 project {
-    bpm 80;
-    time 3 4;
+    bpm 120;
+    time 4 4;
 
     track {
         bar {
-            beat { quarter note A; }
-            beat {
-                quarter chord A7;
-                32nd rest;
-                8th chord Amin7;
-            }
-            beat { quarter note A; }
+            whole note C on beat 1;
+        }
+        bar {
+            whole note F on beat 1;
+        }
+        bar {
+            whole note C on beat 1;
+        }
+        bar {
+            whole note C on beat 1;
+        }
+        bar {
+            whole note F on beat 1;
+        }
+        bar {
+            whole note F on beat 1;
+        }
+        bar {
+            whole note C on beat 1;
+        }
+        bar {
+            whole note C on beat 1;
+        }
+        bar {
+            whole note G on beat 1;
+        }
+        bar {
+            whole note F on beat 1;
+        }
+        bar {
+            whole note C on beat 1;
+        }
+        bar {
+            whole note G on beat 1;
         }
     }
 }

@@ -1,5 +1,15 @@
 package types
 
+import (
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/generators"
+	"github.com/faiface/beep/speaker"
+)
+
 type Project struct {
 	bpm       uint8
 	signature *Signature
@@ -37,17 +47,45 @@ func (project *Project) GetTracks() []*Track {
 }
 
 func (project *Project) Play() {
-	// first, start a goroutine to ensure that we always know what's up for next beat
-	done := make(chan bool)
-	go func() {
-		for _, track := range project.GetTracks() {
-			go func() {
+	tuning, _ := NewTuning("a440")
 
-			}()
+	wg := sync.WaitGroup{}
+	for _, track := range project.GetTracks() {
+		for _, bar := range track.GetBars() {
+			for _, playable := range bar.GetPlayables() {
+				wg.Add(1)
+				go func(b *Bar, p Playable) {
+					timer := time.NewTimer(b.GetTimestamp() + p.GetTimestamp())
+					<-timer.C
+
+					fmt.Println(time.Now(), "Playing", p.GetType(), p.GetName(), "for", p.GetDurationTime())
+					freq, _ := tuning.Frequency(p.GetName(), 4)
+					a := Anote{freq: freq}
+					go a.Play(p.GetDurationTime())
+
+					wg.Done()
+				}(bar, playable)
+			}
 		}
-		done <- true
-	}()
+	}
+	wg.Wait()
+}
 
-	// then start a ticker, playing playables for that beat
+//////
+type Anote struct {
+	freq float64
+}
+
+func (st *Anote) Play(duration time.Duration) {
+	sr := beep.SampleRate(41100)
+	sine, err := generators.SineTone(sr, st.freq)
+	if err != nil {
+		panic(err)
+	}
+
+	done := make(chan bool)
+	speaker.Play(beep.Seq(beep.Take(sr.N(duration), sine), beep.Callback(func() {
+		done <- true
+	})))
 	<-done
 }

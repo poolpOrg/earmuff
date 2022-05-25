@@ -1,27 +1,9 @@
-package main
+package types
 
-import (
-	"fmt"
-	"log"
-	"math"
-	"time"
-
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/speaker"
-)
-
-const (
-	SampleRate = 44100
-)
+import "fmt"
 
 type Tuning struct {
 	name string
-}
-
-type Note struct {
-	tuning *Tuning
-	name   string
-	octave uint8
 }
 
 const (
@@ -62,6 +44,8 @@ func (tuning *Tuning) Offset(name string) (int8, error) {
 		return 3, nil
 
 	case "E":
+		fallthrough
+	case "Fb":
 		return 4, nil
 
 	case "F":
@@ -89,6 +73,8 @@ func (tuning *Tuning) Offset(name string) (int8, error) {
 		return 10, nil
 
 	case "B":
+		fallthrough
+	case "Cb":
 		return 11, nil
 
 	}
@@ -116,90 +102,4 @@ func (tuning *Tuning) Frequency(note string, octave uint8) (float64, error) {
 		return 0.0, fmt.Errorf("can't produce octave > 8")
 	}
 	return a440[octave][offset], nil
-}
-
-func (tuning *Tuning) Note(name string, octave uint8) *Note {
-	return &Note{tuning: tuning, name: name, octave: octave}
-}
-
-func (note *Note) Frequency() float64 {
-	freq, _ := note.tuning.Frequency(note.name, note.octave)
-	return freq
-}
-
-func (note *Note) Play(duration time.Duration) {
-	sr := beep.SampleRate(SampleRate)
-	done := make(chan bool)
-	speaker.Play(beep.Seq(beep.Take(sr.N(duration), note), beep.Callback(func() {
-		done <- true
-	})))
-	<-done
-}
-
-func (note Note) Stream(samples [][2]float64) (n int, ok bool) {
-	for i := range samples {
-		sample := math.Sin((math.Pi * 2 / float64(SampleRate)) * note.Frequency() * float64(i))
-		samples[i][0] = sample
-		samples[i][1] = sample
-	}
-	return len(samples), true
-}
-func (note Note) Err() error {
-	return nil
-}
-
-type TimeSignature struct {
-	unit  uint8
-	beats uint8
-}
-
-func NewTimeSignature(unit uint8, beats uint8) *TimeSignature {
-	return &TimeSignature{unit: unit, beats: beats}
-}
-
-type Measure struct {
-	timeSignature *TimeSignature
-	notes         []Note
-}
-
-func NewMeasure(timeSignature *TimeSignature) *Measure {
-	return &Measure{timeSignature: timeSignature, notes: make([]Note, 0)}
-}
-
-func (measure *Measure) Add(note Note, duration uint8) {
-	measure.notes = append(measure.notes, note)
-}
-
-func (measure *Measure) Play() {
-	for _, note := range measure.notes {
-		note.Play(time.Second)
-	}
-}
-
-func main() {
-	sr := beep.SampleRate(SampleRate)
-	speaker.Init(SampleRate, sr.N(time.Second/10))
-
-	tuning, err := NewTuning("a440")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	timeSignature := NewTimeSignature(4, 4)
-	measure := NewMeasure(timeSignature)
-	measure.Add(*tuning.Note("A", 4), Sixteenth)
-	measure.Add(*tuning.Note("B", 4), Quarter)
-	measure.Add(*tuning.Note("C", 2), Quarter)
-	measure.Play()
-
-	//	note.Play(time.Second / 4)
-	//
-	//	note = tuning.Note("B", 4)
-	//	note.Play(time.Second / 4)
-	//
-	//	note = tuning.Note("A", 4)
-	//	note.Play(time.Second / 4)
-	//
-	//	note = tuning.Note("C", 4)
-	//	note.Play(time.Second / 4)
 }

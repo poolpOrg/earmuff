@@ -11,7 +11,6 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/poolpOrg/earring/parser"
-	"github.com/poolpOrg/earring/types"
 )
 
 func ticker(bpm uint, beats uint, duration uint, done <-chan bool) {
@@ -110,33 +109,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Project signature %d/%d at %dbpm\n",
-		project.GetSignature().GetBeats(),
-		project.GetSignature().GetDuration(),
-		project.GetBPM())
+	/*
+		fmt.Printf("Project signature %d/%d at %dbpm\n",
+			project.GetSignature().GetBeats(),
+			project.GetSignature().GetDuration(),
+			project.GetBPM())
 
-	c := make(chan *types.Beat, 100)
-
-	for trackOffset, track := range project.GetTracks() {
-		fmt.Println("\tTrack", trackOffset)
-		barOffset := 0
-		for _, bar := range track.GetBars() {
-			fmt.Println("\t\tBar", barOffset)
-			for offset, beat := range bar.GetBeats() {
-				c <- beat
-				fmt.Println("\t\t\tBeat", offset)
-				for _, duration := range beat.GetDurations() {
-					fmt.Println("\t\t\t\t",
-						duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
+		for trackOffset, track := range project.GetTracks() {
+			fmt.Println("  Track", trackOffset+1)
+			barOffset := 1
+			for _, bar := range track.GetBars() {
+				fmt.Printf("    %s: Bar %v\n", bar.GetTimestamp(), barOffset)
+				for _, playable := range bar.GetPlayables() {
+					fmt.Printf("        %s+%s->%s %s: %s %d\n", bar.GetTimestamp(), playable.GetTimestamp(), playable.GetDurationTime(), playable.GetType(), playable.GetName(), playable.GetDuration())
 				}
+				barOffset += 1
 			}
-			barOffset += 1
 		}
-	}
-
+	*/
 	sr := beep.SampleRate(44100)
 	speaker.Init(44100, sr.N(time.Second/10))
-
 	project.Play()
 
 	/*

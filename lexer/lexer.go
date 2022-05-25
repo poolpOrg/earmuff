@@ -16,6 +16,7 @@ const (
 
 	IDENTIFIER
 	NUMBER
+	FLOAT
 	SEMICOLON
 	BRACKET_OPEN
 	BRACKET_CLOSE
@@ -34,6 +35,8 @@ const (
 	QUARTER
 	TH
 	ND
+
+	ON
 
 	REST
 	NOTE
@@ -81,7 +84,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	if isWhitespace(ch) {
 		s.unread()
 		return s.scanWhitespace()
-	} else if isDigit(ch) {
+	} else if isDigit(ch) || ch == '.' {
 		s.unread()
 		return s.scanNumber()
 	} else if isLetter(ch) {
@@ -137,7 +140,7 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	for {
 		if ch := s.read(); ch == eof {
 			break
-		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
+		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' && ch != '#' {
 			s.unread()
 			break
 		} else {
@@ -181,6 +184,9 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	case "CHORD":
 		return CHORD, buf.String()
 
+	case "ON":
+		return ON, buf.String()
+
 	}
 
 	// Otherwise return as a regular identifier.
@@ -194,17 +200,24 @@ func (s *Scanner) scanNumber() (tok Token, lit string) {
 
 	// Read every subsequent ident character into the buffer.
 	// Non-ident characters and EOF will cause the loop to exit.
+	isFloat := false
 	for {
 		if ch := s.read(); ch == eof {
 			break
-		} else if !isDigit(ch) {
+		} else if !isDigit(ch) && ch != '.' {
 			s.unread()
 			break
 		} else {
+			if ch == '.' {
+				isFloat = true
+			}
 			_, _ = buf.WriteRune(ch)
 		}
 	}
 
 	// Otherwise return as a regular identifier.
+	if isFloat {
+		return FLOAT, buf.String()
+	}
 	return NUMBER, buf.String()
 }

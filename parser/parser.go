@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"github.com/poolpOrg/earring/lexer"
 	"github.com/poolpOrg/earring/types"
@@ -182,7 +183,14 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 }
 
 func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
-	bar := types.NewBar()
+	timestamp := time.Duration(0)
+	bars := track.GetBars()
+	if len(bars) != 0 {
+		lastBar := bars[len(bars)-1]
+		step := time.Minute / time.Duration(lastBar.GetBPM()*(lastBar.GetSignature().GetDuration()/lastBar.GetSignature().GetBeats()))
+		timestamp = bars[len(bars)-1].GetTimestamp() + time.Duration(lastBar.GetSignature().GetBeats())*step
+	}
+	bar := types.NewBar(uint64(len(track.GetBars()))+1, timestamp)
 	bar.SetBPM(track.GetBPM())
 	bar.SetSignature(track.GetSignature())
 
@@ -206,51 +214,24 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 			if err != nil {
 				return nil, err
 			}
-		case lexer.BEAT:
-			beat, err := p.parseBeat(bar)
-			if err != nil {
-				return nil, err
-			}
-			bar.AddBeat(beat)
-		default:
-			return nil, fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
-		}
-	}
-
-	return bar, nil
-}
-
-func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
-	beat := types.NewBeat()
-
-	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
-		return nil, fmt.Errorf("found %q, expected {", lit)
-	}
-
-	for {
-		tok, lit := p.scanIgnoreWhitespace()
-		if tok == lexer.BRACKET_CLOSE {
-			break
-		}
-		switch tok {
 		case lexer.WHOLE:
-			duration, err := p.parseDuration(beat, 1)
+			playable, err := p.parsePlayable(bar, 1)
 			if err != nil {
 				return nil, err
 			}
-			beat.AddDuration(duration)
+			bar.AddPlayable(playable)
 		case lexer.HALF:
-			duration, err := p.parseDuration(beat, 2)
+			playable, err := p.parsePlayable(bar, 2)
 			if err != nil {
 				return nil, err
 			}
-			beat.AddDuration(duration)
+			bar.AddPlayable(playable)
 		case lexer.QUARTER:
-			duration, err := p.parseDuration(beat, 4)
+			playable, err := p.parsePlayable(bar, 4)
 			if err != nil {
 				return nil, err
 			}
-			beat.AddDuration(duration)
+			bar.AddPlayable(playable)
 		case lexer.NUMBER:
 			value, err := strconv.ParseUint(lit, 10, 16)
 			if err != nil {
@@ -284,22 +265,21 @@ func (p *Parser) parseBeat(bar *types.Bar) (*types.Beat, error) {
 			} else {
 				return nil, fmt.Errorf("found %q, expected value", lit)
 			}
-			duration, err := p.parseDuration(beat, uint16(value))
+			playable, err := p.parsePlayable(bar, uint16(value))
 			if err != nil {
 				return nil, err
 			}
-			beat.AddDuration(duration)
-
+			bar.AddPlayable(playable)
 		default:
-			return nil, fmt.Errorf("found %q, expected }", lit)
+			return nil, fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
 		}
 	}
 
-	return beat, nil
+	return bar, nil
 }
 
-func (p *Parser) parseDuration(beat *types.Beat, value uint16) (*types.Duration, error) {
-	duration := types.NewDuration(value)
+func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable, error) {
+	var playable types.Playable
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
 		if tok == lexer.SEMICOLON {
@@ -311,24 +291,51 @@ func (p *Parser) parseDuration(beat *types.Beat, value uint16) (*types.Duration,
 			if err != nil {
 				return nil, err
 			}
-			duration.SetPlayable(rest)
+			rest.SetDuration(duration)
+			playable = rest
 		case lexer.CHORD:
 			chord, err := p.parseChord()
 			if err != nil {
 				return nil, err
 			}
-			duration.SetPlayable(chord)
+			chord.SetDuration(duration)
+			playable = chord
 		case lexer.NOTE:
 			note, err := p.parseNote()
 			if err != nil {
 				return nil, err
 			}
-			duration.SetPlayable(note)
+			note.SetDuration(duration)
+			playable = note
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
+
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.ON {
+			return nil, fmt.Errorf("found %q, expected ON", lit)
+		}
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BEAT {
+			return nil, fmt.Errorf("found %q, expected BEAT", lit)
+		}
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+			return nil, fmt.Errorf("found %q, expected NUMBER", lit)
+		} else {
+			beat, err := strconv.ParseUint(lit, 10, 8)
+			if err != nil {
+				return nil, err
+			}
+			if beat > uint64(bar.GetSignature().GetBeats()) {
+				return nil, fmt.Errorf("%d on beat %d mismatches time signature", duration, beat)
+			}
+
+			step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
+			playable.SetBeat(uint8(beat))
+			playable.SetTimestamp(time.Duration(beat-1) * step)
+			playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
+		}
+
 	}
-	return duration, nil
+	return playable, nil
 }
 
 func (p *Parser) parseChord() (*types.Chord, error) {
