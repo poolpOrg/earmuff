@@ -61,8 +61,7 @@ func (project *Project) Play() {
 					fmt.Println(time.Now(), "Playing", p.GetType(), p.GetName(), "for", p.GetDurationTime())
 					freq, _ := tuning.Frequency(p.GetName(), 4)
 					a := Anote{freq: freq}
-					go a.Play(p.GetDurationTime())
-
+					a.Play(p.GetDurationTime())
 					wg.Done()
 				}(bar, playable)
 			}

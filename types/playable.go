@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/poolpOrg/go-harmony/chords"
+)
 
 type Playable interface {
 	GetType() string
@@ -21,14 +25,7 @@ type Chord struct {
 	beat         uint8
 	timestamp    time.Duration
 	durationTime time.Duration
-}
-
-type Note struct {
-	name         string
-	duration     uint16
-	beat         uint8
-	timestamp    time.Duration
-	durationTime time.Duration
+	chord        chords.Chord
 }
 
 type Rest struct {
@@ -38,9 +35,9 @@ type Rest struct {
 	durationTime time.Duration
 }
 
-func NewChord(name string) *Chord {
+func NewChord(chord chords.Chord) *Chord {
 	return &Chord{
-		name: name,
+		chord: chord,
 	}
 }
 
@@ -49,7 +46,7 @@ func (chord *Chord) GetType() string {
 }
 
 func (chord *Chord) GetName() string {
-	return chord.name
+	return chord.chord.Name()
 }
 
 func (chord *Chord) SetDuration(duration uint16) {
@@ -82,52 +79,6 @@ func (chord *Chord) SetDurationTime(timestamp time.Duration) {
 
 func (chord *Chord) GetDurationTime() time.Duration {
 	return chord.durationTime
-}
-
-func NewNote(name string) *Note {
-	return &Note{
-		name: name,
-	}
-}
-
-func (note *Note) GetType() string {
-	return "Note"
-}
-
-func (note *Note) GetName() string {
-	return note.name
-}
-
-func (note *Note) SetDuration(duration uint16) {
-	note.duration = duration
-}
-
-func (note *Note) GetDuration() uint16 {
-	return note.duration
-}
-
-func (note *Note) SetBeat(beat uint8) {
-	note.beat = beat
-}
-
-func (note *Note) GetBeat() uint8 {
-	return note.beat
-}
-
-func (note *Note) SetTimestamp(timestamp time.Duration) {
-	note.timestamp = timestamp
-}
-
-func (note *Note) GetTimestamp() time.Duration {
-	return note.timestamp
-}
-
-func (note *Note) SetDurationTime(timestamp time.Duration) {
-	note.durationTime = timestamp
-}
-
-func (note *Note) GetDurationTime() time.Duration {
-	return note.durationTime
 }
 
 func NewRest() *Rest {

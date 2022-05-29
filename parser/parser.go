@@ -8,6 +8,8 @@ import (
 
 	"github.com/poolpOrg/earring/lexer"
 	"github.com/poolpOrg/earring/types"
+	"github.com/poolpOrg/go-harmony/chords"
+	"github.com/poolpOrg/go-harmony/notes"
 )
 
 type Parser struct {
@@ -342,7 +344,11 @@ func (p *Parser) parseChord() (*types.Chord, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected chord name", lit)
 	} else {
-		return types.NewChord(lit), nil
+		chord, err := chords.Parse(lit)
+		if err != nil {
+			return nil, err
+		}
+		return types.NewChord(*chord), nil
 	}
 }
 
@@ -350,7 +356,12 @@ func (p *Parser) parseNote() (*types.Note, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected note name", lit)
 	} else {
-		return types.NewNote(lit), nil
+		note, err := notes.Parse(lit)
+		if err != nil {
+			return nil, err
+		}
+		_ = note
+		return types.NewNote(lit, 4)
 	}
 }
 

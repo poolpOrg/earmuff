@@ -78,7 +78,7 @@ func (tuning *Tuning) Offset(name string) (int8, error) {
 		return 11, nil
 
 	}
-	return 0, fmt.Errorf("no such note")
+	return 0, fmt.Errorf("no such note: %s", name)
 }
 
 var a440 = [][]float64{
@@ -93,7 +93,7 @@ var a440 = [][]float64{
 	{4186.01, 4434.92, 4698.63, 4978.03, 5274.04, 5587.65, 5919.91, 6271.93, 6644.88, 7040.00, 7458.62, 7902.13},
 }
 
-func (tuning *Tuning) Frequency(note string, octave uint8) (float64, error) {
+func (tuning *Tuning) Frequency(note string, octave uint) (float64, error) {
 	offset, err := tuning.Offset(note)
 	if err != nil {
 		return 0.0, err
