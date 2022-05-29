@@ -1,6 +1,7 @@
 package types
 
 import (
+	"sync"
 	"time"
 
 	"github.com/poolpOrg/go-harmony/chords"
@@ -17,6 +18,8 @@ type Playable interface {
 	GetBeat() uint8
 	SetTimestamp(time.Duration)
 	GetTimestamp() time.Duration
+	GetFrequency() float64
+	Play()
 }
 
 type Chord struct {
@@ -81,6 +84,29 @@ func (chord *Chord) GetDurationTime() time.Duration {
 	return chord.durationTime
 }
 
+func (chord *Chord) GetFrequency() float64 {
+	return 0.0
+}
+
+func (chord *Chord) Play() {
+	wg := sync.WaitGroup{}
+	for _, note := range chord.chord.Notes() {
+		wg.Add(1)
+		go func() {
+			n := Note{
+				duration:     chord.duration,
+				beat:         chord.beat,
+				timestamp:    chord.timestamp,
+				durationTime: chord.durationTime,
+				note:         note,
+			}
+			n.Play()
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
 func NewRest() *Rest {
 	return &Rest{}
 }
@@ -123,4 +149,12 @@ func (rest *Rest) SetDurationTime(timestamp time.Duration) {
 
 func (rest *Rest) GetDurationTime() time.Duration {
 	return rest.durationTime
+}
+
+func (rest *Rest) GetFrequency() float64 {
+	return 0.0
+}
+
+func (rest *Rest) Play() {
+
 }

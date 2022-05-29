@@ -109,59 +109,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
-		fmt.Printf("Project signature %d/%d at %dbpm\n",
-			project.GetSignature().GetBeats(),
-			project.GetSignature().GetDuration(),
-			project.GetBPM())
-
-		for trackOffset, track := range project.GetTracks() {
-			fmt.Println("  Track", trackOffset+1)
-			barOffset := 1
-			for _, bar := range track.GetBars() {
-				fmt.Printf("    %s: Bar %v\n", bar.GetTimestamp(), barOffset)
-				for _, playable := range bar.GetPlayables() {
-					fmt.Printf("        %s+%s->%s %s: %s %d\n", bar.GetTimestamp(), playable.GetTimestamp(), playable.GetDurationTime(), playable.GetType(), playable.GetName(), playable.GetDuration())
-				}
-				barOffset += 1
-			}
-		}
-	*/
 	sr := beep.SampleRate(44100)
 	speaker.Init(44100, sr.N(time.Second/10))
 	project.Play()
-
-	/*
-		done := make(chan bool)
-		go ticker(uint(project.GetBPM()), uint(project.GetSignature().GetBeats()), uint(project.GetSignature().GetDuration()), done)
-
-		t := time.NewTimer(time.Second * 30)
-		<-t.C
-		done <- true
-	*/
-
-	/*
-		for {
-			select {
-			case <-t.C:
-				if (i % project.GetSignature().GetBeats()) == 0 {
-					go loTick.Play(time.Millisecond * 100)
-				} else {
-					go hiTick.Play(time.Millisecond * 100)
-				}
-
-				go func() {
-					beat := <-c
-					for _, duration := range beat.GetDurations() {
-						fmt.Println(time.Now().Round(time.Millisecond), duration.GetDurationName(), duration.GetPlayable().Type(), duration.GetPlayable().Name())
-					}
-				}()
-				i++
-			}
-			if done {
-				break
-			}
-		}
-	*/
-
 }

@@ -1,14 +1,18 @@
 package types
 
+import "github.com/poolpOrg/go-harmony/tunings"
+
 type Track struct {
 	bpm       uint8
 	signature *Signature
 	bars      []*Bar
+	tuning    tunings.Tuning
 }
 
 func NewTrack() *Track {
 	return &Track{
-		bars: make([]*Bar, 0),
+		bars:   make([]*Bar, 0),
+		tuning: tunings.A440,
 	}
 }
 

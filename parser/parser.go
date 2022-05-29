@@ -360,8 +360,7 @@ func (p *Parser) parseNote() (*types.Note, error) {
 		if err != nil {
 			return nil, err
 		}
-		_ = note
-		return types.NewNote(lit, 4)
+		return types.NewNote(*note), nil
 	}
 }
 

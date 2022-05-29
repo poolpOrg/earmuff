@@ -47,8 +47,6 @@ func (project *Project) GetTracks() []*Track {
 }
 
 func (project *Project) Play() {
-	tuning, _ := NewTuning("a440")
-
 	wg := sync.WaitGroup{}
 	for _, track := range project.GetTracks() {
 		for _, bar := range track.GetBars() {
@@ -59,15 +57,14 @@ func (project *Project) Play() {
 					<-timer.C
 
 					fmt.Println(time.Now(), "Playing", p.GetType(), p.GetName(), "for", p.GetDurationTime())
-					freq, _ := tuning.Frequency(p.GetName(), 4)
-					a := Anote{freq: freq}
-					a.Play(p.GetDurationTime())
+					p.Play()
 					wg.Done()
 				}(bar, playable)
 			}
 		}
 	}
 	wg.Wait()
+
 }
 
 //////
