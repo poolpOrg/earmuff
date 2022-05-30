@@ -5,10 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/generators"
-	"github.com/faiface/beep/speaker"
-
 	"github.com/poolpOrg/go-synctimer"
 )
 
@@ -67,26 +63,6 @@ func (project *Project) Play() {
 		}
 	}
 	t.Start()
-
 	wg.Wait()
 
-}
-
-//////
-type Anote struct {
-	freq float64
-}
-
-func (st *Anote) Play(duration time.Duration) {
-	sr := beep.SampleRate(41100)
-	sine, err := generators.SineTone(sr, st.freq)
-	if err != nil {
-		panic(err)
-	}
-
-	done := make(chan bool)
-	speaker.Play(beep.Seq(beep.Take(sr.N(duration), sine), beep.Callback(func() {
-		done <- true
-	})))
-	<-done
 }
