@@ -331,8 +331,18 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 			}
 
 			step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
+
+			barDuration := time.Duration(bar.GetSignature().GetBeats()) * step
+			remainingDuration := barDuration - time.Duration(beat-1)*step
+
+			playableDuration := time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration)
+			if playableDuration > remainingDuration {
+				return nil, fmt.Errorf("%d on beat %d mismatches time signature, will overlap next bar", duration, beat)
+			}
+
 			playable.SetBeat(uint8(beat))
 			playable.SetTimestamp(time.Duration(beat-1) * step)
+			playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
 			playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
 		}
 

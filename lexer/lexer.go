@@ -22,6 +22,7 @@ const (
 	BRACKET_CLOSE
 	PLUS
 	MINUS
+	SLASH
 
 	BPM
 	TIME
@@ -96,6 +97,8 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	switch ch {
 	case eof:
 		return EOF, ""
+	case '/':
+		return SLASH, string(ch)
 	case '{':
 		return BRACKET_OPEN, string(ch)
 	case '}':
