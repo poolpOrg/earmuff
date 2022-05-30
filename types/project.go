@@ -8,6 +8,8 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/generators"
 	"github.com/faiface/beep/speaker"
+
+	"github.com/poolpOrg/go-synctimer"
 )
 
 type Project struct {
@@ -48,21 +50,24 @@ func (project *Project) GetTracks() []*Track {
 
 func (project *Project) Play() {
 	wg := sync.WaitGroup{}
+
+	t := synctimer.NewTimer()
+
 	for _, track := range project.GetTracks() {
 		for _, bar := range track.GetBars() {
 			for _, playable := range bar.GetPlayables() {
 				wg.Add(1)
-				go func(b *Bar, p Playable) {
-					timer := time.NewTimer(b.GetTimestamp() + p.GetTimestamp())
-					<-timer.C
-
+				go func(p Playable, c chan bool) {
+					<-c
 					fmt.Println(time.Now(), "Playing", p.GetType(), p.GetName(), "for", p.GetDurationTime())
 					p.Play()
 					wg.Done()
-				}(bar, playable)
+				}(playable, t.NewSubTimer(bar.GetTimestamp()+playable.GetTimestamp()))
 			}
 		}
 	}
+	t.Start()
+
 	wg.Wait()
 
 }
