@@ -319,33 +319,55 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BEAT {
 			return nil, fmt.Errorf("found %q, expected BEAT", lit)
 		}
+
+		var beat uint8
 		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
 			return nil, fmt.Errorf("found %q, expected NUMBER", lit)
 		} else {
-			beat, err := strconv.ParseUint(lit, 10, 8)
+			tmp, err := strconv.ParseUint(lit, 10, 8)
 			if err != nil {
 				return nil, err
 			}
-			if beat > uint64(bar.GetSignature().GetBeats()) {
-				return nil, fmt.Errorf("%d on beat %d mismatches time signature", duration, beat)
+			if tmp > uint64(bar.GetSignature().GetBeats()) {
+				return nil, fmt.Errorf("%d on beat %d mismatches time signature", duration, tmp)
 			}
-
-			step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
-
-			barDuration := time.Duration(bar.GetSignature().GetBeats()) * step
-			remainingDuration := barDuration - time.Duration(beat-1)*step
-
-			playableDuration := time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration)
-			if playableDuration > remainingDuration {
-				return nil, fmt.Errorf("%d on beat %d mismatches time signature, will overlap next bar", duration, beat)
-			}
-
-			playable.SetBeat(uint8(beat))
-			playable.SetTimestamp(time.Duration(beat-1) * step)
-			playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
-			playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
+			beat = uint8(tmp)
 		}
 
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.SLASH {
+			return nil, fmt.Errorf("found %q, expected SLASH", lit)
+		}
+
+		var subdivision uint8
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+			return nil, fmt.Errorf("found %q, expected NUMBER", lit)
+		} else {
+			tmp, err := strconv.ParseUint(lit, 10, 8)
+			if err != nil {
+				return nil, err
+			}
+			if tmp > uint64(bar.GetSignature().GetDuration()) {
+				return nil, fmt.Errorf("%d on beat %d/%d mismatches time signature", duration, beat, tmp)
+			}
+			subdivision = uint8(tmp)
+		}
+
+		step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
+
+		substep := step / time.Duration(subdivision)
+
+		barDuration := time.Duration(bar.GetSignature().GetBeats()) * step
+		remainingDuration := barDuration - time.Duration(beat-1)*step - time.Duration(subdivision-1)*substep
+
+		playableDuration := time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration)
+		if playableDuration > remainingDuration {
+			return nil, fmt.Errorf("%d on beat %d mismatches time signature, will overlap next bar", duration, beat)
+		}
+
+		playable.SetBeat(uint8(beat))
+		playable.SetTimestamp(time.Duration(beat-1)*step + time.Duration(subdivision-1)*substep)
+		playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
+		playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
 	}
 	return playable, nil
 }
