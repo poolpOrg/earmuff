@@ -3,17 +3,17 @@ project {
     time 4 4;
 
     track {
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord F7 on beat 1; }
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord F7 on beat 1; }
-        bar { whole chord F7 on beat 1; }
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord G7 on beat 1; }
-        bar { whole chord F7 on beat 1; }
-        bar { whole chord C7 on beat 1; }
-        bar { whole chord G7 on beat 1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord F7 on beat 1/1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord F7 on beat 1/1; }
+        bar { whole chord F7 on beat 1/1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord G7 on beat 1/1; }
+        bar { whole chord F7 on beat 1/1; }
+        bar { whole chord C7 on beat 1/1; }
+        bar { whole chord G7 on beat 1/1; }
     }
 }
