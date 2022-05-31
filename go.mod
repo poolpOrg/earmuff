@@ -11,6 +11,8 @@ require (
 	github.com/hajimehoshi/oto v0.7.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88 // indirect
+	gitlab.com/gomidi/midi v1.23.7 // indirect
+	gitlab.com/gomidi/midi/v2 v2.0.15 // indirect
 	golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 // indirect
 	golang.org/x/image v0.0.0-20190227222117-0694c2d4d067 // indirect
 	golang.org/x/mobile v0.0.0-20190415191353-3e0bab5405d6 // indirect

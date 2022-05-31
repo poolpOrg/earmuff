@@ -1,0 +1,44 @@
+project {
+    bpm 120;
+    time 4 4;
+
+    track {
+        bar {
+            8th note C# on beat 3/1;
+            8th note D on beat 3/2;
+            8th note A on beat 3/3;
+            8th note G# on beat 3/4;
+            8th note G on beat 4/1;
+            8th note F# on beat 4/2;
+        }
+        bar {
+            half note F on beat 1/1;
+            8th note E on beat 4/2;
+        }
+        bar {
+            half note Fbb on beat 1/1;
+            quarter note Eb on beat 2/2;
+            8th note D on beat 4/2;
+        }
+        bar {
+            whole note D on beat 1/1;
+        }
+    }
+
+    track {
+        bar {
+        }
+        bar {
+            whole chord Eb9 on beat 1/1;
+        }
+        bar {
+            half chord Am7b5 on beat 1/1;
+            half chord D7b9 on beat 3/1;
+        }
+        bar {
+            half chord Gmaj7 on beat 1/1;
+            quarter chord Am7 on beat 3/1;
+            quarter chord Bm7b5 on beat 4/1;
+        }
+    }
+}

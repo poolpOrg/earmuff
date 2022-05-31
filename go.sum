@@ -32,6 +32,10 @@ github.com/poolpOrg/go-harmony v0.0.0-20220530201118-b570fb7a39e2 h1:tMn+PRxdQj7
 github.com/poolpOrg/go-harmony v0.0.0-20220530201118-b570fb7a39e2/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88 h1:Jh87bQfzEjym0BkmApmvnzG1AzKfoxzA52DTGFu87t4=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88/go.mod h1:4BAd1YY8YrbL7koDUoNLmEpULsqepDIBqnUxqHE22Ao=
+gitlab.com/gomidi/midi v1.23.7 h1:I6qKoIk9s9dcX+pNf0jC+tziCzJFn82bMpuntRkLeik=
+gitlab.com/gomidi/midi v1.23.7/go.mod h1:3ohtNOhqoSakkuLG/Li1OI6I3J1c2LErnJF5o/VBq1c=
+gitlab.com/gomidi/midi/v2 v2.0.15 h1:17g5ejCM+XyWDss+DeT8ZPpIvqIR6uSycD2iJZ5o/gM=
+gitlab.com/gomidi/midi/v2 v2.0.15/go.mod h1:quTyMKSQ4Klevxu6gY4gy2USbeZra0fV5SalndmPfsY=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 h1:idBdZTd9UioThJp8KpM/rTSinK/ChZFBE43/WtIy8zg=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/image v0.0.0-20190220214146-31aff87c08e9/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=

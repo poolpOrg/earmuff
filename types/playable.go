@@ -19,6 +19,7 @@ type Playable interface {
 	SetTimestamp(time.Duration)
 	GetTimestamp() time.Duration
 	GetFrequency() float64
+	GetNotes() []Note
 	Play()
 }
 
@@ -86,6 +87,21 @@ func (chord *Chord) GetDurationTime() time.Duration {
 
 func (chord *Chord) GetFrequency() float64 {
 	return 0.0
+}
+func (chord *Chord) GetNotes() []Note {
+	ret := make([]Note, 0)
+	for _, note := range chord.chord.Notes() {
+		n := Note{
+			duration:     chord.duration,
+			beat:         chord.beat,
+			timestamp:    chord.timestamp,
+			durationTime: chord.durationTime,
+			note:         note,
+		}
+		ret = append(ret, n)
+	}
+
+	return ret
 }
 
 func (chord *Chord) Play() {
@@ -157,4 +173,8 @@ func (rest *Rest) GetFrequency() float64 {
 
 func (rest *Rest) Play() {
 
+}
+
+func (rest *Rest) GetNotes() []Note {
+	return []Note{}
 }

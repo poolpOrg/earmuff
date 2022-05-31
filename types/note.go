@@ -67,6 +67,10 @@ func (note *Note) GetFrequency() float64 {
 	return note.note.Frequency()
 }
 
+func (note *Note) GetNotes() []Note {
+	return []Note{*note}
+}
+
 func (note *Note) Play() {
 	sr := beep.SampleRate(41100)
 	sine, err := generators.SineTone(sr, note.note.Frequency())
