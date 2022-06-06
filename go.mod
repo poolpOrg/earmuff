@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/faiface/beep v1.1.1-0.20220304214352-60cd18038f16
-	github.com/poolpOrg/go-harmony v0.0.0-20220530201118-b570fb7a39e2
+	github.com/poolpOrg/go-harmony v0.0.0-20220606195546-160cd8cbda03
 	github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88
 )
 
