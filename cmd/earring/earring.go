@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/poolpOrg/earring/midi"
+	"github.com/poolpOrg/earring/compiler"
 	"github.com/poolpOrg/earring/parser"
 	"github.com/poolpOrg/go-synctimer"
 	"github.com/youpy/go-coremidi"
@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b := midi.ToMidi(project)
+	b := compiler.Compile(project)
 
 	client, err := coremidi.NewClient("earring")
 	if err != nil {
