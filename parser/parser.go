@@ -240,14 +240,7 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 }
 
 func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
-	timestamp := time.Duration(0)
-	bars := track.GetBars()
-	if len(bars) != 0 {
-		lastBar := bars[len(bars)-1]
-		step := time.Minute / time.Duration(lastBar.GetBPM()*(lastBar.GetSignature().GetDuration()/lastBar.GetSignature().GetBeats()))
-		timestamp = bars[len(bars)-1].GetTimestamp() + time.Duration(lastBar.GetSignature().GetBeats())*step
-	}
-	bar := types.NewBar(uint32(len(track.GetBars())), timestamp)
+	bar := types.NewBar(uint32(len(track.GetBars())))
 	bar.SetBPM(track.GetBPM())
 	bar.SetSignature(track.GetSignature())
 

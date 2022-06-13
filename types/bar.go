@@ -1,19 +1,15 @@
 package types
 
-import "time"
-
 type Bar struct {
 	offset    uint32
 	bpm       uint8
-	timestamp time.Duration
 	signature *Signature
 	playables []Playable
 }
 
-func NewBar(offset uint32, timestamp time.Duration) *Bar {
+func NewBar(offset uint32) *Bar {
 	return &Bar{
 		offset:    offset,
-		timestamp: timestamp,
 		playables: make([]Playable, 0),
 	}
 }
@@ -28,10 +24,6 @@ func (bar *Bar) GetBPM() uint8 {
 
 func (bar *Bar) SetBPM(bpm uint8) {
 	bar.bpm = bpm
-}
-
-func (bar *Bar) GetTimestamp() time.Duration {
-	return bar.timestamp
 }
 
 func (bar *Bar) GetSignature() *Signature {
