@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/poolpOrg/earring/midi"
 	"github.com/poolpOrg/earring/parser"
+	"github.com/youpy/go-coremidi"
+	"gitlab.com/gomidi/midi/v2/smf"
 	// (Meta Messages)
 	// you may also want to use these
 	// github.com/gomidi/midi/midimessage/cc         (ControlChange Messages)
@@ -33,80 +37,77 @@ func main() {
 	}
 
 	b := midi.ToMidi(project)
-	fp2, err := os.OpenFile("file.mid", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+
+	//fp2, err := os.OpenFile("file.mid", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer fp2.Close()
+	///
+	//fp2.Write(b)
+	client, err := coremidi.NewClient("earring")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
-	defer fp2.Close()
 
-	fp2.Write(b)
+	port, err := coremidi.NewInputPort(
+		client,
+		"test",
+		func(source coremidi.Source, packet coremidi.Packet) {
+			fmt.Printf(
+				"device: %v, manufacturer: %v, source: %v, data: %v\n",
+				source.Entity().Device().Name(),
+				source.Manufacturer(),
+				source.Name(),
+				packet.Data,
+			)
+			return
+		},
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	/*
-		tpq := smf.MetricTicks(0) // set the time resolution in ticks per quarter note; 0 uses the defaults (i.e. 960)
+	source, err := coremidi.NewSource(client, "earring")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	conn, err := port.Connect(source)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(conn)
 
-		writeMIDI := func(wr smf.Writer) {
+	e, err := smf.ReadFrom(bytes.NewReader(b))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-			// always set the delta before writing
-			wr.SetDelta(tpq.Ticks8th())
+	tracks := e.Tracks
 
-			// starts MIDI key 65 on MIDI channel 3 with velocity 90 with delta of 480 to
-			// the beginning of the track (note starts after a quaver pause)
-			// MIDI channels 1-16 correspond to channel.Channel0 - channel.Channel15.
-			err = wr.Write(Channel2.NoteOn(65, 90))
+	//out, _ := coremidi.NewOutputPort(client, "out")
 
-			if err != nil {
-				return
-			}
+	for _, track := range tracks {
+		for _, ev := range track {
+			//out.WriteString(fmt.Sprintf("Track %v@%v %s\n", i, ev.Delta, ev.MessageType()))
+			//m := midi2.NewMessage(ev.Data)
+			//m.Type = midi2.GetMessageType(ev.Data)
+			p := coremidi.NewPacket(ev.Message.Bytes(), uint64(ev.Delta))
+			//			p.Send(conn, )
+			fmt.Println(p)
 
-			wr.SetDelta(tpq.Ticks4th())
-
-			// stops MIDI note 65 on MIDI channel 3 with delta of 960 to previous message
-			// this results in a duration of 1 quarter note for midi note 65
-			err = wr.Write(Channel2.NoteOff(65))
-
-			if err != nil {
-				return
-			}
-
-			// finishes the first track and writes it to the file
-			err = wr.Write(meta.EndOfTrack)
-
-			if err != nil {
-				return
-			}
-
-			// the next write writes to the second track
-			// after writing delta is always 0, so we start here at the beginning of the second track
-			err = wr.Write(Channel2.NoteOn(65, 90))
-
-			if err != nil {
-				return
-			}
-
-			wr.SetDelta(tpq.Ticks4th())
-
-			// stops MIDI note 65 on MIDI channel 3 with delta of 960 to previous message
-			// this results in a duration of 1 quarter note for midi note 65
-			err = wr.Write(Channel2.NoteOff(65))
-
-			if err != nil {
-				return
-			}
-
-			if err != nil {
-				return
-			}
-
-			// finishes the second track and writes it to the file
-			err = wr.Write(meta.EndOfTrack)
 		}
+	}
 
-		// the number passed to the NumTracks option must match the tracks written
-		// if NumTracks is not passed, it defaults to single track (SMF0)
-		// if numtracks > 1, SMF1 format is chosen.
-		// if TimeFormat is not passed, smf.MetricTicks(960) will be chosen
-		smfwriter.WriteFile("file.mid", writeMIDI, smfwriter.NumTracks(2), smfwriter.TimeFormat(tpq))
+	conn.Disconnect()
+	_ = b
 
-		// deal with err
-	*/
+	ch := make(chan int)
+	<-ch
+
 }

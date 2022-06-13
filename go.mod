@@ -11,6 +11,7 @@ require (
 require (
 	github.com/hajimehoshi/oto v0.7.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/youpy/go-coremidi v0.0.0-20210828055444-d16028a71dfe // indirect
 	gitlab.com/gomidi/midi/v2 v2.0.21 // indirect
 	golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 // indirect
 	golang.org/x/image v0.0.0-20190227222117-0694c2d4d067 // indirect

@@ -28,6 +28,8 @@ github.com/poolpOrg/go-harmony v0.0.0-20220606195546-160cd8cbda03 h1:fK6NnMBp0rD
 github.com/poolpOrg/go-harmony v0.0.0-20220606195546-160cd8cbda03/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88 h1:Jh87bQfzEjym0BkmApmvnzG1AzKfoxzA52DTGFu87t4=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88/go.mod h1:4BAd1YY8YrbL7koDUoNLmEpULsqepDIBqnUxqHE22Ao=
+github.com/youpy/go-coremidi v0.0.0-20210828055444-d16028a71dfe h1:YnIUnee8uwqdupK1JUluo59Obk1XDa3iXy45BHH5yhs=
+github.com/youpy/go-coremidi v0.0.0-20210828055444-d16028a71dfe/go.mod h1:JECUA7NazToXvXOjdf3ZXbqBk/LjRx+5GI3geQfi4L4=
 gitlab.com/gomidi/midi/v2 v2.0.21 h1:2edYfWsb3pPP2j0Bw9MTxJKr5BxnwPAuz7uhGI6ptS0=
 gitlab.com/gomidi/midi/v2 v2.0.21/go.mod h1:quTyMKSQ4Klevxu6gY4gy2USbeZra0fV5SalndmPfsY=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 h1:idBdZTd9UioThJp8KpM/rTSinK/ChZFBE43/WtIy8zg=
