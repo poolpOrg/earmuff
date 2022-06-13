@@ -192,7 +192,7 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 		step := time.Minute / time.Duration(lastBar.GetBPM()*(lastBar.GetSignature().GetDuration()/lastBar.GetSignature().GetBeats()))
 		timestamp = bars[len(bars)-1].GetTimestamp() + time.Duration(lastBar.GetSignature().GetBeats())*step
 	}
-	bar := types.NewBar(uint64(len(track.GetBars()))+1, timestamp)
+	bar := types.NewBar(uint32(len(track.GetBars())), timestamp)
 	bar.SetBPM(track.GetBPM())
 	bar.SetSignature(track.GetSignature())
 
@@ -353,7 +353,6 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 		}
 
 		step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
-
 		substep := step / time.Duration(subdivision)
 
 		barDuration := time.Duration(bar.GetSignature().GetBeats()) * step
@@ -367,7 +366,17 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 		playable.SetBeat(uint8(beat))
 		playable.SetTimestamp(time.Duration(beat-1)*step + time.Duration(subdivision-1)*substep)
 		playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
-		playable.SetDurationTime(time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration))
+
+		ticksPerBeat := 960
+		ticksPerBar := uint32(bar.GetSignature().GetBeats()) * 960
+		ticksPerSubdivision := uint32(ticksPerBeat / int(bar.GetSignature().GetDuration()))
+
+		tick := (bar.GetOffset() * ticksPerBar) +
+			uint32(beat-1)*uint32(ticksPerBeat) +
+			uint32(subdivision-1)*ticksPerSubdivision
+		fmt.Println("bar offset", bar.GetOffset(), "tick:", tick)
+
+		playable.SetTick(tick)
 	}
 	return playable, nil
 }

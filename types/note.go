@@ -15,6 +15,7 @@ type Note struct {
 	timestamp    time.Duration
 	durationTime time.Duration
 	note         notes.Note
+	tick         uint32
 }
 
 func NewNote(note notes.Note) *Note {
@@ -83,4 +84,12 @@ func (note *Note) Play() {
 		done <- true
 	})))
 	<-done
+}
+
+func (note *Note) SetTick(tick uint32) {
+	note.tick = tick
+}
+
+func (note *Note) GetTick() uint32 {
+	return note.tick
 }

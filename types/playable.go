@@ -20,6 +20,10 @@ type Playable interface {
 	GetTimestamp() time.Duration
 	GetFrequency() float64
 	GetNotes() []Note
+
+	SetTick(uint32)
+	GetTick() uint32
+
 	Play()
 }
 
@@ -30,6 +34,7 @@ type Chord struct {
 	timestamp    time.Duration
 	durationTime time.Duration
 	chord        chords.Chord
+	tick         uint32
 }
 
 type Rest struct {
@@ -37,6 +42,7 @@ type Rest struct {
 	beat         uint8
 	timestamp    time.Duration
 	durationTime time.Duration
+	tick         uint32
 }
 
 func NewChord(chord chords.Chord) *Chord {
@@ -88,6 +94,15 @@ func (chord *Chord) GetDurationTime() time.Duration {
 func (chord *Chord) GetFrequency() float64 {
 	return 0.0
 }
+
+func (chord *Chord) SetTick(tick uint32) {
+	chord.tick = tick
+}
+
+func (chord *Chord) GetTick() uint32 {
+	return chord.tick
+}
+
 func (chord *Chord) GetNotes() []Note {
 	ret := make([]Note, 0)
 	for _, note := range chord.chord.Notes() {
@@ -96,6 +111,7 @@ func (chord *Chord) GetNotes() []Note {
 			beat:         chord.beat,
 			timestamp:    chord.timestamp,
 			durationTime: chord.durationTime,
+			tick:         chord.tick,
 			note:         note,
 		}
 		ret = append(ret, n)
@@ -177,4 +193,12 @@ func (rest *Rest) Play() {
 
 func (rest *Rest) GetNotes() []Note {
 	return []Note{}
+}
+
+func (rest *Rest) SetTick(tick uint32) {
+	rest.tick = tick
+}
+
+func (rest *Rest) GetTick() uint32 {
+	return rest.tick
 }

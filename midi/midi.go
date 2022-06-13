@@ -3,6 +3,7 @@ package midi
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
 	"github.com/poolpOrg/earring/types"
 	"gitlab.com/gomidi/midi/v2"
@@ -54,34 +55,91 @@ func ToMidi(project *types.Project) []byte {
 		}
 
 		tr.Add(0, smf.MetaInstrument("Piano"))
-		//	tr.Add(0, midi.ProgramChange(0, gm.Instr_BrassSection.Value()))
 
+		events := make(map[uint32][]midi.Message)
 		for _, bar := range track.GetBars() {
 			for _, playable := range bar.GetPlayables() {
 				for _, n := range playable.GetNotes() {
 					fn := midiMap[n.GetName()]
-					duration := clock.Ticks4th()
+
+					unit := clock.Ticks4th()
+					switch bar.GetSignature().GetDuration() {
+					case 1:
+						unit = clock.Ticks4th() * 4
+					case 2:
+						unit = clock.Ticks4th() * 2
+					case 4:
+						unit = clock.Ticks4th()
+					case 8:
+						unit = clock.Ticks8th()
+					case 16:
+						unit = clock.Ticks16th()
+					case 32:
+						unit = clock.Ticks32th()
+					case 64:
+						unit = clock.Ticks64th()
+					case 128:
+						unit = clock.Ticks128th()
+						/*
+							case 256:
+								unit = clock.Ticks256th()
+						*/
+					}
+
+					duration := unit
 					switch n.GetDuration() {
 					case 1:
-						duration = clock.Ticks4th() * 4
+						duration *= 4
 					case 2:
-						duration = clock.Ticks4th() * 2
+						duration *= 2
 					case 4:
-						duration = clock.Ticks4th()
+						duration = unit
 					case 8:
-						duration = clock.Ticks8th()
+						duration = unit / 2
 					case 16:
-						duration = clock.Ticks16th()
+						duration = unit / 4
+					case 32:
+						duration = unit / 8
+					case 64:
+						duration = unit / 16
+					case 128:
+						duration = unit / 32
+						/*case 256*/
 					}
-					fmt.Println(duration)
-					tr.Add(duration, midi.NoteOn(1, fn(4), 120))
-				}
-				for _, n := range playable.GetNotes() {
-					fn := midiMap[n.GetName()]
-					tr.Add(clock.Ticks8th(), midi.NoteOff(1, fn(4)))
+
+					tick := n.GetTick()
+
+					fmt.Println("TICK", tick, "DURATION", duration)
+					if _, exists := events[tick]; !exists {
+						events[tick] = make([]midi.Message, 0)
+					}
+					if _, exists := events[tick+duration]; !exists {
+						events[tick+duration] = make([]midi.Message, 0)
+					}
+					events[tick] = append(events[tick], midi.NoteOn(0, fn(4), 120))
+					events[tick+duration] = append(events[tick+duration], midi.NoteOff(0, fn(4)))
 				}
 			}
 		}
+		keys := make([]uint32, 0)
+		for t, _ := range events {
+			keys = append(keys, t)
+		}
+		sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+		lastKey := uint32(0)
+		for _, key := range keys {
+			fmt.Println(key-lastKey, events[key])
+			for offset, message := range events[key] {
+				if offset == 0 {
+					tr.Add((key - lastKey), message)
+				} else {
+					tr.Add(0, message)
+				}
+			}
+			lastKey = key
+		}
+
 		tr.Close(0)
 		s.Add(tr)
 	}
