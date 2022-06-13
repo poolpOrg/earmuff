@@ -127,7 +127,7 @@ func Compile(project *types.Project) []byte {
 						events[tick+duration] = make([]midi.Message, 0)
 					}
 					events[tick] = append(events[tick], midi.NoteOn(uint8(channel), fn(n.GetOctave()), 120))
-					events[tick+duration] = append(events[tick+duration], midi.NoteOff(uint8(channel), fn(4)))
+					events[tick+duration] = append(events[tick+duration], midi.NoteOff(uint8(channel), fn(n.GetOctave())))
 				}
 			}
 		}
@@ -139,8 +139,11 @@ func Compile(project *types.Project) []byte {
 
 		lastKey := uint32(0)
 		for _, key := range keys {
-			//			fmt.Println(key-lastKey, events[key])
-			for offset, message := range events[key] {
+			events := events[key]
+			sort.Slice(events, func(i, j int) bool {
+				return events[i].Type().String() == "NoteOff"
+			})
+			for offset, message := range events {
 				if offset == 0 {
 					tr.Add((key - lastKey), message)
 				} else {
