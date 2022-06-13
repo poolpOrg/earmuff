@@ -3,10 +3,12 @@ package types
 import "github.com/poolpOrg/go-harmony/tunings"
 
 type Track struct {
-	bpm       uint8
-	signature *Signature
-	bars      []*Bar
-	tuning    tunings.Tuning
+	bpm          uint8
+	signature    *Signature
+	bars         []*Bar
+	tuning       tunings.Tuning
+	instrument   string
+	isPercussive bool
 }
 
 func NewTrack() *Track {
@@ -38,4 +40,20 @@ func (track *Track) AddBar(bar *Bar) {
 
 func (track *Track) GetBars() []*Bar {
 	return track.bars
+}
+
+func (track *Track) SetInstrument(instrument string) {
+	track.instrument = instrument
+}
+
+func (track *Track) GetInstrument() string {
+	return track.instrument
+}
+
+func (track *Track) SetPercussive() {
+	track.isPercussive = true
+}
+
+func (track *Track) IsPercussive() bool {
+	return track.isPercussive
 }

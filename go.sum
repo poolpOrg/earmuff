@@ -22,10 +22,10 @@ github.com/mewkiz/pkg v0.0.0-20190919212034-518ade7978e2/go.mod h1:3E2FUC/qYUfM8
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/poolpOrg/go-harmony v0.0.0-20220530201118-b570fb7a39e2 h1:tMn+PRxdQj7gIUEUJhGKmzHwkhmLjtWWtJpefK0QKiE=
-github.com/poolpOrg/go-harmony v0.0.0-20220530201118-b570fb7a39e2/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
 github.com/poolpOrg/go-harmony v0.0.0-20220606195546-160cd8cbda03 h1:fK6NnMBp0rDaC6yRHwqBXk7hswHNiiDyiudiSSQKJxk=
 github.com/poolpOrg/go-harmony v0.0.0-20220606195546-160cd8cbda03/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
+github.com/poolpOrg/go-harmony v0.0.0-20220613215928-0240ff10126e h1:N3JmPiTUnfdRAhfn5ASqcf6tJchu9wxxK2eDB34aelc=
+github.com/poolpOrg/go-harmony v0.0.0-20220613215928-0240ff10126e/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88 h1:Jh87bQfzEjym0BkmApmvnzG1AzKfoxzA52DTGFu87t4=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88/go.mod h1:4BAd1YY8YrbL7koDUoNLmEpULsqepDIBqnUxqHE22Ao=
 github.com/youpy/go-coremidi v0.0.0-20210828055444-d16028a71dfe h1:YnIUnee8uwqdupK1JUluo59Obk1XDa3iXy45BHH5yhs=

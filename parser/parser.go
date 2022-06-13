@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/poolpOrg/earring/lexer"
+	"github.com/poolpOrg/earring/midi"
 	"github.com/poolpOrg/earring/types"
 	"github.com/poolpOrg/go-harmony/chords"
 	"github.com/poolpOrg/go-harmony/notes"
@@ -124,6 +125,12 @@ func (p *Parser) parseProject() (*types.Project, error) {
 				return nil, err
 			}
 			project.SetSignature(timeSignature)
+		case lexer.INSTRUMENT:
+			track, err := p.parseInstrument(project)
+			if err != nil {
+				return nil, err
+			}
+			project.AddTrack(track)
 		case lexer.TRACK:
 			track, err := p.parseTrack(project)
 			if err != nil {
@@ -144,6 +151,54 @@ func (p *Parser) parseProject() (*types.Project, error) {
 	}
 
 	return project, nil
+}
+
+func (p *Parser) parseInstrument(project *types.Project) (*types.Track, error) {
+	track := types.NewTrack()
+	track.SetBPM(project.GetBPM())
+	track.SetSignature(project.GetSignature())
+
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
+		return nil, fmt.Errorf("found %q, expected instrument name", lit)
+	} else {
+		_, err := midi.InstrumentToPC(lit)
+		if err != nil {
+			return nil, fmt.Errorf("found %q, unknown instrument", lit)
+		}
+		track.SetInstrument(lit)
+	}
+
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
+		return nil, fmt.Errorf("found %q, expected {", lit)
+	}
+
+	for {
+		tok, lit := p.scanIgnoreWhitespace()
+		if tok == lexer.BRACKET_CLOSE {
+			break
+		}
+		switch tok {
+		case lexer.BPM:
+			_, err := p.parseBpm()
+			if err != nil {
+				return nil, err
+			}
+		case lexer.TIME:
+			_, err := p.parseTimeSignature()
+			if err != nil {
+				return nil, err
+			}
+		case lexer.BAR:
+			bar, err := p.parseBar(track)
+			if err != nil {
+				return nil, err
+			}
+			track.AddBar(bar)
+		default:
+			return nil, fmt.Errorf("found %q, expected BAR or }", lit)
+		}
+	}
+	return track, nil
 }
 
 func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
@@ -288,13 +343,6 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 			break
 		}
 		switch tok {
-		case lexer.REST:
-			rest, err := p.parseRest()
-			if err != nil {
-				return nil, err
-			}
-			rest.SetDuration(duration)
-			playable = rest
 		case lexer.CHORD:
 			chord, err := p.parseChord()
 			if err != nil {
@@ -309,15 +357,40 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 			}
 			note.SetDuration(duration)
 			playable = note
+
+		case lexer.CYMBAL:
+			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+			//n, _ := notes.Parse("A6") // open triangle (81)
+			n, _ := notes.Parse("D#4") // Ride Cymbal 1 (51)
+
+			note := types.NewNote(*n)
+			note.SetDuration(duration)
+			playable = note
+
+		case lexer.SNARE:
+			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+			//n, _ := notes.Parse("A6") // open triangle (81)
+			n, _ := notes.Parse("D3") // acoustic snare (38)
+
+			note := types.NewNote(*n)
+			note.SetDuration(duration)
+			playable = note
+
+		case lexer.OPEN_HI_HAT:
+			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+			//n, _ := notes.Parse("A6") // open triangle (81)
+			n, _ := notes.Parse("A#3") // acoustic snare (38)
+
+			note := types.NewNote(*n)
+			note.SetDuration(duration)
+			playable = note
+
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
 
 		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.ON {
 			return nil, fmt.Errorf("found %q, expected ON", lit)
-		}
-		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BEAT {
-			return nil, fmt.Errorf("found %q, expected BEAT", lit)
 		}
 
 		var beat uint8
@@ -374,7 +447,7 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 		tick := (bar.GetOffset() * ticksPerBar) +
 			uint32(beat-1)*uint32(ticksPerBeat) +
 			uint32(subdivision-1)*ticksPerSubdivision
-		fmt.Println("bar offset", bar.GetOffset(), "tick:", tick)
+		//fmt.Println("bar offset", bar.GetOffset(), "tick:", tick)
 
 		playable.SetTick(tick)
 	}
@@ -403,10 +476,6 @@ func (p *Parser) parseNote() (*types.Note, error) {
 		}
 		return types.NewNote(*note), nil
 	}
-}
-
-func (p *Parser) parseRest() (*types.Rest, error) {
-	return types.NewRest(), nil
 }
 
 func (p *Parser) Parse() (*types.Project, error) {

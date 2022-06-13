@@ -27,6 +27,7 @@ const (
 	BPM
 	TIME
 	PROJECT
+	INSTRUMENT
 	TRACK
 	BAR
 	BEAT
@@ -39,7 +40,10 @@ const (
 
 	ON
 
-	REST
+	CYMBAL
+	SNARE
+	OPEN_HI_HAT
+
 	NOTE
 	INTERVAL
 	CHORD
@@ -88,7 +92,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isDigit(ch) || ch == '.' {
 		s.unread()
 		return s.scanNumber()
-	} else if isLetter(ch) {
+	} else if isLetter(ch) || ch == '"' || ch == '\'' {
 		s.unread()
 		return s.scanIdent()
 	}
@@ -160,6 +164,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 
 	case "PROJECT":
 		return PROJECT, buf.String()
+	case "INSTRUMENT":
+		return INSTRUMENT, buf.String()
 	case "TRACK":
 		return TRACK, buf.String()
 	case "BAR":
@@ -178,14 +184,19 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	case "ND":
 		return ND, buf.String()
 
-	case "REST":
-		return REST, buf.String()
 	case "NOTE":
 		return NOTE, buf.String()
 	case "INTERVAL":
 		return INTERVAL, buf.String()
 	case "CHORD":
 		return CHORD, buf.String()
+
+	case "CYMBAL":
+		return CYMBAL, buf.String()
+	case "SNARE":
+		return SNARE, buf.String()
+	case "OPEN_HI_HAT":
+		return OPEN_HI_HAT, buf.String()
 
 	case "ON":
 		return ON, buf.String()

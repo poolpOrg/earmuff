@@ -93,3 +93,7 @@ func (note *Note) SetTick(tick uint32) {
 func (note *Note) GetTick() uint32 {
 	return note.tick
 }
+
+func (note *Note) GetOctave() uint8 {
+	return note.note.Octave()
+}

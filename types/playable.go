@@ -1,7 +1,6 @@
 package types
 
 import (
-	"sync"
 	"time"
 
 	"github.com/poolpOrg/go-harmony/chords"
@@ -23,8 +22,6 @@ type Playable interface {
 
 	SetTick(uint32)
 	GetTick() uint32
-
-	Play()
 }
 
 type Chord struct {
@@ -34,14 +31,6 @@ type Chord struct {
 	timestamp    time.Duration
 	durationTime time.Duration
 	chord        chords.Chord
-	tick         uint32
-}
-
-type Rest struct {
-	duration     uint16
-	beat         uint8
-	timestamp    time.Duration
-	durationTime time.Duration
 	tick         uint32
 }
 
@@ -118,87 +107,4 @@ func (chord *Chord) GetNotes() []Note {
 	}
 
 	return ret
-}
-
-func (chord *Chord) Play() {
-	wg := sync.WaitGroup{}
-	for _, note := range chord.chord.Notes() {
-		wg.Add(1)
-		go func() {
-			n := Note{
-				duration:     chord.duration,
-				beat:         chord.beat,
-				timestamp:    chord.timestamp,
-				durationTime: chord.durationTime,
-				note:         note,
-			}
-			n.Play()
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-
-func NewRest() *Rest {
-	return &Rest{}
-}
-
-func (rest *Rest) GetType() string {
-	return "Rest"
-}
-
-func (rest *Rest) GetName() string {
-	return ""
-}
-
-func (rest *Rest) SetDuration(duration uint16) {
-	rest.duration = duration
-}
-
-func (rest *Rest) GetDuration() uint16 {
-	return rest.duration
-}
-
-func (rest *Rest) SetBeat(beat uint8) {
-	rest.beat = beat
-}
-
-func (rest *Rest) GetBeat() uint8 {
-	return rest.beat
-}
-
-func (rest *Rest) SetTimestamp(timestamp time.Duration) {
-	rest.timestamp = timestamp
-}
-
-func (rest *Rest) GetTimestamp() time.Duration {
-	return rest.timestamp
-}
-
-func (rest *Rest) SetDurationTime(timestamp time.Duration) {
-	rest.durationTime = timestamp
-}
-
-func (rest *Rest) GetDurationTime() time.Duration {
-	return rest.durationTime
-}
-
-func (rest *Rest) GetFrequency() float64 {
-	return 0.0
-}
-
-func (rest *Rest) Play() {
-
-}
-
-func (rest *Rest) GetNotes() []Note {
-	return []Note{}
-}
-
-func (rest *Rest) SetTick(tick uint32) {
-	rest.tick = tick
-}
-
-func (rest *Rest) GetTick() uint32 {
-	return rest.tick
 }
