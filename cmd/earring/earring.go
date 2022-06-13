@@ -18,6 +18,13 @@ import (
 )
 
 func main() {
+	var opt_file string
+	var opt_verbose bool
+	var opt_quiet bool
+
+	flag.StringVar(&opt_file, "out", "", "output file (.mid)")
+	flag.BoolVar(&opt_quiet, "quiet", false, "do not play")
+	flag.BoolVar(&opt_verbose, "verbose", false, "extensive logging")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -37,6 +44,19 @@ func main() {
 	}
 
 	b := compiler.Compile(project)
+
+	if opt_file != "" {
+		fp, err := os.Create(opt_file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fp.Write(b)
+		fp.Close()
+	}
+
+	if opt_quiet {
+		os.Exit(0)
+	}
 
 	client, err := coremidi.NewClient("earring")
 	if err != nil {
@@ -73,14 +93,20 @@ func main() {
 	smf.ReadTracksFrom(bytes.NewReader(b)).Do(
 		func(te smf.TrackEvent) {
 			if te.Message.IsMeta() {
-				fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+				if opt_verbose {
+					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+				}
 			} else {
-				//fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+				if opt_verbose {
+					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+				}
 				wg.Add(1)
 				go func(_ev smf.TrackEvent, c chan bool) {
 					p := coremidi.NewPacket(_ev.Message.Bytes(), 0)
 					<-c
-					//					fmt.Println("PLAYING", _ev)
+					if opt_verbose {
+						fmt.Println("synth <-", te.TrackNo, _ev.Message)
+					}
 					err := p.Send(&outPorts[_ev.TrackNo], dest)
 					if err != nil {
 						fmt.Println(err)
