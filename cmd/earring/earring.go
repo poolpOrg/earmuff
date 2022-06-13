@@ -86,6 +86,9 @@ func main() {
 			break
 		}
 	}
+	if dest == nil {
+		log.Fatal("could not find synthesiser")
+	}
 
 	wg := sync.WaitGroup{}
 	t := synctimer.NewTimer()
