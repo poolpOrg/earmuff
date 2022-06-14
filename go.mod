@@ -1,4 +1,4 @@
-module github.com/poolpOrg/earring
+module github.com/poolpOrg/earmuff
 
 go 1.18
 

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/poolpOrg/earring/compiler"
-	"github.com/poolpOrg/earring/parser"
+	"github.com/poolpOrg/earmuff/compiler"
+	"github.com/poolpOrg/earmuff/parser"
 	"github.com/poolpOrg/go-synctimer"
 	"github.com/youpy/go-coremidi"
 	"gitlab.com/gomidi/midi/v2/smf"

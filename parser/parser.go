@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/poolpOrg/earring/lexer"
-	"github.com/poolpOrg/earring/midi"
-	"github.com/poolpOrg/earring/types"
+	"github.com/poolpOrg/earmuff/lexer"
+	"github.com/poolpOrg/earmuff/midi"
+	"github.com/poolpOrg/earmuff/types"
 	"github.com/poolpOrg/go-harmony/chords"
 	"github.com/poolpOrg/go-harmony/notes"
 )

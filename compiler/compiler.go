@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"sort"
 
-	lmidi "github.com/poolpOrg/earring/midi"
-	"github.com/poolpOrg/earring/types"
+	lmidi "github.com/poolpOrg/earmuff/midi"
+	"github.com/poolpOrg/earmuff/types"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/smf"
 )
