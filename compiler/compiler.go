@@ -11,32 +11,47 @@ import (
 )
 
 var midiMap = map[string]func(uint8) uint8{
-	"Cb": midi.B,
-	"C":  midi.C,
-	"C#": midi.Db,
+	"Cbb": midi.Bb,
+	"Cb":  midi.B,
+	"C":   midi.C,
+	"C#":  midi.Db,
+	"C##": midi.D,
 
-	"Db": midi.Db,
-	"D":  midi.D,
-	"D#": midi.Eb,
+	"Dbb": midi.C,
+	"Db":  midi.Db,
+	"D":   midi.D,
+	"D#":  midi.Eb,
+	"D##": midi.E,
 
-	"Eb": midi.Eb,
-	"E":  midi.E,
+	"Ebb": midi.D,
+	"Eb":  midi.Eb,
+	"E":   midi.E,
+	"E#":  midi.F,
+	"E##": midi.Gb,
 
 	"Fbb": midi.Eb,
 	"Fb":  midi.E,
 	"F":   midi.F,
 	"F#":  midi.Gb,
+	"F##": midi.G,
 
-	"Gb": midi.Gb,
-	"G":  midi.G,
-	"G#": midi.Ab,
+	"Gbb": midi.F,
+	"Gb":  midi.Gb,
+	"G":   midi.G,
+	"G#":  midi.Ab,
+	"G##": midi.A,
 
-	"Ab": midi.Ab,
-	"A":  midi.A,
-	"A#": midi.Bb,
+	"Abb": midi.G,
+	"Ab":  midi.Ab,
+	"A":   midi.A,
+	"A#":  midi.Bb,
+	"A##": midi.B,
 
-	"Bb": midi.Bb,
-	"B":  midi.B,
+	"Bbb": midi.A,
+	"Bb":  midi.Bb,
+	"B":   midi.B,
+	"B#":  midi.C,
+	"B##": midi.Db,
 }
 
 func Compile(project *types.Project) []byte {

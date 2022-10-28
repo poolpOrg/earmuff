@@ -1,5 +1,7 @@
 github.com/poolpOrg/go-harmony v0.0.0-20220613215928-0240ff10126e h1:N3JmPiTUnfdRAhfn5ASqcf6tJchu9wxxK2eDB34aelc=
 github.com/poolpOrg/go-harmony v0.0.0-20220613215928-0240ff10126e/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
+github.com/poolpOrg/go-harmony v0.0.0-20221028072938-5fc7c9ce032b h1:ULA1po+fu3SvMOywqYPUkFVhHqao4+WszFY98kwvyVc=
+github.com/poolpOrg/go-harmony v0.0.0-20221028072938-5fc7c9ce032b/go.mod h1:dy0myZkwV+M8A+6vWI/uncRXEdQfLefH1/Ja2bhEy60=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88 h1:Jh87bQfzEjym0BkmApmvnzG1AzKfoxzA52DTGFu87t4=
 github.com/poolpOrg/go-synctimer v0.0.0-20220526195117-e4f3ac9e7e88/go.mod h1:4BAd1YY8YrbL7koDUoNLmEpULsqepDIBqnUxqHE22Ao=
 github.com/youpy/go-coremidi v0.0.0-20210828055444-d16028a71dfe h1:YnIUnee8uwqdupK1JUluo59Obk1XDa3iXy45BHH5yhs=

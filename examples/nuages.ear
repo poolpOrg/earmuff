@@ -20,17 +20,12 @@ project {
             quarter note Eb on 2/2;
             8th note D on 4/2;
         }
-        bar {
-            whole note D on 1/1;
-        }
+        bar { whole note D on 1/1; }
     }
 
     instrument piano {
-        bar {
-        }
-        bar {
-            whole chord Eb9 on 1/1;
-        }
+        bar {}
+        bar { whole chord Eb9 on 1/1; }
         bar {
             half chord Am7b5 on 1/1;
             half chord D7b9 on 3/1;
@@ -43,23 +38,9 @@ project {
     }
 
     instrument percussive {
-        bar {
-            half cymbal on 1/1;
-            half snare on 2/1;
-        }
-        bar {
-            half cymbal on 1/1;
-            half snare on 2/1;
-
-        }
-        bar {
-            half cymbal on 1/1;
-            half snare on 2/1;
-
-        }
-        bar {
-            half cymbal on 1/1;
-            half snare on 2/1;
-        }
+        bar {}
+        bar { half cymbal on 1/1; }
+        bar { half cymbal on 1/1; }
+        bar { half cymbal on 1/1; }
     }
 }
