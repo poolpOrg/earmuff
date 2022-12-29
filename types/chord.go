@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/poolpOrg/go-harmony/chords"
+	"github.com/poolpOrg/go-harmony/notes"
 )
 
 type Chord struct {
@@ -46,8 +47,8 @@ func (chord *Chord) GetTick() uint32 {
 	return chord.tick
 }
 
-func (chord *Chord) GetNotes() []Note {
-	ret := make([]Note, 0)
+func (chord *Chord) GetNotes() []notes.Note {
+	ret := make([]notes.Note, 0)
 	for _, note := range chord.chord.Notes() {
 		n := Note{
 			duration: chord.duration,
@@ -55,7 +56,7 @@ func (chord *Chord) GetNotes() []Note {
 			tick: chord.tick,
 			note: note,
 		}
-		ret = append(ret, n)
+		ret = append(ret, n.note)
 	}
 
 	return ret

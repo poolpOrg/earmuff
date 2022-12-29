@@ -10,50 +10,6 @@ import (
 	"gitlab.com/gomidi/midi/v2/smf"
 )
 
-var midiMap = map[string]func(uint8) uint8{
-	"Cbb": midi.Bb,
-	"Cb":  midi.B,
-	"C":   midi.C,
-	"C#":  midi.Db,
-	"C##": midi.D,
-
-	"Dbb": midi.C,
-	"Db":  midi.Db,
-	"D":   midi.D,
-	"D#":  midi.Eb,
-	"D##": midi.E,
-
-	"Ebb": midi.D,
-	"Eb":  midi.Eb,
-	"E":   midi.E,
-	"E#":  midi.F,
-	"E##": midi.Gb,
-
-	"Fbb": midi.Eb,
-	"Fb":  midi.E,
-	"F":   midi.F,
-	"F#":  midi.Gb,
-	"F##": midi.G,
-
-	"Gbb": midi.F,
-	"Gb":  midi.Gb,
-	"G":   midi.G,
-	"G#":  midi.Ab,
-	"G##": midi.A,
-
-	"Abb": midi.G,
-	"Ab":  midi.Ab,
-	"A":   midi.A,
-	"A#":  midi.Bb,
-	"A##": midi.B,
-
-	"Bbb": midi.A,
-	"Bb":  midi.Bb,
-	"B":   midi.B,
-	"B#":  midi.C,
-	"B##": midi.Db,
-}
-
 func Compile(project *types.Project) []byte {
 	var bf bytes.Buffer
 	var clock = smf.MetricTicks(960)
@@ -85,8 +41,6 @@ func Compile(project *types.Project) []byte {
 		for _, bar := range track.GetBars() {
 			for _, playable := range bar.GetPlayables() {
 				for _, n := range playable.GetNotes() {
-					fn := midiMap[n.GetName()]
-
 					unit := clock.Ticks4th()
 					switch bar.GetSignature().GetDuration() {
 					case 1:
@@ -112,7 +66,7 @@ func Compile(project *types.Project) []byte {
 					}
 
 					duration := unit
-					switch n.GetDuration() {
+					switch playable.GetDuration() {
 					case 1:
 						duration *= 4
 					case 2:
@@ -132,7 +86,7 @@ func Compile(project *types.Project) []byte {
 						/*case 256*/
 					}
 
-					tick := n.GetTick()
+					tick := playable.GetTick()
 
 					//fmt.Println("TICK", tick, "DURATION", duration)
 					if _, exists := events[tick]; !exists {
@@ -141,8 +95,12 @@ func Compile(project *types.Project) []byte {
 					if _, exists := events[tick+duration]; !exists {
 						events[tick+duration] = make([]midi.Message, 0)
 					}
-					events[tick] = append(events[tick], midi.NoteOn(uint8(channel), fn(n.GetOctave()), n.GetVelocity()))
-					events[tick+duration] = append(events[tick+duration], midi.NoteOff(uint8(channel), fn(n.GetOctave())))
+
+					noteOn := midi.NoteOn(uint8(channel), n.MIDI(), playable.GetVelocity())
+					noteOff := midi.NoteOff(uint8(channel), n.MIDI())
+
+					events[tick] = append(events[tick], noteOn)
+					events[tick+duration] = append(events[tick+duration], noteOff)
 				}
 			}
 		}

@@ -38,8 +38,8 @@ func (note *Note) GetVelocity() uint8 {
 	return note.velocity
 }
 
-func (note *Note) GetNotes() []Note {
-	return []Note{*note}
+func (note *Note) GetNotes() []notes.Note {
+	return []notes.Note{*&note.note}
 }
 
 func (note *Note) SetTick(tick uint32) {
