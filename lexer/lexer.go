@@ -13,6 +13,7 @@ const (
 	ILLEGAL Token = iota
 	EOF
 	WHITESPACE
+	COMMENT
 
 	IDENTIFIER
 	NUMBER
@@ -20,9 +21,6 @@ const (
 	SEMICOLON
 	BRACKET_OPEN
 	BRACKET_CLOSE
-	PLUS
-	MINUS
-	SLASH
 
 	BPM
 	TIME
@@ -97,14 +95,23 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isLetter(ch) || ch == '"' || ch == '\'' {
 		s.unread()
 		return s.scanIdent()
+	} else if ch == '/' {
+		ch = s.read()
+		if ch == '/' {
+			s.unread()
+			return s.scanSingleLineComment()
+		} else if ch == '*' {
+			s.unread()
+			return s.scanMultiLineComment()
+		} else {
+			s.unread()
+		}
 	}
 
 	// Otherwise read the individual character.
 	switch ch {
 	case eof:
 		return EOF, ""
-	case '/':
-		return SLASH, string(ch)
 	case '{':
 		return BRACKET_OPEN, string(ch)
 	case '}':
@@ -137,6 +144,48 @@ func (s *Scanner) scanWhitespace() (tok Token, lit string) {
 	}
 
 	return WHITESPACE, buf.String()
+}
+
+func (s *Scanner) scanMultiLineComment() (tok Token, lit string) {
+	// Create a buffer and read the current character into it.
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	// Read every subsequent whitespace character into the buffer.
+	// Non-whitespace characters and EOF will cause the loop to exit.
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if ch == '*' {
+			ch = s.read()
+			if ch == '/' {
+				break
+			}
+			s.unread()
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+	return COMMENT, buf.String()
+}
+
+func (s *Scanner) scanSingleLineComment() (tok Token, lit string) {
+	// Create a buffer and read the current character into it.
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	// Read every subsequent whitespace character into the buffer.
+	// Non-whitespace characters and EOF will cause the loop to exit.
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if ch == '\n' {
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+	return COMMENT, buf.String()
 }
 
 func (s *Scanner) scanIdent() (tok Token, lit string) {

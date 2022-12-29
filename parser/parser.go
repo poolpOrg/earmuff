@@ -49,11 +49,13 @@ func (p *Parser) unscan() { p.buf.n = 1 }
 
 // scanIgnoreWhitespace scans the next non-whitespace token.
 func (p *Parser) scanIgnoreWhitespace() (tok lexer.Token, lit string) {
-	tok, lit = p.scan()
-	if tok == lexer.WHITESPACE {
+	for {
 		tok, lit = p.scan()
+		if tok == lexer.WHITESPACE || tok == lexer.COMMENT {
+			continue
+		}
+		return tok, lit
 	}
-	return
 }
 
 func (p *Parser) parseBpm() (uint8, error) {
