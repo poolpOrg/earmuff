@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 	"io"
+	"math"
 	"strconv"
-	"time"
 
 	"github.com/poolpOrg/earmuff/lexer"
 	"github.com/poolpOrg/earmuff/midi"
@@ -387,56 +387,42 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 		}
 
 		var beat uint8
-		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+		var delta float64
+		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER && tok != lexer.FLOAT {
 			return nil, fmt.Errorf("found %q, expected NUMBER", lit)
-		} else {
+		} else if tok == lexer.NUMBER {
 			tmp, err := strconv.ParseUint(lit, 10, 8)
 			if err != nil {
 				return nil, err
 			}
-			if tmp > uint64(bar.GetSignature().GetBeats()) {
+			if tmp == 0 || tmp > uint64(bar.GetSignature().GetBeats()) {
 				return nil, fmt.Errorf("%d on beat %d mismatches time signature", duration, tmp)
 			}
 			beat = uint8(tmp)
-		}
-
-		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.SLASH {
-			return nil, fmt.Errorf("found %q, expected SLASH", lit)
-		}
-
-		var subdivision uint8
-		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
-			return nil, fmt.Errorf("found %q, expected NUMBER", lit)
+			delta = 0.0
 		} else {
-			tmp, err := strconv.ParseUint(lit, 10, 8)
+			tmp, err := strconv.ParseFloat(lit, 32)
 			if err != nil {
 				return nil, err
 			}
-			if tmp > uint64(bar.GetSignature().GetDuration()) {
-				return nil, fmt.Errorf("%d on beat %d/%d mismatches time signature", duration, beat, tmp)
+
+			integer, fraction := math.Modf(tmp)
+
+			if uint64(integer) == 0 || uint64(integer) > uint64(bar.GetSignature().GetBeats()) {
+				return nil, fmt.Errorf("%d on beat %d mismatches time signature", duration, tmp)
 			}
-			subdivision = uint8(tmp)
-		}
-
-		step := time.Minute / time.Duration(bar.GetBPM()*(bar.GetSignature().GetDuration()/bar.GetSignature().GetBeats()))
-		substep := step / time.Duration(subdivision)
-
-		barDuration := time.Duration(bar.GetSignature().GetBeats()) * step
-		remainingDuration := barDuration - time.Duration(beat-1)*step - time.Duration(subdivision-1)*substep
-
-		playableDuration := time.Duration(bar.GetSignature().GetBeats()) * step / time.Duration(duration)
-		if playableDuration > remainingDuration {
-			return nil, fmt.Errorf("%d on beat %d mismatches time signature, will overlap next bar", duration, beat)
+			beat = uint8(integer)
+			delta = fraction
 		}
 
 		ticksPerBeat := uint32(960)
 		ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
 		ticksPerSubdivision := uint32(ticksPerBeat) / uint32(bar.GetSignature().GetDuration())
 
+		deltaTicks := float64(ticksPerSubdivision) * delta
 		tick := (bar.GetOffset() * ticksPerBar) +
 			uint32(beat-1)*uint32(ticksPerBeat) +
-			uint32(subdivision-1)*ticksPerSubdivision
-		//fmt.Println("bar offset", bar.GetOffset(), "tick:", tick)
+			uint32(deltaTicks)
 
 		playable.SetTick(tick)
 	}
