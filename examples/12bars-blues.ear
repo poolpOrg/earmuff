@@ -3,17 +3,17 @@ project {
     time 4 4;
 
     instrument guitar {
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord F7 on 1/1; }
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord F7 on 1/1; }
-        bar { whole chord F7 on 1/1; }
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord G7 on 1/1; }
-        bar { whole chord F7 on 1/1; }
-        bar { whole chord C7 on 1/1; }
-        bar { whole chord G7 on 1/1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord F7 on 1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord F7 on 1; }
+        bar { whole chord F7 on 1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord G7 on 1; }
+        bar { whole chord F7 on 1; }
+        bar { whole chord C7 on 1; }
+        bar { whole chord G7 on 1; }
     }
 }

@@ -141,7 +141,7 @@ func Compile(project *types.Project) []byte {
 					if _, exists := events[tick+duration]; !exists {
 						events[tick+duration] = make([]midi.Message, 0)
 					}
-					events[tick] = append(events[tick], midi.NoteOn(uint8(channel), fn(n.GetOctave()), 120))
+					events[tick] = append(events[tick], midi.NoteOn(uint8(channel), fn(n.GetOctave()), n.GetVelocity()))
 					events[tick+duration] = append(events[tick+duration], midi.NoteOff(uint8(channel), fn(n.GetOctave())))
 				}
 			}

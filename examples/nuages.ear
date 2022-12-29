@@ -4,43 +4,43 @@ project {
 
     instrument guitar {
         bar {
-            8th note C# on 3/1;
-            8th note D on 3/2;
-            8th note A on 3/3;
-            8th note G# on 3/4;
-            8th note G on 4/1;
-            8th note F# on 4/2;
+            8th note C# on 3;
+            8th note D on 3.25;
+            8th note A on 3.50;
+            8th note G# on 3.75;
+            8th note G on 4;
+            8th note F# on 4.5;
         }
         bar {
-            half note F on 1/1;
-            8th note E on 4/2;
+            half note F on 1;
+            8th note E on 4.5;
         }
         bar {
-            half note Fbb on 1/1;
-            quarter note Eb on 2/2;
-            8th note D on 4/2;
+            half note Fbb on 1;
+            quarter note Eb on 2.5;
+            8th note D on 4.5;
         }
-        bar { whole note D on 1/1; }
+        bar { whole note D on 1; }
     }
 
     instrument piano {
         bar {}
-        bar { whole chord Eb9 on 1/1; }
+        bar { whole chord Eb9 on 1; }
         bar {
-            half chord Am7b5 on 1/1;
-            half chord D7b9 on 3/1;
+            half chord Am7b5 on 1;
+            half chord D7b9 on 3;
         }
         bar {
-            half chord Gmaj7 on 1/1;
-            quarter chord Am7 on 3/1;
-            quarter chord Bm7b5 on 4/1;
+            half chord Gmaj7 on 1;
+            quarter chord Am7 on 3;
+            quarter chord Bm7b5 on 4;
         }
     }
 
     instrument percussive {
         bar {}
-        bar { half cymbal on 1/1; }
-        bar { half cymbal on 1/1; }
-        bar { half cymbal on 1/1; }
+        bar { half cymbal on 1; }
+        bar { half cymbal on 1; }
+        bar { half cymbal on 1; }
     }
 }

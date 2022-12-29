@@ -8,11 +8,13 @@ type Chord struct {
 	duration uint16
 	chord    chords.Chord
 	tick     uint32
+	velocity uint8
 }
 
 func NewChord(chord chords.Chord) *Chord {
 	return &Chord{
-		chord: chord,
+		chord:    chord,
+		velocity: 120,
 	}
 }
 
@@ -24,8 +26,16 @@ func (chord *Chord) SetDuration(duration uint16) {
 	chord.duration = duration
 }
 
+func (chord *Chord) SetVelocity(velocity uint8) {
+	chord.velocity = velocity
+}
+
 func (chord *Chord) GetDuration() uint16 {
 	return chord.duration
+}
+
+func (chord *Chord) GetVelocity() uint8 {
+	return chord.velocity
 }
 
 func (chord *Chord) SetTick(tick uint32) {

@@ -8,11 +8,13 @@ type Note struct {
 	duration uint16
 	note     notes.Note
 	tick     uint32
+	velocity uint8
 }
 
 func NewNote(note notes.Note) *Note {
 	return &Note{
-		note: note,
+		note:     note,
+		velocity: 120,
 	}
 }
 
@@ -24,8 +26,16 @@ func (note *Note) SetDuration(duration uint16) {
 	note.duration = duration
 }
 
+func (note *Note) SetVelocity(velocity uint8) {
+	note.velocity = velocity
+}
+
 func (note *Note) GetDuration() uint16 {
 	return note.duration
+}
+
+func (note *Note) GetVelocity() uint8 {
+	return note.velocity
 }
 
 func (note *Note) GetNotes() []Note {

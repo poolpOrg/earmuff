@@ -47,6 +47,8 @@ const (
 	NOTE
 	INTERVAL
 	CHORD
+
+	VELOCITY
 )
 
 func isWhitespace(ch rune) bool {
@@ -190,6 +192,9 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return INTERVAL, buf.String()
 	case "CHORD":
 		return CHORD, buf.String()
+
+	case "VELOCITY":
+		return VELOCITY, buf.String()
 
 	case "CYMBAL":
 		return CYMBAL, buf.String()

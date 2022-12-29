@@ -425,6 +425,27 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16) (types.Playable,
 			uint32(deltaTicks)
 
 		playable.SetTick(tick)
+
+		for {
+			tok, _ := p.scanIgnoreWhitespace()
+			if tok == lexer.SEMICOLON {
+				p.unscan()
+				break
+			}
+			switch tok {
+			case lexer.VELOCITY:
+				if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+					return nil, fmt.Errorf("found %q, expected NUMBER", lit)
+				} else {
+					tmp, err := strconv.ParseUint(lit, 10, 8)
+					if err != nil {
+						return nil, err
+					}
+					playable.SetVelocity(uint8(tmp))
+				}
+			}
+		}
+
 	}
 	return playable, nil
 }
