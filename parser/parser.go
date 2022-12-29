@@ -160,7 +160,7 @@ func (p *Parser) parseInstrument(project *types.Project) (*types.Track, error) {
 	track.SetBPM(project.GetBPM())
 	track.SetSignature(project.GetSignature())
 
-	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.STRING {
 		return nil, fmt.Errorf("found %q, expected instrument name", lit)
 	} else {
 		_, err := midi.InstrumentToPC(lit)

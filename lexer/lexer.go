@@ -18,6 +18,7 @@ const (
 	IDENTIFIER
 	NUMBER
 	FLOAT
+	STRING
 	SEMICOLON
 	BRACKET_OPEN
 	BRACKET_CLOSE
@@ -92,9 +93,12 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isDigit(ch) || ch == '.' {
 		s.unread()
 		return s.scanNumber()
-	} else if isLetter(ch) || ch == '"' || ch == '\'' {
+	} else if isLetter(ch) {
 		s.unread()
 		return s.scanIdent()
+	} else if ch == '"' || ch == '\'' {
+		s.unread()
+		return s.scanString()
 	} else if ch == '/' {
 		ch = s.read()
 		if ch == '/' {
@@ -144,6 +148,32 @@ func (s *Scanner) scanWhitespace() (tok Token, lit string) {
 	}
 
 	return WHITESPACE, buf.String()
+}
+
+func (s *Scanner) scanString() (tok Token, lit string) {
+	// Create a buffer and read the current character into it.
+	var buf bytes.Buffer
+	r := s.read()
+	escaped := false
+
+	// Read every subsequent whitespace character into the buffer.
+	// Non-whitespace characters and EOF will cause the loop to exit.
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if ch == '\\' {
+			escaped = true
+		} else {
+			if ch == r {
+				if !escaped {
+					break
+				}
+			}
+			buf.WriteRune(ch)
+			escaped = false
+		}
+	}
+	return STRING, buf.String()
 }
 
 func (s *Scanner) scanMultiLineComment() (tok Token, lit string) {
