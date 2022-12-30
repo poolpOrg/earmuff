@@ -1,46 +1,51 @@
-project {
+project "nuages" {
     bpm 80;
     time 4 4;
 
-    instrument "guitar" {
+    track "lead guitar" {
+        instrument "guitar";
+
         bar {
-            8th note C# on 3;
-            8th note D on 3.25;
-            8th note A on 3.50;
-            8th note G# on 3.75;
-            8th note G on 4;
-            8th note F# on 4.5;
+            on beat 3 play 8th note C#;
+            on beat 3.25 play 8th note D;
+            on beat 3.5 play 8th note A;
+            on beat 3.75 play 8th note G#;
+            on beat 4 play 8th note G;
+            on beat 4.5 play 8th note F#;
         }
         bar {
-            half note F on 1;
-            8th note E on 4.5;
+            on beat 1 play half note F;
+            on beat 4.5 play 8th note E;
         }
         bar {
-            half note Fbb on 1;
-            quarter note Eb on 2.5;
-            8th note D on 4.5;
+            on beat 1 play half note Fbb;
+            on beat 2.5 play quarter note Eb;
+            on beat 4.5 play 8th note D;
         }
-        bar { whole note D on 1; }
+        bar { on beat 1 play whole note D; }
     }
 
-    instrument "piano" {
+    track "rythm piano" {
+        instrument "piano";
+
         bar {}
-        bar { whole chord Eb9 on 1; }
+        bar { on beat 1 play whole chord Eb9; }
         bar {
-            half chord Am7b5 on 1;
-            half chord D7b9 on 3;
+            on beat 1 play half chord Am7b5;
+            on beat 3 play half chord D7b9;
         }
         bar {
-            half chord Gmaj7 on 1;
-            quarter chord Am7 on 3;
-            quarter chord Bm7b5 on 4;
+            on beat 1 play half chord Gmaj7;
+            on beat 3 play quarter chord Am7;
+            on beat 4 play quarter chord Bm7b5;
         }
     }
 
-    instrument "percussive" {
+    track "percussions" {
+        instrument "percussive";
         bar {}
-        bar { half cymbal on 1; }
-        bar { half cymbal on 1; }
-        bar { half cymbal on 1; }
+        bar { on beat 1 play half cymbal; }
+        bar { on beat 1 play half cymbal; }
+        bar { on beat 1 play half cymbal; }
     }
 }
