@@ -32,7 +32,9 @@ const (
 	BAR
 	BEAT
 	TEXT
-	//NAME
+	LYRIC
+	MARKER
+	CUE
 
 	PLAY
 
@@ -250,7 +252,14 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return TEXT, buf.String()
 	case "COPYRIGHT":
 		return COPYRIGHT, buf.String()
-	//case "NAME":
+	case "LYRIC":
+		return LYRIC, buf.String()
+	case "MARKER":
+		return MARKER, buf.String()
+	case "CUE":
+		return CUE, buf.String()
+
+		//case "NAME":
 	//	return NAME, buf.String()
 	case "INSTRUMENT":
 		return INSTRUMENT, buf.String()

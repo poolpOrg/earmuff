@@ -7,7 +7,7 @@ type Bar struct {
 
 	tickables []Tickable
 
-	texts []string
+	//texts []string
 
 	textsOn map[float64][]string
 }
@@ -16,18 +16,9 @@ func NewBar(offset uint32) *Bar {
 	return &Bar{
 		offset:    offset,
 		tickables: make([]Tickable, 0),
-		//playables: make([]Playable, 0),
-		texts:   make([]string, 0),
+		//texts:     make([]string, 0),
 		textsOn: make(map[float64][]string),
 	}
-}
-
-func (bar *Bar) AddText(text string) {
-	bar.texts = append(bar.texts, text)
-}
-
-func (bar *Bar) GetTexts() []string {
-	return bar.texts
 }
 
 func (bar *Bar) GetOffset() uint32 {

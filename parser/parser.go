@@ -230,45 +230,6 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 	return track, nil
 }
 
-/*
-	func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
-		track := types.NewTrack()
-		track.SetBPM(project.GetBPM())
-		track.SetSignature(project.GetSignature())
-
-		if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN {
-			return nil, fmt.Errorf("found %q, expected {", lit)
-		}
-
-		for {
-			tok, lit := p.scanIgnoreWhitespace()
-			if tok == lexer.BRACKET_CLOSE {
-				break
-			}
-			switch tok {
-			case lexer.BPM:
-				_, err := p.parseBpm()
-				if err != nil {
-					return nil, err
-				}
-			case lexer.TIME:
-				_, err := p.parseTimeSignature()
-				if err != nil {
-					return nil, err
-				}
-			case lexer.BAR:
-				bar, err := p.parseBar(track)
-				if err != nil {
-					return nil, err
-				}
-				track.AddBar(bar)
-			default:
-				return nil, fmt.Errorf("found %q, expected BAR or }", lit)
-			}
-		}
-		return track, nil
-	}
-*/
 func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 	bar := types.NewBar(uint32(len(track.GetBars())))
 	bar.SetBPM(track.GetBPM())
@@ -296,11 +257,16 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 			}
 
 		case lexer.TEXT:
-			text, err := p.parseText()
-			if err != nil {
-				return nil, err
-			}
-			bar.AddText(text)
+			p.parseMetaText(bar, 0)
+
+		case lexer.LYRIC:
+			p.parseMetaLyric(bar, 0)
+
+		case lexer.MARKER:
+			p.parseMetaMarker(bar, 0)
+
+		case lexer.CUE:
+			p.parseMetaCue(bar, 0)
 
 		case lexer.ON:
 			err := p.parseOn(bar)
@@ -316,7 +282,7 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 	return bar, nil
 }
 
-func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, beat uint8, delta float64) (types.Playable, error) {
+func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (types.Playable, error) {
 	var playable types.Playable
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
@@ -369,15 +335,6 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, beat uint8, delt
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
-
-		ticksPerBeat := uint32(960)
-		ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
-		ticksPerSubdivision := uint32(ticksPerBeat) / uint32(bar.GetSignature().GetDuration())
-
-		deltaTicks := float64(ticksPerSubdivision) * delta
-		tick := (bar.GetOffset() * ticksPerBar) +
-			uint32(beat-1)*uint32(ticksPerBeat) +
-			uint32(deltaTicks)
 
 		playable.SetTick(tick)
 
@@ -513,31 +470,57 @@ func (p *Parser) parseOn(bar *types.Bar) error {
 		delta = fraction
 	}
 
-	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.PLAY {
+	ticksPerBeat := uint32(960)
+	ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
+	ticksPerSubdivision := uint32(ticksPerBeat) / uint32(bar.GetSignature().GetDuration())
+
+	deltaTicks := float64(ticksPerSubdivision) * delta
+	tick := (bar.GetOffset() * ticksPerBar) +
+		uint32(beat-1)*uint32(ticksPerBeat) +
+		uint32(deltaTicks)
+
+	tok, lit := p.scanIgnoreWhitespace()
+	switch tok {
+	case lexer.PLAY:
+		//		fmt.Println("play", tick)
+		return p.parsePlay(bar, tick)
+	case lexer.TEXT:
+		//		fmt.Println("text", tick)
+		return p.parseMetaText(bar, tick)
+	case lexer.LYRIC:
+		//		fmt.Println("lyric", tick)
+		return p.parseMetaLyric(bar, tick)
+	case lexer.MARKER:
+		//		fmt.Println("marker", tick)
+		return p.parseMetaMarker(bar, tick)
+	case lexer.CUE:
+		//		fmt.Println("cue", tick)
+		return p.parseMetaCue(bar, tick)
+
+	default:
 		return fmt.Errorf("found %q, expected PLAY", lit)
 	}
-	return p.parsePlay(bar, beat, delta)
 }
 
-func (p *Parser) parsePlay(bar *types.Bar, beat uint8, delta float64) error {
+func (p *Parser) parsePlay(bar *types.Bar, tick uint32) error {
 
 	tok, lit := p.scanIgnoreWhitespace()
 
 	switch tok {
 	case lexer.WHOLE:
-		playable, err := p.parsePlayable(bar, 1, beat, delta)
+		playable, err := p.parsePlayable(bar, 1, tick)
 		if err != nil {
 			return err
 		}
 		bar.AddTickable(playable)
 	case lexer.HALF:
-		playable, err := p.parsePlayable(bar, 2, beat, delta)
+		playable, err := p.parsePlayable(bar, 2, tick)
 		if err != nil {
 			return err
 		}
 		bar.AddTickable(playable)
 	case lexer.QUARTER:
-		playable, err := p.parsePlayable(bar, 4, beat, delta)
+		playable, err := p.parsePlayable(bar, 4, tick)
 		if err != nil {
 			return err
 		}
@@ -568,14 +551,10 @@ func (p *Parser) parsePlay(bar *types.Bar, beat uint8, delta float64) error {
 			if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.TH {
 				return fmt.Errorf("found %q, expected note name", lit)
 			}
-		} else if value == 256 {
-			if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.TH {
-				return fmt.Errorf("found %q, expected note name", lit)
-			}
 		} else {
 			return fmt.Errorf("found %q, expected value", lit)
 		}
-		playable, err := p.parsePlayable(bar, uint16(value), beat, delta)
+		playable, err := p.parsePlayable(bar, uint16(value), tick)
 		if err != nil {
 			return err
 		}
@@ -585,6 +564,70 @@ func (p *Parser) parsePlay(bar *types.Bar, beat uint8, delta float64) error {
 	}
 
 	return nil
+}
+
+func (p *Parser) parseMetaText(bar *types.Bar, tick uint32) error {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER && tok != lexer.STRING {
+		return fmt.Errorf("found %q, expected string", lit)
+	} else {
+		if tok, _ := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
+			return fmt.Errorf("found %q, expected ;", lit)
+		}
+
+		tickable := types.NewText(lit)
+		tickable.SetTick(tick)
+		bar.AddTickable(tickable)
+
+		return nil
+	}
+}
+
+func (p *Parser) parseMetaLyric(bar *types.Bar, tick uint32) error {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER && tok != lexer.STRING {
+		return fmt.Errorf("found %q, expected string", lit)
+	} else {
+		if tok, _ := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
+			return fmt.Errorf("found %q, expected ;", lit)
+		}
+
+		tickable := types.NewLyric(lit)
+		tickable.SetTick(tick)
+		bar.AddTickable(tickable)
+
+		return nil
+	}
+}
+
+func (p *Parser) parseMetaMarker(bar *types.Bar, tick uint32) error {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER && tok != lexer.STRING {
+		return fmt.Errorf("found %q, expected string", lit)
+	} else {
+		if tok, _ := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
+			return fmt.Errorf("found %q, expected ;", lit)
+		}
+
+		tickable := types.NewMarker(lit)
+		tickable.SetTick(tick)
+		bar.AddTickable(tickable)
+
+		return nil
+	}
+}
+
+func (p *Parser) parseMetaCue(bar *types.Bar, tick uint32) error {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER && tok != lexer.STRING {
+		return fmt.Errorf("found %q, expected string", lit)
+	} else {
+		if tok, _ := p.scanIgnoreWhitespace(); tok != lexer.SEMICOLON {
+			return fmt.Errorf("found %q, expected ;", lit)
+		}
+
+		tickable := types.NewCue(lit)
+		tickable.SetTick(tick)
+		bar.AddTickable(tickable)
+
+		return nil
+	}
 }
 
 func (p *Parser) Parse() (*types.Project, error) {

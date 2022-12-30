@@ -99,6 +99,21 @@ func main() {
 				if opt_verbose {
 					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
 				}
+
+				wg.Add(1)
+				go func(_ev smf.TrackEvent, c chan bool) {
+					p := coremidi.NewPacket(_ev.Message.Bytes(), 0)
+					<-c
+					if opt_verbose {
+						fmt.Println("synth <-", te.TrackNo, _ev.Message)
+					}
+					err := p.Send(&outPorts[_ev.TrackNo], dest)
+					if err != nil {
+						fmt.Println(err)
+					}
+					wg.Done()
+				}(te, t.NewSubTimer(time.Duration(int(te.AbsMicroSeconds/1000)*int(time.Millisecond))))
+
 			} else {
 				if opt_verbose {
 					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())

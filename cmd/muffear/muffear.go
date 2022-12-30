@@ -145,7 +145,7 @@ func main() {
 							fmt.Println("NoteOff", key, uint16(te.AbsTicks), (uint16(te.AbsTicks) - uint16(key)))
 							n.SetDuration(uint16(absDuration))
 
-							bar.AddPlayable(n)
+							bar.AddTickable(n)
 							//n.SetVelocity()
 						case 2:
 							root, _ := notes.Parse(activeNotes[0])
@@ -170,7 +170,7 @@ func main() {
 
 							n.SetDuration(uint16(absDuration))
 
-							bar.AddPlayable(n)
+							bar.AddTickable(n)
 
 							//c.SetRoot(*c.Root().Interval(intervals.PerfectFourth))
 

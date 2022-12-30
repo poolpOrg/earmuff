@@ -56,11 +56,32 @@ func Compile(project *types.Project) []byte {
 
 		events := make(map[uint32][]midi.Message)
 		for _, bar := range track.GetBars() {
-			for _, text := range bar.GetTexts() {
-				tr.Add(0, smf.MetaText(text))
-			}
-
 			for _, tickable := range bar.GetTickables() {
+
+				t, isText := tickable.(*types.Text)
+				if isText {
+					//fmt.Println("text.GetTick()", t.GetTick())
+					tr.Add(t.GetTick(), smf.MetaText(t.GetValue()))
+				}
+
+				l, isLyrics := tickable.(*types.Lyric)
+				if isLyrics {
+					//fmt.Println("lyric.GetTick()", l.GetTick())
+					tr.Add(l.GetTick(), smf.MetaLyric(l.GetValue()))
+				}
+
+				m, isMarker := tickable.(*types.Marker)
+				if isMarker {
+					//fmt.Println("marker.GetTick()", m.GetTick())
+					tr.Add(m.GetTick(), smf.MetaMarker(m.GetValue()))
+				}
+
+				c, isCue := tickable.(*types.Cue)
+				if isCue {
+					//fmt.Println("cue.GetTick()", c.GetTick())
+					tr.Add(c.GetTick(), smf.MetaCuepoint(c.GetValue()))
+				}
+
 				_, isPlayable := tickable.(types.Playable)
 				if isPlayable {
 					playable := tickable.(types.Playable)
