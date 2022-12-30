@@ -11,6 +11,7 @@ import (
 	"github.com/poolpOrg/earmuff/types"
 	"github.com/poolpOrg/go-harmony/chords"
 	"github.com/poolpOrg/go-harmony/notes"
+	"gitlab.com/gomidi/midi/v2/smf"
 )
 
 type Parser struct {
@@ -20,10 +21,11 @@ type Parser struct {
 		lit string
 		n   int
 	}
+	activeNotes map[uint8]types.Playable
 }
 
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: lexer.NewScanner(r)}
+	return &Parser{s: lexer.NewScanner(r), activeNotes: make(map[uint8]types.Playable)}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -173,6 +175,9 @@ func (p *Parser) parseProject() (*types.Project, error) {
 }
 
 func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
+	//XXX - for now clear active notes when entering a new track
+	p.activeNotes = make(map[uint8]types.Playable)
+
 	track := types.NewTrack()
 	track.SetBPM(project.GetBPM())
 	track.SetSignature(project.GetSignature())
@@ -256,17 +261,19 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 				return nil, err
 			}
 
-		case lexer.TEXT:
-			p.parseMetaText(bar, 0)
+			/*
+				case lexer.TEXT:
+					p.parseMetaText(bar, 0)
 
-		case lexer.LYRIC:
-			p.parseMetaLyric(bar, 0)
+				case lexer.LYRIC:
+					p.parseMetaLyric(bar, 0)
 
-		case lexer.MARKER:
-			p.parseMetaMarker(bar, 0)
+				case lexer.MARKER:
+					p.parseMetaMarker(bar, 0)
 
-		case lexer.CUE:
-			p.parseMetaCue(bar, 0)
+				case lexer.CUE:
+					p.parseMetaCue(bar, 0)
+			*/
 
 		case lexer.ON:
 			err := p.parseOn(bar)
@@ -359,6 +366,61 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 		}
 
 	}
+
+	notes := playable.GetNotes()
+	for _, note := range notes {
+		if active, exists := p.activeNotes[note.MIDI()]; !exists {
+			p.activeNotes[note.MIDI()] = playable
+		} else {
+			var clock = smf.MetricTicks(960)
+
+			unit := clock.Ticks4th()
+			switch bar.GetSignature().GetDuration() {
+			case 1:
+				unit = clock.Ticks4th() * 4
+			case 2:
+				unit = clock.Ticks4th() * 2
+			case 4:
+				unit = clock.Ticks4th()
+			case 8:
+				unit = clock.Ticks8th()
+			case 16:
+				unit = clock.Ticks16th()
+			case 32:
+				unit = clock.Ticks32th()
+			case 64:
+				unit = clock.Ticks64th()
+			case 128:
+				unit = clock.Ticks128th()
+			}
+
+			duration := unit
+			switch active.GetDuration() {
+			case 1:
+				duration *= 4
+			case 2:
+				duration *= 2
+			case 4:
+				duration = unit
+			case 8:
+				duration = unit / 2
+			case 16:
+				duration = unit / 4
+			case 32:
+				duration = unit / 8
+			case 64:
+				duration = unit / 16
+			case 128:
+				duration = unit / 32
+			}
+
+			if active.GetTick()+duration > tick {
+				return nil, fmt.Errorf("pitch overlap: %s (tick: %d) / %s (tick: %d)", active.GetName(), active.GetTick(), note.Name(), playable.GetTick())
+			}
+		}
+
+	}
+
 	return playable, nil
 }
 
