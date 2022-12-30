@@ -57,62 +57,66 @@ func Compile(project *types.Project) []byte {
 				tr.Add(0, smf.MetaText(text))
 			}
 
-			for _, playable := range bar.GetPlayables() {
-				for _, n := range playable.GetNotes() {
-					unit := clock.Ticks4th()
-					switch bar.GetSignature().GetDuration() {
-					case 1:
-						unit = clock.Ticks4th() * 4
-					case 2:
-						unit = clock.Ticks4th() * 2
-					case 4:
-						unit = clock.Ticks4th()
-					case 8:
-						unit = clock.Ticks8th()
-					case 16:
-						unit = clock.Ticks16th()
-					case 32:
-						unit = clock.Ticks32th()
-					case 64:
-						unit = clock.Ticks64th()
-					case 128:
-						unit = clock.Ticks128th()
-					}
+			for _, tickable := range bar.GetTickables() {
+				_, isPlayable := tickable.(types.Playable)
+				if isPlayable {
+					playable := tickable.(types.Playable)
+					for _, n := range playable.GetNotes() {
+						unit := clock.Ticks4th()
+						switch bar.GetSignature().GetDuration() {
+						case 1:
+							unit = clock.Ticks4th() * 4
+						case 2:
+							unit = clock.Ticks4th() * 2
+						case 4:
+							unit = clock.Ticks4th()
+						case 8:
+							unit = clock.Ticks8th()
+						case 16:
+							unit = clock.Ticks16th()
+						case 32:
+							unit = clock.Ticks32th()
+						case 64:
+							unit = clock.Ticks64th()
+						case 128:
+							unit = clock.Ticks128th()
+						}
 
-					duration := unit
-					switch playable.GetDuration() {
-					case 1:
-						duration *= 4
-					case 2:
-						duration *= 2
-					case 4:
-						duration = unit
-					case 8:
-						duration = unit / 2
-					case 16:
-						duration = unit / 4
-					case 32:
-						duration = unit / 8
-					case 64:
-						duration = unit / 16
-					case 128:
-						duration = unit / 32
-					}
+						duration := unit
+						switch playable.GetDuration() {
+						case 1:
+							duration *= 4
+						case 2:
+							duration *= 2
+						case 4:
+							duration = unit
+						case 8:
+							duration = unit / 2
+						case 16:
+							duration = unit / 4
+						case 32:
+							duration = unit / 8
+						case 64:
+							duration = unit / 16
+						case 128:
+							duration = unit / 32
+						}
 
-					tick := playable.GetTick()
-					//fmt.Println("TICK", tick, "DURATION", duration)
-					if _, exists := events[tick]; !exists {
-						events[tick] = make([]midi.Message, 0)
-					}
-					if _, exists := events[tick+duration]; !exists {
-						events[tick+duration] = make([]midi.Message, 0)
-					}
+						tick := playable.GetTick()
+						//fmt.Println("TICK", tick, "DURATION", duration)
+						if _, exists := events[tick]; !exists {
+							events[tick] = make([]midi.Message, 0)
+						}
+						if _, exists := events[tick+duration]; !exists {
+							events[tick+duration] = make([]midi.Message, 0)
+						}
 
-					noteOn := midi.NoteOn(uint8(channel), n.MIDI(), playable.GetVelocity())
-					noteOff := midi.NoteOff(uint8(channel), n.MIDI())
+						noteOn := midi.NoteOn(uint8(channel), n.MIDI(), playable.GetVelocity())
+						noteOff := midi.NoteOff(uint8(channel), n.MIDI())
 
-					events[tick] = append(events[tick], noteOn)
-					events[tick+duration] = append(events[tick+duration], noteOff)
+						events[tick] = append(events[tick], noteOn)
+						events[tick+duration] = append(events[tick+duration], noteOff)
+					}
 				}
 			}
 		}

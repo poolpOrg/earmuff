@@ -90,8 +90,6 @@ func (s *Scanner) unread() { _ = s.r.UnreadRune() }
 func (s *Scanner) Scan() (tok Token, lit string) {
 	ch := s.read()
 
-	// If we see whitespace then consume all contiguous whitespace.
-	// If we see a letter then consume as an ident or reserved word.
 	if isWhitespace(ch) {
 		s.unread()
 		return s.scanWhitespace()

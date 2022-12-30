@@ -536,19 +536,19 @@ func (p *Parser) parsePlay(bar *types.Bar, beat uint8, delta float64) error {
 		if err != nil {
 			return err
 		}
-		bar.AddPlayable(playable)
+		bar.AddTickable(playable)
 	case lexer.HALF:
 		playable, err := p.parsePlayable(bar, 2, beat, delta)
 		if err != nil {
 			return err
 		}
-		bar.AddPlayable(playable)
+		bar.AddTickable(playable)
 	case lexer.QUARTER:
 		playable, err := p.parsePlayable(bar, 4, beat, delta)
 		if err != nil {
 			return err
 		}
-		bar.AddPlayable(playable)
+		bar.AddTickable(playable)
 	case lexer.NUMBER:
 		value, err := strconv.ParseUint(lit, 10, 16)
 		if err != nil {
@@ -586,7 +586,7 @@ func (p *Parser) parsePlay(bar *types.Bar, beat uint8, delta float64) error {
 		if err != nil {
 			return err
 		}
-		bar.AddPlayable(playable)
+		bar.AddTickable(playable)
 	default:
 		return fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
 	}

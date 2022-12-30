@@ -95,62 +95,67 @@ func (project *Project) String() string {
 				buf += fmt.Sprintf("\t\t\ttime %d %d;", bar.GetSignature().GetBeats(), bar.GetSignature().GetDuration())
 			}
 
-			for _, playable := range bar.playables {
-				begin := uint32(playable.GetTick()) / ticksPerBeat
-				delta := uint32(playable.GetTick()) % ticksPerBeat
+			for _, tickable := range bar.tickables {
+				begin := uint32(tickable.GetTick()) / ticksPerBeat
+				delta := uint32(tickable.GetTick()) % ticksPerBeat
 				_, frac := math.Modf(float64(delta) / float64(ticksPerBeat) * 100)
 
-				beat := begin % uint32(bar.GetSignature().GetBeats())
-				durationName := ""
-				switch playable.GetDuration() {
-				case 1:
-					durationName = "whole"
-				case 2:
-					durationName = "half"
-				case 4:
-					durationName = "quarter"
-				case 8:
-					durationName = "8th"
-				case 16:
-					durationName = "16th"
-				case 32:
-					durationName = "32nd"
-				case 64:
-					durationName = "64th"
-				case 128:
-					durationName = "128th"
-				case 256:
-					durationName = "256th"
+				_, isPlayable := tickable.(Playable)
+				if isPlayable {
+					playable := tickable.(Playable)
 
-				}
+					beat := begin % uint32(bar.GetSignature().GetBeats())
+					durationName := ""
+					switch playable.GetDuration() {
+					case 1:
+						durationName = "whole"
+					case 2:
+						durationName = "half"
+					case 4:
+						durationName = "quarter"
+					case 8:
+						durationName = "8th"
+					case 16:
+						durationName = "16th"
+					case 32:
+						durationName = "32nd"
+					case 64:
+						durationName = "64th"
+					case 128:
+						durationName = "128th"
+					case 256:
+						durationName = "256th"
 
-				_, ok := playable.(*Note)
-				if ok {
-					note := playable.(*Note)
-
-					if frac > 0. {
-						buf += fmt.Sprintf("\t\t\t%s note %s on %f", durationName, note.GetName(), float64(beat+1)+frac)
-					} else {
-						buf += fmt.Sprintf("\t\t\t%s note %s on %d", durationName, note.GetName(), beat+1)
 					}
 
-					//fmt.Println(float64(note.duration) / float64(ticksPerBeat))
-				}
+					_, ok := playable.(*Note)
+					if ok {
+						note := playable.(*Note)
 
-				_, ok = playable.(*Chord)
-				if ok {
-					chord := playable.(*Chord)
+						if frac > 0. {
+							buf += fmt.Sprintf("\t\t\t%s note %s on %f", durationName, note.GetName(), float64(beat+1)+frac)
+						} else {
+							buf += fmt.Sprintf("\t\t\t%s note %s on %d", durationName, note.GetName(), beat+1)
+						}
 
-					if frac > 0. {
-						buf += fmt.Sprintf("\t\t\t%s note %s on %f", durationName, chord.GetName(), float64(beat+1)+frac)
-					} else {
-						buf += fmt.Sprintf("\t\t\t%s note %s on %d", durationName, chord.GetName(), beat+1)
+						//fmt.Println(float64(note.duration) / float64(ticksPerBeat))
 					}
 
-					//fmt.Println(float64(note.duration) / float64(ticksPerBeat))
-				}
+					_, ok = playable.(*Chord)
+					if ok {
+						chord := playable.(*Chord)
 
-				buf += ";\n"
+						if frac > 0. {
+							buf += fmt.Sprintf("\t\t\t%s note %s on %f", durationName, chord.GetName(), float64(beat+1)+frac)
+						} else {
+							buf += fmt.Sprintf("\t\t\t%s note %s on %d", durationName, chord.GetName(), beat+1)
+						}
+
+						//fmt.Println(float64(note.duration) / float64(ticksPerBeat))
+					}
+
+					buf += ";\n"
+				}
 				//	buf := fmt.Sprintf("%d note %s on %d", note.duration, note.GetName(), note.GetTick())
 				//	buf += ";"
 			}
