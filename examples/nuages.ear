@@ -5,7 +5,7 @@ project {
     instrument "guitar" {
         bar {
             8th note C# on 3;
-            8th note D on 3;
+            8th note D on 3.25;
             8th note A on 3.50;
             8th note G# on 3.75;
             8th note G on 4;

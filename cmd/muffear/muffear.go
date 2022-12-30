@@ -88,6 +88,20 @@ func main() {
 					te.Message.GetNoteStart(&ch, &key, &vel)
 					channels[te.TrackNo][te.AbsTicks][midi.Note(key).String()] = key
 
+					ticksPerBeat := uint32(960)
+					begin := uint32(key) / ticksPerBeat
+					barno := begin / uint32(project.GetSignature().GetBeats())
+					for {
+						if len(tracks[te.TrackNo].GetBars()) <= int(barno) {
+							b := types.NewBar(uint32(len(tracks[te.TrackNo].GetBars()) + 1))
+							b.SetBPM(tracks[te.TrackNo].GetBPM())
+							b.SetSignature(tracks[te.TrackNo].GetSignature())
+							tracks[te.TrackNo].AddBar(b)
+						} else {
+							break
+						}
+					}
+
 				case "NoteOff":
 					keys := make([]int64, 0)
 					for key := range channels[te.TrackNo] {
@@ -103,26 +117,11 @@ func main() {
 					ticksPerBeat := uint32(960)
 					ticksPerBar := uint32(project.GetSignature().GetBeats()) * ticksPerBeat
 
-					// need to compute bars
-
-					// need to compute key in beats
-
 					for _, key := range keys {
 						begin := uint32(key) / ticksPerBeat
 						//delta := uint32(key) % ticksPerBeat
 						//_, frac := math.Modf(float64(delta) / float64(ticksPerBeat) * 100)
 						barno := begin / uint32(project.GetSignature().GetBeats())
-
-						for {
-							if len(tracks[te.TrackNo].GetBars()) <= int(barno) {
-								b := types.NewBar(uint32(len(tracks[te.TrackNo].GetBars()) + 1))
-								b.SetBPM(tracks[te.TrackNo].GetBPM())
-								b.SetSignature(tracks[te.TrackNo].GetSignature())
-								tracks[te.TrackNo].AddBar(b)
-							} else {
-								break
-							}
-						}
 						bar := tracks[te.TrackNo].GetBars()[barno]
 
 						activeNotes := make([]string, 0)
@@ -143,7 +142,7 @@ func main() {
 
 							// duration := uint16(math.Pow(2, float64(uint16(ticksPerBeat)/(uint16(te.AbsTicks)-uint16(key)))))
 							absDuration := float64(uint16(ticksPerBar) / (uint16(te.AbsTicks) - uint16(key)))
-
+							fmt.Println("NoteOff", key, uint16(te.AbsTicks), (uint16(te.AbsTicks) - uint16(key)))
 							n.SetDuration(uint16(absDuration))
 
 							bar.AddPlayable(n)

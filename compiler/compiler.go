@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 
 	lmidi "github.com/poolpOrg/earmuff/midi"
@@ -88,7 +89,7 @@ func Compile(project *types.Project) []byte {
 
 					tick := playable.GetTick()
 
-					//fmt.Println("TICK", tick, "DURATION", duration)
+					fmt.Println("TICK", tick, "DURATION", duration)
 					if _, exists := events[tick]; !exists {
 						events[tick] = make([]midi.Message, 0)
 					}
