@@ -2,7 +2,7 @@ package types
 
 type Bar struct {
 	offset    uint32
-	bpm       uint8
+	bpm       float64
 	signature *Signature
 	playables []Playable
 }
@@ -18,11 +18,11 @@ func (bar *Bar) GetOffset() uint32 {
 	return bar.offset
 }
 
-func (bar *Bar) GetBPM() uint8 {
+func (bar *Bar) GetBPM() float64 {
 	return bar.bpm
 }
 
-func (bar *Bar) SetBPM(bpm uint8) {
+func (bar *Bar) SetBPM(bpm float64) {
 	bar.bpm = bpm
 }
 

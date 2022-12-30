@@ -2,10 +2,10 @@ project {
     bpm 80;
     time 4 4;
 
-    instrument guitar {
+    instrument "guitar" {
         bar {
             8th note C# on 3;
-            8th note D on 3.25;
+            8th note D on 3;
             8th note A on 3.50;
             8th note G# on 3.75;
             8th note G on 4;
@@ -23,7 +23,7 @@ project {
         bar { whole note D on 1; }
     }
 
-    instrument piano {
+    instrument "piano" {
         bar {}
         bar { whole chord Eb9 on 1; }
         bar {
@@ -37,7 +37,7 @@ project {
         }
     }
 
-    instrument percussive {
+    instrument "percussive" {
         bar {}
         bar { half cymbal on 1; }
         bar { half cymbal on 1; }

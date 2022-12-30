@@ -58,12 +58,12 @@ func (p *Parser) scanIgnoreWhitespace() (tok lexer.Token, lit string) {
 	}
 }
 
-func (p *Parser) parseBpm() (uint8, error) {
-	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+func (p *Parser) parseBpm() (float64, error) {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER && tok != lexer.FLOAT {
 		return 0, fmt.Errorf("found %q, expected number", lit)
 	}
 
-	beats, err := strconv.ParseUint(p.buf.lit, 10, 8)
+	beats, err := strconv.ParseFloat(p.buf.lit, 64)
 	if err != nil {
 		return 0, err
 	}
@@ -72,7 +72,7 @@ func (p *Parser) parseBpm() (uint8, error) {
 		return 0, fmt.Errorf("found %q, expected ;", lit)
 	}
 
-	return uint8(beats), nil
+	return beats, nil
 }
 
 func (p *Parser) parseTimeSignature() (*types.Signature, error) {

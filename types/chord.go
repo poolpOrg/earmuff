@@ -61,3 +61,7 @@ func (chord *Chord) GetNotes() []notes.Note {
 
 	return ret
 }
+
+func (chord *Chord) String() string {
+	return ""
+}

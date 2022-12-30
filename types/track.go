@@ -1,9 +1,11 @@
 package types
 
-import "github.com/poolpOrg/go-harmony/tunings"
+import (
+	"github.com/poolpOrg/go-harmony/tunings"
+)
 
 type Track struct {
-	bpm          uint8
+	bpm          float64
 	signature    *Signature
 	bars         []*Bar
 	tuning       tunings.Tuning
@@ -18,11 +20,11 @@ func NewTrack() *Track {
 	}
 }
 
-func (track *Track) GetBPM() uint8 {
+func (track *Track) GetBPM() float64 {
 	return track.bpm
 }
 
-func (track *Track) SetBPM(bpm uint8) {
+func (track *Track) SetBPM(bpm float64) {
 	track.bpm = bpm
 }
 
