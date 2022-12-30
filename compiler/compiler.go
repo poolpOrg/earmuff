@@ -23,17 +23,20 @@ func Compile(project *types.Project) []byte {
 		if trackNumber == 0 {
 			tr.Add(0, smf.MetaMeter(project.GetSignature().GetBeats(), project.GetSignature().GetDuration()))
 			tr.Add(0, smf.MetaTempo(float64(project.GetBPM())))
+
+			copyright := project.GetCopyright()
+			if copyright != "" {
+				tr.Add(0, smf.MetaCopyright(copyright))
+			}
 		}
 
-		for _, copyright := range project.GetCopyrights() {
-			tr.Add(0, smf.MetaCopyright(copyright))
+		trackName := track.GetName()
+		if trackName != "" {
+			tr.Add(0, smf.MetaTrackSequenceName(trackName))
 		}
+
 		for _, text := range project.GetTexts() {
 			tr.Add(0, smf.MetaText(text))
-		}
-
-		for _, copyright := range track.GetCopyrights() {
-			tr.Add(0, smf.MetaCopyright(copyright))
 		}
 		for _, text := range track.GetTexts() {
 			tr.Add(0, smf.MetaText(text))

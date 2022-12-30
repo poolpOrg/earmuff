@@ -9,7 +9,6 @@ type Track struct {
 	bpm          float64
 	signature    *Signature
 	bars         []*Bar
-	copyrights   []string
 	texts        []string
 	tuning       tunings.Tuning
 	instrument   string
@@ -18,10 +17,9 @@ type Track struct {
 
 func NewTrack() *Track {
 	return &Track{
-		bars:       make([]*Bar, 0),
-		copyrights: make([]string, 0),
-		texts:      make([]string, 0),
-		tuning:     tunings.A440,
+		bars:   make([]*Bar, 0),
+		texts:  make([]string, 0),
+		tuning: tunings.A440,
 	}
 }
 
@@ -55,14 +53,6 @@ func (track *Track) AddBar(bar *Bar) {
 
 func (track *Track) GetBars() []*Bar {
 	return track.bars
-}
-
-func (track *Track) AddCopyright(text string) {
-	track.copyrights = append(track.copyrights, text)
-}
-
-func (track *Track) GetCopyrights() []string {
-	return track.copyrights
 }
 
 func (track *Track) AddText(text string) {

@@ -6,19 +6,18 @@ import (
 )
 
 type Project struct {
-	name       string
-	bpm        float64
-	signature  *Signature
-	tracks     []*Track
-	copyrights []string
-	texts      []string
+	name      string
+	bpm       float64
+	signature *Signature
+	tracks    []*Track
+	copyright string
+	texts     []string
 }
 
 func NewProject() *Project {
 	return &Project{
-		tracks:     make([]*Track, 0),
-		copyrights: make([]string, 0),
-		texts:      make([]string, 0),
+		tracks: make([]*Track, 0),
+		texts:  make([]string, 0),
 	}
 }
 
@@ -54,8 +53,8 @@ func (project *Project) AddText(text string) {
 	project.texts = append(project.texts, text)
 }
 
-func (project *Project) AddCopyright(text string) {
-	project.copyrights = append(project.copyrights, text)
+func (project *Project) SetCopyright(text string) {
+	project.copyright = text
 }
 
 func (project *Project) GetTracks() []*Track {
@@ -66,8 +65,8 @@ func (project *Project) GetTexts() []string {
 	return project.texts
 }
 
-func (project *Project) GetCopyrights() []string {
-	return project.copyrights
+func (project *Project) GetCopyright() string {
+	return project.copyright
 }
 
 func (project *Project) String() string {

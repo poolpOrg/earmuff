@@ -147,7 +147,7 @@ func (p *Parser) parseProject() (*types.Project, error) {
 			if err != nil {
 				return nil, err
 			}
-			project.AddCopyright(text)
+			project.SetCopyright(text)
 
 		case lexer.TEXT:
 			text, err := p.parseText()
@@ -209,13 +209,6 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 				return nil, err
 			}
 			track.AddBar(bar)
-
-		case lexer.COPYRIGHT:
-			text, err := p.parseCopyright()
-			if err != nil {
-				return nil, err
-			}
-			track.AddCopyright(text)
 
 		case lexer.INSTRUMENT:
 			text, err := p.parseInstrument()
