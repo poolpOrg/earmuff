@@ -5,9 +5,12 @@ import (
 )
 
 type Track struct {
+	name         string
 	bpm          float64
 	signature    *Signature
 	bars         []*Bar
+	copyrights   []string
+	texts        []string
 	tuning       tunings.Tuning
 	instrument   string
 	isPercussive bool
@@ -15,9 +18,19 @@ type Track struct {
 
 func NewTrack() *Track {
 	return &Track{
-		bars:   make([]*Bar, 0),
-		tuning: tunings.A440,
+		bars:       make([]*Bar, 0),
+		copyrights: make([]string, 0),
+		texts:      make([]string, 0),
+		tuning:     tunings.A440,
 	}
+}
+
+func (track *Track) GetName() string {
+	return track.name
+}
+
+func (track *Track) SetName(name string) {
+	track.name = name
 }
 
 func (track *Track) GetBPM() float64 {
@@ -42,6 +55,22 @@ func (track *Track) AddBar(bar *Bar) {
 
 func (track *Track) GetBars() []*Bar {
 	return track.bars
+}
+
+func (track *Track) AddCopyright(text string) {
+	track.copyrights = append(track.copyrights, text)
+}
+
+func (track *Track) GetCopyrights() []string {
+	return track.copyrights
+}
+
+func (track *Track) AddText(text string) {
+	track.texts = append(track.texts, text)
+}
+
+func (track *Track) GetTexts() []string {
+	return track.texts
 }
 
 func (track *Track) SetInstrument(instrument string) {

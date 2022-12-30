@@ -25,6 +25,20 @@ func Compile(project *types.Project) []byte {
 			tr.Add(0, smf.MetaTempo(float64(project.GetBPM())))
 		}
 
+		for _, copyright := range project.GetCopyrights() {
+			tr.Add(0, smf.MetaCopyright(copyright))
+		}
+		for _, text := range project.GetTexts() {
+			tr.Add(0, smf.MetaText(text))
+		}
+
+		for _, copyright := range track.GetCopyrights() {
+			tr.Add(0, smf.MetaCopyright(copyright))
+		}
+		for _, text := range track.GetTexts() {
+			tr.Add(0, smf.MetaText(text))
+		}
+
 		tr.Add(0, smf.MetaInstrument(track.GetInstrument()))
 		pc, _ := lmidi.InstrumentToPC(track.GetInstrument())
 		var channel = trackNumber
@@ -39,6 +53,10 @@ func Compile(project *types.Project) []byte {
 
 		events := make(map[uint32][]midi.Message)
 		for _, bar := range track.GetBars() {
+			for _, text := range bar.GetTexts() {
+				tr.Add(0, smf.MetaText(text))
+			}
+
 			for _, playable := range bar.GetPlayables() {
 				for _, n := range playable.GetNotes() {
 					unit := clock.Ticks4th()

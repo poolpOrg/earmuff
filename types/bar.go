@@ -5,13 +5,27 @@ type Bar struct {
 	bpm       float64
 	signature *Signature
 	playables []Playable
+
+	texts []string
+
+	textsOn map[float64][]string
 }
 
 func NewBar(offset uint32) *Bar {
 	return &Bar{
 		offset:    offset,
 		playables: make([]Playable, 0),
+		texts:     make([]string, 0),
+		textsOn:   make(map[float64][]string),
 	}
+}
+
+func (bar *Bar) AddText(text string) {
+	bar.texts = append(bar.texts, text)
+}
+
+func (bar *Bar) GetTexts() []string {
+	return bar.texts
 }
 
 func (bar *Bar) GetOffset() uint32 {

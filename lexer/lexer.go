@@ -24,12 +24,17 @@ const (
 	BRACKET_CLOSE
 
 	BPM
+	COPYRIGHT
 	TIME
 	PROJECT
 	INSTRUMENT
 	TRACK
 	BAR
 	BEAT
+	TEXT
+	//NAME
+
+	PLAY
 
 	WHOLE
 	HALF
@@ -243,16 +248,26 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	case "TIME":
 		return TIME, buf.String()
 
-	case "PROJECT":
-		return PROJECT, buf.String()
+	case "TEXT":
+		return TEXT, buf.String()
+	case "COPYRIGHT":
+		return COPYRIGHT, buf.String()
+	//case "NAME":
+	//	return NAME, buf.String()
 	case "INSTRUMENT":
 		return INSTRUMENT, buf.String()
+
+	case "PROJECT":
+		return PROJECT, buf.String()
 	case "TRACK":
 		return TRACK, buf.String()
 	case "BAR":
 		return BAR, buf.String()
 	case "BEAT":
 		return BEAT, buf.String()
+
+	case "PLAY":
+		return PLAY, buf.String()
 
 	case "WHOLE":
 		return WHOLE, buf.String()

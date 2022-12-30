@@ -6,15 +6,28 @@ import (
 )
 
 type Project struct {
-	bpm       float64
-	signature *Signature
-	tracks    []*Track
+	name       string
+	bpm        float64
+	signature  *Signature
+	tracks     []*Track
+	copyrights []string
+	texts      []string
 }
 
 func NewProject() *Project {
 	return &Project{
-		tracks: make([]*Track, 0),
+		tracks:     make([]*Track, 0),
+		copyrights: make([]string, 0),
+		texts:      make([]string, 0),
 	}
+}
+
+func (project *Project) GetName() string {
+	return project.name
+}
+
+func (project *Project) SetName(name string) {
+	project.name = name
 }
 
 func (project *Project) GetBPM() float64 {
@@ -37,8 +50,24 @@ func (project *Project) AddTrack(track *Track) {
 	project.tracks = append(project.tracks, track)
 }
 
+func (project *Project) AddText(text string) {
+	project.texts = append(project.texts, text)
+}
+
+func (project *Project) AddCopyright(text string) {
+	project.copyrights = append(project.copyrights, text)
+}
+
 func (project *Project) GetTracks() []*Track {
 	return project.tracks
+}
+
+func (project *Project) GetTexts() []string {
+	return project.texts
+}
+
+func (project *Project) GetCopyrights() []string {
+	return project.copyrights
 }
 
 func (project *Project) String() string {
