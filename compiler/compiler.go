@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 
 	lmidi "github.com/poolpOrg/earmuff/midi"
@@ -60,10 +59,6 @@ func Compile(project *types.Project) []byte {
 						unit = clock.Ticks64th()
 					case 128:
 						unit = clock.Ticks128th()
-						/*
-							case 256:
-								unit = clock.Ticks256th()
-						*/
 					}
 
 					duration := unit
@@ -84,12 +79,10 @@ func Compile(project *types.Project) []byte {
 						duration = unit / 16
 					case 128:
 						duration = unit / 32
-						/*case 256*/
 					}
 
 					tick := playable.GetTick()
-
-					fmt.Println("TICK", tick, "DURATION", duration)
+					//fmt.Println("TICK", tick, "DURATION", duration)
 					if _, exists := events[tick]; !exists {
 						events[tick] = make([]midi.Message, 0)
 					}
