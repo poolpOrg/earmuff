@@ -136,4 +136,96 @@ project "12 bars blues" {
             on beat 3 play quarter note B2;
         }
     }
+
+    track "drums" {
+        instrument "steel drums";
+
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+        bar {
+            on beat 1 play quarter cymbal;
+            on beat 1 play quarter snare;
+            on beat 2 play quarter cymbal;
+            on beat 3 play quarter cymbal;
+            on beat 4 play quarter cymbal;
+        }
+
+
+    }
 }

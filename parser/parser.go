@@ -315,7 +315,7 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 		case lexer.CYMBAL:
 			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
 			//n, _ := notes.Parse("A6") // open triangle (81)
-			n, _ := notes.Parse("D#4") // Ride Cymbal 1 (51)
+			n, _ := notes.Parse("Bb1") // Ride Cymbal 1 (51)
 
 			note := types.NewNote(*n)
 			note.SetDuration(duration)
@@ -324,7 +324,7 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 		case lexer.SNARE:
 			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
 			//n, _ := notes.Parse("A6") // open triangle (81)
-			n, _ := notes.Parse("D2") // acoustic snare (38)
+			n, _ := notes.Parse("D1") // acoustic snare (38)
 
 			note := types.NewNote(*n)
 			note.SetDuration(duration)
