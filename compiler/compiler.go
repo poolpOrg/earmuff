@@ -151,6 +151,7 @@ func Compile(project *types.Project) []byte {
 		sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
 		lastKey := uint32(0)
+		lastDelta := uint32(0)
 		for _, key := range keys {
 			events := events[key]
 			sort.Slice(events, func(i, j int) bool {
@@ -159,14 +160,17 @@ func Compile(project *types.Project) []byte {
 			for offset, message := range events {
 				if offset == 0 {
 					tr.Add((key - lastKey), message)
+					lastDelta = (key - lastKey)
+
 				} else {
 					tr.Add(0, message)
+					lastDelta = 0
 				}
 			}
 			lastKey = key
 		}
 
-		tr.Close(0)
+		tr.Close(lastDelta)
 		s.Add(tr)
 	}
 
