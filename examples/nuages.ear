@@ -18,7 +18,7 @@ project "nuages" {
             on beat 4.5 play 8th note E;
         }
         bar {
-            on beat 1 play half note Fbb;
+            on beat 1 play half note Fb;
             on beat 2.5 play quarter note Eb;
             on beat 4.5 play 8th note D;
         }

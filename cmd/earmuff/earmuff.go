@@ -17,6 +17,11 @@ import (
 	"gitlab.com/gomidi/midi/v2/smf"
 )
 
+type tickevent struct {
+	trackEvent smf.TrackEvent
+	packet     coremidi.Packet
+}
+
 func main() {
 	var opt_file string
 	var opt_verbose bool
@@ -54,11 +59,27 @@ func main() {
 		fp.Close()
 	}
 
+	ticks := make(map[int64][]tickevent)
+	ticksList := make([]int64, 0)
+	smf.ReadTracksFrom(bytes.NewReader(b)).Do(
+		func(te smf.TrackEvent) {
+			offset := te.AbsMicroSeconds / 1000
+			if _, exists := ticks[offset]; !exists {
+				ticks[offset] = make([]tickevent, 0)
+				ticksList = append(ticksList, offset)
+			}
+			ticks[offset] = append(ticks[offset], tickevent{te, coremidi.NewPacket(te.Message.Bytes(), 0)})
+			if opt_verbose {
+				fmt.Printf("plan: [%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+			}
+		},
+	)
+
 	if opt_quiet {
 		os.Exit(0)
 	}
 
-	client, err := coremidi.NewClient("earring")
+	client, err := coremidi.NewClient("earmuff")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -92,49 +113,23 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	t := synctimer.NewTimer()
-
-	smf.ReadTracksFrom(bytes.NewReader(b)).Do(
-		func(te smf.TrackEvent) {
-			if te.Message.IsMeta() {
+	for _, tick := range ticksList {
+		events := ticks[tick]
+		wg.Add(1)
+		go func(_events []tickevent, c chan bool) {
+			<-c
+			for _, event := range _events {
 				if opt_verbose {
-					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+					fmt.Printf("synth: [%v] @%vms %s\n", event.trackEvent.TrackNo, event.trackEvent.AbsMicroSeconds/1000, event.trackEvent.Message.String())
 				}
-
-				wg.Add(1)
-				go func(_ev smf.TrackEvent, c chan bool) {
-					p := coremidi.NewPacket(_ev.Message.Bytes(), 0)
-					<-c
-					if opt_verbose {
-						fmt.Println("synth <-", te.TrackNo, _ev.Message)
-					}
-					err := p.Send(&outPorts[_ev.TrackNo], dest)
-					if err != nil {
-						fmt.Println(err)
-					}
-					wg.Done()
-				}(te, t.NewSubTimer(time.Duration(int(te.AbsMicroSeconds/1000)*int(time.Millisecond))))
-
-			} else {
-				if opt_verbose {
-					fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+				err := event.packet.Send(&outPorts[event.trackEvent.TrackNo], dest)
+				if err != nil {
+					fmt.Println(err)
 				}
-				wg.Add(1)
-				go func(_ev smf.TrackEvent, c chan bool) {
-					p := coremidi.NewPacket(_ev.Message.Bytes(), 0)
-					<-c
-					if opt_verbose {
-						fmt.Println("synth <-", te.TrackNo, _ev.Message)
-					}
-					err := p.Send(&outPorts[_ev.TrackNo], dest)
-					if err != nil {
-						fmt.Println(err)
-					}
-					wg.Done()
-				}(te, t.NewSubTimer(time.Duration(int(te.AbsMicroSeconds/1000)*int(time.Millisecond))))
-
 			}
-		},
-	)
+			wg.Done()
+		}(events, t.NewSubTimer(time.Duration(int(tick)*int(time.Millisecond))))
+	}
 	t.Start()
 	wg.Wait()
 
