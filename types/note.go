@@ -14,7 +14,7 @@ type Note struct {
 func NewNote(note notes.Note) *Note {
 	return &Note{
 		note:     note,
-		velocity: 120,
+		velocity: 64,
 	}
 }
 
