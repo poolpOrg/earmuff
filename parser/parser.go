@@ -489,10 +489,12 @@ func (p *Parser) parseInstrument() (string, error) {
 			return "", fmt.Errorf("found %q, expected ;", lit)
 		}
 
-		_, err := midi.InstrumentToPC(lit)
+		x, err := midi.InstrumentToPC(lit)
 		if err != nil {
 			return "", fmt.Errorf("found %q, unknown instrument", lit)
 		}
+
+		fmt.Println("INSTRUMENT", x)
 
 		return lit, nil
 	}
