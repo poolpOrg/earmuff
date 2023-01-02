@@ -53,6 +53,7 @@ const (
 	NOTE
 	INTERVAL
 	CHORD
+	PERCUSSION
 
 	VELOCITY
 )
@@ -293,6 +294,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return INTERVAL, buf.String()
 	case "CHORD":
 		return CHORD, buf.String()
+	case "PERCUSSION":
+		return PERCUSSION, buf.String()
 
 	case "VELOCITY":
 		return VELOCITY, buf.String()

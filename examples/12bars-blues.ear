@@ -141,91 +141,112 @@ project "12 bars blues" {
         instrument "steel drums";
 
         bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
         }
 
         bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
-        }
-        bar {
-            on beat 1 play quarter cymbal;
-            on beat 1 play quarter snare;
-            on beat 2 play quarter cymbal;
-            on beat 3 play quarter cymbal;
-            on beat 4 play quarter cymbal;
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
         }
 
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
+
+        bar {
+            on beat 1 play quarter percussion "open hi-hat";
+            on beat 1 play quarter percussion "acoustic snare";
+            on beat 1 play quarter percussion "crash cymbal 1";
+            on beat 2 play quarter percussion "closed hi-hat";
+            on beat 3 play quarter percussion "closed hi-hat";
+            on beat 4 play quarter percussion "closed hi-hat";
+        }
 
     }
 }

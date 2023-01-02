@@ -85,7 +85,7 @@ func Compile(project *types.Project) []byte {
 				_, isPlayable := tickable.(types.Playable)
 				if isPlayable {
 					playable := tickable.(types.Playable)
-					for _, n := range playable.GetNotes() {
+					for _, pitch := range playable.GetPitches() {
 						unit := clock.Ticks4th()
 						switch bar.GetSignature().GetDuration() {
 						case 1:
@@ -135,8 +135,8 @@ func Compile(project *types.Project) []byte {
 							events[tick+duration] = make([]midi.Message, 0)
 						}
 
-						noteOn := midi.NoteOn(uint8(channel), n.MIDI(), playable.GetVelocity())
-						noteOff := midi.NoteOff(uint8(channel), n.MIDI())
+						noteOn := midi.NoteOn(uint8(channel), pitch, playable.GetVelocity())
+						noteOff := midi.NoteOff(uint8(channel), pitch)
 
 						events[tick] = append(events[tick], noteOn)
 						events[tick+duration] = append(events[tick+duration], noteOff)

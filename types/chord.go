@@ -62,6 +62,14 @@ func (chord *Chord) GetNotes() []notes.Note {
 	return ret
 }
 
+func (chord *Chord) GetPitches() []uint8 {
+	ret := make([]uint8, 0)
+	for _, note := range chord.chord.Notes() {
+		ret = append(ret, note.MIDI())
+	}
+	return ret
+}
+
 func (chord *Chord) String() string {
 	return ""
 }

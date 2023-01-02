@@ -21,11 +21,11 @@ type Parser struct {
 		lit string
 		n   int
 	}
-	activeNotes map[uint8]types.Playable
+	activePitches map[uint8]types.Playable
 }
 
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: lexer.NewScanner(r), activeNotes: make(map[uint8]types.Playable)}
+	return &Parser{s: lexer.NewScanner(r), activePitches: make(map[uint8]types.Playable)}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -176,7 +176,7 @@ func (p *Parser) parseProject() (*types.Project, error) {
 
 func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 	//XXX - for now clear active notes when entering a new track
-	p.activeNotes = make(map[uint8]types.Playable)
+	p.activePitches = make(map[uint8]types.Playable)
 
 	track := types.NewTrack()
 	track.SetBPM(project.GetBPM())
@@ -312,33 +312,42 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 			note.SetDuration(duration)
 			playable = note
 
-		case lexer.CYMBAL:
-			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-			//n, _ := notes.Parse("A6") // open triangle (81)
-			n, _ := notes.Parse("Bb1") // Ride Cymbal 1 (51)
+		case lexer.PERCUSSION:
+			pitch, err := p.parsePercussion()
+			if err != nil {
+				return nil, err
+			}
+			pitch.SetDuration(duration)
+			playable = pitch
 
-			note := types.NewNote(*n)
-			note.SetDuration(duration)
-			playable = note
+			/*
+				case lexer.CYMBAL:
+					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+					//n, _ := notes.Parse("A6") // open triangle (81)
+					n, _ := notes.Parse("Bb1") // Ride Cymbal 1 (51)
 
-		case lexer.SNARE:
-			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-			//n, _ := notes.Parse("A6") // open triangle (81)
-			n, _ := notes.Parse("D1") // acoustic snare (38)
+					note := types.NewNote(*n)
+					note.SetDuration(duration)
+					playable = note
 
-			note := types.NewNote(*n)
-			note.SetDuration(duration)
-			playable = note
+				case lexer.SNARE:
+					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+					//n, _ := notes.Parse("A6") // open triangle (81)
+					n, _ := notes.Parse("D1") // acoustic snare (38)
 
-		case lexer.OPEN_HI_HAT:
-			//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-			//n, _ := notes.Parse("A6") // open triangle (81)
-			n, _ := notes.Parse("A#3") // acoustic snare (38)
+					note := types.NewNote(*n)
+					note.SetDuration(duration)
+					playable = note
 
-			note := types.NewNote(*n)
-			note.SetDuration(duration)
-			playable = note
+				case lexer.OPEN_HI_HAT:
+					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
+					//n, _ := notes.Parse("A6") // open triangle (81)
+					n, _ := notes.Parse("A#3") // acoustic snare (38)
 
+					note := types.NewNote(*n)
+					note.SetDuration(duration)
+					playable = note
+			*/
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
@@ -367,10 +376,10 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 
 	}
 
-	notes := playable.GetNotes()
-	for _, note := range notes {
-		if active, exists := p.activeNotes[note.MIDI()]; !exists {
-			p.activeNotes[note.MIDI()] = playable
+	pitches := playable.GetPitches()
+	for _, pitch := range pitches {
+		if active, exists := p.activePitches[pitch]; !exists {
+			p.activePitches[pitch] = playable
 		} else {
 			var clock = smf.MetricTicks(960)
 
@@ -415,7 +424,7 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 			}
 
 			if active.GetTick()+duration > tick {
-				return nil, fmt.Errorf("pitch overlap: %s (tick: %d) / %s (tick: %d)", active.GetName(), active.GetTick(), note.Name(), playable.GetTick())
+				return nil, fmt.Errorf("pitch overlap: %d (tick: %d / %d)", pitch, active.GetTick(), playable.GetTick())
 			}
 		}
 
@@ -445,6 +454,19 @@ func (p *Parser) parseNote() (*types.Note, error) {
 			return nil, err
 		}
 		return types.NewNote(*note), nil
+	}
+}
+
+func (p *Parser) parsePercussion() (*types.Pitch, error) {
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER && tok != lexer.STRING {
+		return nil, fmt.Errorf("found %q, expected percussion name", lit)
+	} else {
+		percussion, err := midi.PercussionKeyMap(lit)
+		if err != nil {
+			return nil, err
+		}
+
+		return types.NewPitch(percussion), nil
 	}
 }
 
@@ -489,7 +511,7 @@ func (p *Parser) parseInstrument() (string, error) {
 			return "", fmt.Errorf("found %q, expected ;", lit)
 		}
 
-		x, err := midi.InstrumentToPC(lit)
+		_, err := midi.InstrumentToPC(lit)
 		if err != nil {
 			return "", fmt.Errorf("found %q, unknown instrument", lit)
 		}

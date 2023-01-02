@@ -42,6 +42,10 @@ func (note *Note) GetNotes() []notes.Note {
 	return []notes.Note{*&note.note}
 }
 
+func (note *Note) GetPitches() []uint8 {
+	return []uint8{note.note.MIDI()}
+}
+
 func (note *Note) SetTick(tick uint32) {
 	note.tick = tick
 }
