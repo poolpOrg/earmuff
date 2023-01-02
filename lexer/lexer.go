@@ -31,6 +31,7 @@ const (
 	PROJECT
 	INSTRUMENT
 	TRACK
+	TIMES
 	BAR
 	BEAT
 	TEXT
@@ -252,6 +253,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return TIME, buf.String()
 	case "REPEAT":
 		return REPEAT, buf.String()
+	case "TIMES":
+		return TIMES, buf.String()
 
 	case "TEXT":
 		return TEXT, buf.String()

@@ -15,17 +15,17 @@ project "12 bars blues" {
             on beat 2 play quarter note A;
             on beat 3 play quarter note C;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note C;
             on beat 2 play quarter note E;
             on beat 3 play quarter note G;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note F;
             on beat 2 play quarter note A;
             on beat 3 play quarter note C;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note C;
             on beat 2 play quarter note E;
             on beat 3 play quarter note G;
@@ -57,9 +57,9 @@ project "12 bars blues" {
 
         bar { on beat 1 play whole chord C7; }
         bar { on beat 1 play whole chord F7; }
-        repeat 2 bar { on beat 1 play whole chord C7; }
-        repeat 2 bar { on beat 1 play whole chord F7; }
-        repeat 2 bar { on beat 1 play whole chord C7; }
+        repeat 2 times bar { on beat 1 play whole chord C7; }
+        repeat 2 times bar { on beat 1 play whole chord F7; }
+        repeat 2 times  bar { on beat 1 play whole chord C7; }
         bar { on beat 1 play whole chord G7; }
         bar { on beat 1 play whole chord F7; }
         bar { on beat 1 play whole chord C7; }
@@ -77,15 +77,15 @@ project "12 bars blues" {
             on beat 1 play quarter note F2;
             on beat 3 play quarter note A2;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note C2;
             on beat 3 play quarter note E2;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note F2;
             on beat 3 play quarter note G2;
         }
-        repeat 2 bar {
+        repeat 2 times bar {
             on beat 1 play quarter note C2;
             on beat 3 play quarter note E2;
         }
@@ -110,7 +110,7 @@ project "12 bars blues" {
     track "drums" {
         instrument "steel drums";
 
-        repeat 12 bar {
+        repeat 12 times bar {
             on beat 1 play quarter percussion "open hi-hat";
             on beat 1 play quarter percussion "acoustic snare";
             on beat 1 play quarter percussion "crash cymbal 1";

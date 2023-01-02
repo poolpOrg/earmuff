@@ -302,6 +302,10 @@ func (p *Parser) parseRepeat(track *types.Track) ([]*types.Bar, error) {
 		repeatCount = uint(tmp)
 	}
 
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.TIMES {
+		return nil, fmt.Errorf("found %q, expected FOR", lit)
+	}
+
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN && tok != lexer.BAR {
 		return nil, fmt.Errorf("found %q, expected { or BAR", lit)
 	} else {
