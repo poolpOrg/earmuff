@@ -324,6 +324,14 @@ func (p *Parser) parseRepeat(track *types.Track) ([]*types.Bar, error) {
 						return nil, err
 					}
 					bars = append(bars, bar)
+
+				case lexer.REPEAT:
+					nestedBars, err := p.parseRepeat(track)
+					if err != nil {
+						return nil, err
+					}
+					bars = append(bars, nestedBars...)
+
 				default:
 					return nil, fmt.Errorf("found %q, expected BAR or }", lit)
 				}
