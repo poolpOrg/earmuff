@@ -82,70 +82,69 @@ func Compile(project *types.Project) []byte {
 					tr.Add(c.GetTick(), smf.MetaCuepoint(c.GetValue()))
 				}
 
-				_, isPlayable := tickable.(types.Playable)
-				if isPlayable {
-					playable := tickable.(types.Playable)
-					for _, pitch := range playable.GetPitches() {
-						unit := clock.Ticks4th()
-						switch bar.GetSignature().GetDuration() {
-						case 1:
-							unit = clock.Ticks4th() * 4
-						case 2:
-							unit = clock.Ticks4th() * 2
-						case 4:
-							unit = clock.Ticks4th()
-						case 8:
-							unit = clock.Ticks8th()
-						case 16:
-							unit = clock.Ticks16th()
-						case 32:
-							unit = clock.Ticks32th()
-						case 64:
-							unit = clock.Ticks64th()
-						case 128:
-							unit = clock.Ticks128th()
-						}
-
-						duration := unit
-						switch playable.GetDuration() {
-						case 1:
-							duration *= 4
-						case 2:
-							duration *= 2
-						case 4:
-							duration = unit
-						case 8:
-							duration = unit / 2
-						case 16:
-							duration = unit / 4
-						case 32:
-							duration = unit / 8
-						case 64:
-							duration = unit / 16
-						case 128:
-							duration = unit / 32
-						}
-
-						ticksPerBeat := uint32(960)
-						ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
-
-						tick := playable.GetTick()
-						tick += uint32(barOffset) * ticksPerBar
-
-						//fmt.Println("TICK", tick, "DURATION", duration)
-						if _, exists := events[tick]; !exists {
-							events[tick] = make([]midi.Message, 0)
-						}
-						if _, exists := events[tick+duration]; !exists {
-							events[tick+duration] = make([]midi.Message, 0)
-						}
-
-						noteOn := midi.NoteOn(uint8(channel), pitch, playable.GetVelocity())
-						noteOff := midi.NoteOff(uint8(channel), pitch)
-
-						events[tick] = append(events[tick], noteOn)
-						events[tick+duration] = append(events[tick+duration], noteOff)
+				_, isPitch := tickable.(*types.Pitch)
+				if isPitch {
+					pitch := tickable.(*types.Pitch)
+					unit := clock.Ticks4th()
+					switch bar.GetSignature().GetDuration() {
+					case 1:
+						unit = clock.Ticks4th() * 4
+					case 2:
+						unit = clock.Ticks4th() * 2
+					case 4:
+						unit = clock.Ticks4th()
+					case 8:
+						unit = clock.Ticks8th()
+					case 16:
+						unit = clock.Ticks16th()
+					case 32:
+						unit = clock.Ticks32th()
+					case 64:
+						unit = clock.Ticks64th()
+					case 128:
+						unit = clock.Ticks128th()
 					}
+
+					duration := unit
+					switch pitch.GetDuration() {
+					case 1:
+						duration *= 4
+					case 2:
+						duration *= 2
+					case 4:
+						duration = unit
+					case 8:
+						duration = unit / 2
+					case 16:
+						duration = unit / 4
+					case 32:
+						duration = unit / 8
+					case 64:
+						duration = unit / 16
+					case 128:
+						duration = unit / 32
+					}
+
+					ticksPerBeat := uint32(960)
+					ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
+
+					tick := pitch.GetTick()
+					tick += uint32(barOffset) * ticksPerBar
+
+					//fmt.Println("TICK", tick, "DURATION", duration)
+					if _, exists := events[tick]; !exists {
+						events[tick] = make([]midi.Message, 0)
+					}
+					if _, exists := events[tick+duration]; !exists {
+						events[tick+duration] = make([]midi.Message, 0)
+					}
+
+					noteOn := midi.NoteOn(uint8(channel), pitch.GetValue(), pitch.GetVelocity())
+					noteOff := midi.NoteOff(uint8(channel), pitch.GetValue())
+
+					events[tick] = append(events[tick], noteOn)
+					events[tick+duration] = append(events[tick+duration], noteOff)
+
 				}
 			}
 		}

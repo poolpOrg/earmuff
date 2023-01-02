@@ -18,20 +18,20 @@ func (pitch *Pitch) SetDuration(duration uint16) {
 	pitch.duration = duration
 }
 
-func (pitch *Pitch) SetVelocity(velocity uint8) {
-	pitch.velocity = velocity
-}
-
 func (pitch *Pitch) GetDuration() uint16 {
 	return pitch.duration
+}
+
+func (pitch *Pitch) SetVelocity(velocity uint8) {
+	pitch.velocity = velocity
 }
 
 func (pitch *Pitch) GetVelocity() uint8 {
 	return pitch.velocity
 }
 
-func (pitch *Pitch) GetPitches() []uint8 {
-	return []uint8{pitch.value}
+func (pitch *Pitch) GetValue() uint8 {
+	return pitch.value
 }
 
 func (pitch *Pitch) SetTick(tick uint32) {

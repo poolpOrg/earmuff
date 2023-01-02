@@ -21,12 +21,12 @@ type Parser struct {
 		lit string
 		n   int
 	}
-	activePitches map[uint8]types.Playable
+	activePitches map[uint8]*types.Pitch
 	barNo         uint32
 }
 
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: lexer.NewScanner(r), activePitches: make(map[uint8]types.Playable), barNo: 0}
+	return &Parser{s: lexer.NewScanner(r), activePitches: make(map[uint8]*types.Pitch), barNo: 0}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -177,7 +177,7 @@ func (p *Parser) parseProject() (*types.Project, error) {
 
 func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 	//XXX - for now clear active notes when entering a new track
-	p.activePitches = make(map[uint8]types.Playable)
+	p.activePitches = make(map[uint8]*types.Pitch)
 	p.barNo = 0
 
 	track := types.NewTrack()
@@ -352,8 +352,8 @@ func (p *Parser) parseRepeat(track *types.Track) ([]*types.Bar, error) {
 	}
 }
 
-func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (types.Playable, error) {
-	var playable types.Playable
+func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) ([]*types.Pitch, error) {
+	playables := make([]*types.Pitch, 0)
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
 		if tok == lexer.SEMICOLON {
@@ -361,19 +361,22 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 		}
 		switch tok {
 		case lexer.CHORD:
-			chord, err := p.parseChord()
+			pitches, err := p.parseChord()
 			if err != nil {
 				return nil, err
 			}
-			chord.SetDuration(duration)
-			playable = chord
+			for _, pitch := range pitches {
+				pitch.SetDuration(duration)
+				playables = append(playables, pitch)
+			}
+
 		case lexer.NOTE:
-			note, err := p.parseNote()
+			pitch, err := p.parseNote()
 			if err != nil {
 				return nil, err
 			}
-			note.SetDuration(duration)
-			playable = note
+			pitch.SetDuration(duration)
+			playables = append(playables, pitch)
 
 		case lexer.PERCUSSION:
 			pitch, err := p.parsePercussion()
@@ -381,13 +384,15 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 				return nil, err
 			}
 			pitch.SetDuration(duration)
-			playable = pitch
+			playables = append(playables, pitch)
 
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
 
-		playable.SetTick(tick)
+		for _, p := range playables {
+			p.SetTick(tick)
+		}
 
 		for {
 			tok, _ := p.scanIgnoreWhitespace()
@@ -404,17 +409,19 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 					if err != nil {
 						return nil, err
 					}
-					playable.SetVelocity(uint8(tmp))
+					for _, p := range playables {
+						p.SetVelocity(uint8(tmp))
+					}
+
 				}
 			}
 		}
 
 	}
 
-	pitches := playable.GetPitches()
-	for _, pitch := range pitches {
-		if active, exists := p.activePitches[pitch]; !exists {
-			p.activePitches[pitch] = playable
+	for _, pitch := range playables {
+		if active, exists := p.activePitches[pitch.GetValue()]; !exists {
+			p.activePitches[pitch.GetValue()] = pitch
 		} else {
 			var clock = smf.MetricTicks(960)
 
@@ -466,10 +473,12 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 
 	}
 
-	return playable, nil
+	return playables, nil
 }
 
-func (p *Parser) parseChord() (*types.Chord, error) {
+func (p *Parser) parseChord() ([]*types.Pitch, error) {
+	ret := make([]*types.Pitch, 0)
+
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected chord name", lit)
 	} else {
@@ -477,11 +486,15 @@ func (p *Parser) parseChord() (*types.Chord, error) {
 		if err != nil {
 			return nil, err
 		}
-		return types.NewChord(*chord), nil
+
+		for _, note := range chord.Notes() {
+			ret = append(ret, types.NewPitch(note.MIDI()))
+		}
+		return ret, nil
 	}
 }
 
-func (p *Parser) parseNote() (*types.Note, error) {
+func (p *Parser) parseNote() (*types.Pitch, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.IDENTIFIER {
 		return nil, fmt.Errorf("found %q, expected note name", lit)
 	} else {
@@ -489,7 +502,7 @@ func (p *Parser) parseNote() (*types.Note, error) {
 		if err != nil {
 			return nil, err
 		}
-		return types.NewNote(*note), nil
+		return types.NewPitch(note.MIDI()), nil
 	}
 }
 
@@ -626,23 +639,30 @@ func (p *Parser) parsePlay(bar *types.Bar, tick uint32) error {
 
 	switch tok {
 	case lexer.WHOLE:
-		playable, err := p.parsePlayable(bar, 1, tick)
+		playables, err := p.parsePlayable(bar, 1, tick)
 		if err != nil {
 			return err
 		}
-		bar.AddTickable(playable)
+		for _, playable := range playables {
+			bar.AddTickable(playable)
+
+		}
 	case lexer.HALF:
-		playable, err := p.parsePlayable(bar, 2, tick)
+		playables, err := p.parsePlayable(bar, 2, tick)
 		if err != nil {
 			return err
 		}
-		bar.AddTickable(playable)
+		for _, playable := range playables {
+			bar.AddTickable(playable)
+		}
 	case lexer.QUARTER:
-		playable, err := p.parsePlayable(bar, 4, tick)
+		playables, err := p.parsePlayable(bar, 4, tick)
 		if err != nil {
 			return err
 		}
-		bar.AddTickable(playable)
+		for _, playable := range playables {
+			bar.AddTickable(playable)
+		}
 	case lexer.NUMBER:
 		value, err := strconv.ParseUint(lit, 10, 16)
 		if err != nil {
@@ -672,11 +692,15 @@ func (p *Parser) parsePlay(bar *types.Bar, tick uint32) error {
 		} else {
 			return fmt.Errorf("found %q, expected value", lit)
 		}
-		playable, err := p.parsePlayable(bar, uint16(value), tick)
+		playables, err := p.parsePlayable(bar, uint16(value), tick)
 		if err != nil {
 			return err
 		}
-		bar.AddTickable(playable)
+
+		for _, playable := range playables {
+			bar.AddTickable(playable)
+		}
+
 	default:
 		return fmt.Errorf("found %q, expected TIME, BEAT or }", lit)
 	}

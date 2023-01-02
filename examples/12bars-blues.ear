@@ -59,7 +59,7 @@ project "12 bars blues" {
         bar { on beat 1 play whole chord F7; }
         repeat 2 times bar { on beat 1 play whole chord C7; }
         repeat 2 times bar { on beat 1 play whole chord F7; }
-        repeat 2 times  bar { on beat 1 play whole chord C7; }
+        repeat 2 times bar { on beat 1 play whole chord C7; }
         bar { on beat 1 play whole chord G7; }
         bar { on beat 1 play whole chord F7; }
         bar { on beat 1 play whole chord C7; }
