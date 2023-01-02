@@ -1,29 +1,24 @@
 package types
 
 type Bar struct {
-	offset    uint32
 	bpm       float64
 	signature *Signature
 
 	tickables []Tickable
 
-	//texts []string
-
 	textsOn map[float64][]string
 }
 
-func NewBar(offset uint32) *Bar {
+func NewBar() *Bar {
 	return &Bar{
-		offset:    offset,
 		tickables: make([]Tickable, 0),
-		//texts:     make([]string, 0),
-		textsOn: make(map[float64][]string),
+		textsOn:   make(map[float64][]string),
 	}
 }
 
-func (bar *Bar) GetOffset() uint32 {
-	return bar.offset
-}
+//func (bar *Bar) GetOffset() uint32 {
+//	return bar.offset
+//}
 
 func (bar *Bar) GetBPM() float64 {
 	return bar.bpm

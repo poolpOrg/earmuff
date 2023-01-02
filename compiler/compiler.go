@@ -55,7 +55,7 @@ func Compile(project *types.Project) []byte {
 		tr.Add(0, midi.ProgramChange(uint8(channel), pc))
 
 		events := make(map[uint32][]midi.Message)
-		for _, bar := range track.GetBars() {
+		for barOffset, bar := range track.GetBars() {
 			for _, tickable := range bar.GetTickables() {
 
 				t, isText := tickable.(*types.Text)
@@ -126,7 +126,12 @@ func Compile(project *types.Project) []byte {
 							duration = unit / 32
 						}
 
+						ticksPerBeat := uint32(960)
+						ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
+
 						tick := playable.GetTick()
+						tick += uint32(barOffset) * ticksPerBar
+
 						//fmt.Println("TICK", tick, "DURATION", duration)
 						if _, exists := events[tick]; !exists {
 							events[tick] = make([]midi.Message, 0)

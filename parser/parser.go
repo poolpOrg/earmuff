@@ -22,10 +22,11 @@ type Parser struct {
 		n   int
 	}
 	activePitches map[uint8]types.Playable
+	barNo         uint32
 }
 
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: lexer.NewScanner(r), activePitches: make(map[uint8]types.Playable)}
+	return &Parser{s: lexer.NewScanner(r), activePitches: make(map[uint8]types.Playable), barNo: 0}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -177,6 +178,7 @@ func (p *Parser) parseProject() (*types.Project, error) {
 func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 	//XXX - for now clear active notes when entering a new track
 	p.activePitches = make(map[uint8]types.Playable)
+	p.barNo = 0
 
 	track := types.NewTrack()
 	track.SetBPM(project.GetBPM())
@@ -214,6 +216,7 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 				return nil, err
 			}
 			track.AddBar(bar)
+			p.barNo++
 
 		case lexer.INSTRUMENT:
 			text, err := p.parseInstrument()
@@ -228,6 +231,17 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 				return nil, err
 			}
 			track.AddText(text)
+
+		case lexer.REPEAT:
+			bars, err := p.parseRepeat(track)
+			if err != nil {
+				return nil, err
+			}
+			for _, bar := range bars {
+				track.AddBar(bar)
+				p.barNo++
+			}
+
 		default:
 			return nil, fmt.Errorf("found %q, expected BAR or }", lit)
 		}
@@ -236,7 +250,7 @@ func (p *Parser) parseTrack(project *types.Project) (*types.Track, error) {
 }
 
 func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
-	bar := types.NewBar(uint32(len(track.GetBars())))
+	bar := types.NewBar()
 	bar.SetBPM(track.GetBPM())
 	bar.SetSignature(track.GetSignature())
 
@@ -261,20 +275,6 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 				return nil, err
 			}
 
-			/*
-				case lexer.TEXT:
-					p.parseMetaText(bar, 0)
-
-				case lexer.LYRIC:
-					p.parseMetaLyric(bar, 0)
-
-				case lexer.MARKER:
-					p.parseMetaMarker(bar, 0)
-
-				case lexer.CUE:
-					p.parseMetaCue(bar, 0)
-			*/
-
 		case lexer.ON:
 			err := p.parseOn(bar)
 			if err != nil {
@@ -287,6 +287,57 @@ func (p *Parser) parseBar(track *types.Track) (*types.Bar, error) {
 	}
 
 	return bar, nil
+}
+
+func (p *Parser) parseRepeat(track *types.Track) ([]*types.Bar, error) {
+
+	repeatCount := uint(0)
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.NUMBER {
+		return nil, fmt.Errorf("found %q, expected loop count", lit)
+	} else {
+		tmp, err := strconv.Atoi(lit)
+		if err != nil {
+			return nil, err
+		}
+		repeatCount = uint(tmp)
+	}
+
+	if tok, lit := p.scanIgnoreWhitespace(); tok != lexer.BRACKET_OPEN && tok != lexer.BAR {
+		return nil, fmt.Errorf("found %q, expected { or BAR", lit)
+	} else {
+
+		bars := make([]*types.Bar, 0)
+		if tok == lexer.BRACKET_OPEN {
+			for {
+				tok, lit := p.scanIgnoreWhitespace()
+				if tok == lexer.BRACKET_CLOSE {
+					break
+				}
+				switch tok {
+				case lexer.BAR:
+					bar, err := p.parseBar(track)
+					if err != nil {
+						return nil, err
+					}
+					bars = append(bars, bar)
+				default:
+					return nil, fmt.Errorf("found %q, expected BAR or }", lit)
+				}
+			}
+		} else {
+			bar, err := p.parseBar(track)
+			if err != nil {
+				return nil, err
+			}
+			bars = append(bars, bar)
+		}
+		repeatedBars := make([]*types.Bar, 0)
+		for i := 0; i < int(repeatCount); i++ {
+			repeatedBars = append(repeatedBars, bars...)
+		}
+
+		return repeatedBars, nil
+	}
 }
 
 func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (types.Playable, error) {
@@ -320,34 +371,6 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 			pitch.SetDuration(duration)
 			playable = pitch
 
-			/*
-				case lexer.CYMBAL:
-					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-					//n, _ := notes.Parse("A6") // open triangle (81)
-					n, _ := notes.Parse("Bb1") // Ride Cymbal 1 (51)
-
-					note := types.NewNote(*n)
-					note.SetDuration(duration)
-					playable = note
-
-				case lexer.SNARE:
-					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-					//n, _ := notes.Parse("A6") // open triangle (81)
-					n, _ := notes.Parse("D1") // acoustic snare (38)
-
-					note := types.NewNote(*n)
-					note.SetDuration(duration)
-					playable = note
-
-				case lexer.OPEN_HI_HAT:
-					//n, _ := notes.Parse("B2")	// acoustic bass drum (35)
-					//n, _ := notes.Parse("A6") // open triangle (81)
-					n, _ := notes.Parse("A#3") // acoustic snare (38)
-
-					note := types.NewNote(*n)
-					note.SetDuration(duration)
-					playable = note
-			*/
 		default:
 			return nil, fmt.Errorf("found %q, expected ;", lit)
 		}
@@ -423,9 +446,10 @@ func (p *Parser) parsePlayable(bar *types.Bar, duration uint16, tick uint32) (ty
 				duration = unit / 32
 			}
 
-			if active.GetTick()+duration > tick {
-				return nil, fmt.Errorf("pitch overlap: %d (tick: %d / %d)", pitch, active.GetTick(), playable.GetTick())
-			}
+			/// XXX - THIS NEEDS TO BE CHECKED WHEN INSERTING A BAR IN THE TRACK AS WE NEED BAR NO TO COMPUTE OVERLAPS
+			//if active.GetTick()+duration > tick {
+			//	return nil, fmt.Errorf("pitch overlap: %d (tick: %d / %d)", pitch, active.GetTick(), playable.GetTick())
+			//}
 		}
 
 	}
@@ -555,12 +579,10 @@ func (p *Parser) parseOn(bar *types.Bar) error {
 	}
 
 	ticksPerBeat := uint32(960)
-	ticksPerBar := uint32(bar.GetSignature().GetBeats()) * ticksPerBeat
 	ticksPerSubdivision := uint32(ticksPerBeat) / uint32(bar.GetSignature().GetDuration())
 
 	deltaTicks := float64(ticksPerSubdivision) * delta
-	tick := (bar.GetOffset() * ticksPerBar) +
-		uint32(beat-1)*uint32(ticksPerBeat) +
+	tick := uint32(beat-1)*uint32(ticksPerBeat) +
 		uint32(deltaTicks)
 
 	tok, lit := p.scanIgnoreWhitespace()

@@ -15,6 +15,8 @@ const (
 	WHITESPACE
 	COMMENT
 
+	REPEAT
+
 	IDENTIFIER
 	NUMBER
 	FLOAT
@@ -248,6 +250,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return BPM, buf.String()
 	case "TIME":
 		return TIME, buf.String()
+	case "REPEAT":
+		return REPEAT, buf.String()
 
 	case "TEXT":
 		return TEXT, buf.String()
