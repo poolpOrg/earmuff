@@ -93,7 +93,7 @@ func main() {
 					barno := begin / uint32(project.GetSignature().GetBeats())
 					for {
 						if len(tracks[te.TrackNo].GetBars()) <= int(barno) {
-							b := types.NewBar(uint32(len(tracks[te.TrackNo].GetBars()) + 1))
+							b := types.NewBar()
 							b.SetBPM(tracks[te.TrackNo].GetBPM())
 							b.SetSignature(tracks[te.TrackNo].GetSignature())
 							tracks[te.TrackNo].AddBar(b)
