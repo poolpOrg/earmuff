@@ -1,0 +1,82 @@
+project "Minor Swing" {
+    bpm 120;
+    time 4 4;
+
+    track "rythm guitar" {
+        instrument "guitar";
+
+        repeat 2 times {
+
+            repeat 2 times bar {
+                on beat 1 play quarter chord Am6;
+                on beat 2 play quarter chord Am6;
+                on beat 3 play quarter chord Am6;
+                on beat 4 play quarter chord Am6;
+            }
+
+            repeat 2 times bar {
+                on beat 1 play quarter chord Dm6;
+                on beat 2 play quarter chord Dm6;
+                on beat 3 play quarter chord Dm6;
+                on beat 4 play quarter chord Dm6;
+            }
+
+            repeat 2 times bar {
+                on beat 1 play quarter chord E7;
+                on beat 2 play quarter chord E7;
+                on beat 3 play quarter chord E7;
+                on beat 4 play quarter chord E7;
+            }
+        
+            repeat 2 times bar {
+                on beat 1 play quarter chord Am6;
+                on beat 2 play quarter chord Am6;
+                on beat 3 play quarter chord Am6;
+                on beat 4 play quarter chord Am6;
+            }
+
+            repeat 2 times bar {
+                on beat 1 play quarter chord Dm6;
+                on beat 2 play quarter chord Dm6;
+                on beat 3 play quarter chord Dm6;
+                on beat 4 play quarter chord Dm6;
+            }
+
+            repeat 2 times bar {
+                on beat 1 play quarter chord Am6;
+                on beat 2 play quarter chord Am6;
+                on beat 3 play quarter chord Am6;
+                on beat 4 play quarter chord Am6;
+            }
+            
+            bar {
+                on beat 1 play quarter chord A#6;
+                on beat 2 play quarter chord A#6;
+                on beat 3 play quarter chord A#6;
+                on beat 4 play quarter chord A#6;
+            }
+
+            bar {
+                on beat 1 play quarter chord E7;
+                on beat 2 play quarter chord E7;
+                on beat 3 play quarter chord E7;
+                on beat 4 play quarter chord E7;
+            }
+
+            bar {
+                on beat 1 play quarter chord Am6;
+                on beat 2 play quarter chord Am6;
+                on beat 3 play quarter chord Am6;
+                on beat 4 play quarter chord Am6;
+            }
+            
+            bar {
+                on beat 1 play quarter chord Cm6;
+                on beat 2 play quarter chord Cm6;
+                on beat 3 play quarter chord E9;
+                on beat 4 play quarter chord E9;
+            }
+
+        }
+    }
+}
