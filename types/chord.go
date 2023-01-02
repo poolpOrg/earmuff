@@ -15,7 +15,7 @@ type Chord struct {
 func NewChord(chord chords.Chord) *Chord {
 	return &Chord{
 		chord:    chord,
-		velocity: 120,
+		velocity: 64,
 	}
 }
 
