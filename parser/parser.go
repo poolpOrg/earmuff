@@ -494,8 +494,6 @@ func (p *Parser) parseInstrument() (string, error) {
 			return "", fmt.Errorf("found %q, unknown instrument", lit)
 		}
 
-		fmt.Println("INSTRUMENT", x)
-
 		return lit, nil
 	}
 }
