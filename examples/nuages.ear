@@ -40,12 +40,4 @@ project "nuages" {
             on beat 4 play quarter chord Bm7b5;
         }
     }
-
-    track "percussions" {
-        instrument "percussive";
-        bar {}
-        bar { on beat 1 play half cymbal; }
-        bar { on beat 1 play half cymbal; }
-        bar { on beat 1 play half cymbal; }
-    }
 }
