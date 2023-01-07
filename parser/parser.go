@@ -597,7 +597,7 @@ func (p *Parser) parseOn(bar *types.Bar) error {
 		integer, fraction := math.Modf(tmp)
 
 		if uint64(integer) == 0 || uint64(integer) > uint64(bar.GetSignature().GetBeats()) {
-			return fmt.Errorf("no such beat: %d", tmp)
+			return fmt.Errorf("no such beat: %f", tmp)
 		}
 		beat = uint8(integer)
 		delta = fraction
