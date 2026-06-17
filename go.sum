@@ -1,4 +1,4 @@
-github.com/poolpOrg/go-harmony v0.0.0-20221229162217-c93b360bcf1a h1:HswmW1wo02GjfQR8R82Ha1Dn7GZrPOjrpHSwjUGio8I=
-github.com/poolpOrg/go-harmony v0.0.0-20221229162217-c93b360bcf1a/go.mod h1:376K29jFPo6cuaqUDU4huefbJ7KwHa19l/TmO+HaGM0=
+github.com/poolpOrg/go-harmony v0.0.0-20260617210800-493b7661abc9 h1:Je/dIuw23FI+ul/B60ae0chHkST/Uw/eT3+2KSK3yGU=
+github.com/poolpOrg/go-harmony v0.0.0-20260617210800-493b7661abc9/go.mod h1:376K29jFPo6cuaqUDU4huefbJ7KwHa19l/TmO+HaGM0=
 gitlab.com/gomidi/midi/v2 v2.0.25 h1:dkzVBqbaFHjyWwP71MrQNX7IeRUIDonddmHbPpO/Ucg=
 gitlab.com/gomidi/midi/v2 v2.0.25/go.mod h1:quTyMKSQ4Klevxu6gY4gy2USbeZra0fV5SalndmPfsY=
