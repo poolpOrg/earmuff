@@ -1,7 +1,7 @@
 {
   "name": "earmuff",
   "displayName": "earmuff",
-  "description": "Syntax highlighting and language server support for the earmuff music DSL (.ear files).",
+  "description": "Syntax highlighting, language server, and build commands for the earmuff music DSL (.ear files).",
   "version": "0.1.0",
   "publisher": "poolpOrg",
   "engines": {
@@ -34,6 +34,38 @@
         "path": "./syntaxes/earmuff.tmLanguage.json"
       }
     ],
+    "commands": [
+      {
+        "command": "earmuff.compileMidi",
+        "title": "earmuff: Compile to MIDI",
+        "category": "earmuff"
+      },
+      {
+        "command": "earmuff.play",
+        "title": "earmuff: Play",
+        "category": "earmuff",
+        "icon": "$(play)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "earmuff.play",
+          "when": "resourceLangId == earmuff",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "earmuff.compileMidi",
+          "when": "resourceLangId == earmuff"
+        },
+        {
+          "command": "earmuff.play",
+          "when": "resourceLangId == earmuff"
+        }
+      ]
+    },
     "configuration": {
       "title": "earmuff",
       "properties": {
@@ -46,6 +78,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the earmuff language server (diagnostics, completion, etc.)."
+        },
+        "earmuff.cli.path": {
+          "type": "string",
+          "default": "earmuff",
+          "description": "Path to the earmuff CLI used by the Compile/Play commands. If a bare name is given, it is resolved from PATH."
         }
       }
     }
@@ -53,14 +90,29 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run compile",
+    "build-server": "bash scripts/build-server.sh",
+    "package": "npm run build-server && npm run compile && vsce package"
   },
   "devDependencies": {
     "typescript": "^5.4",
     "@types/vscode": "^1.75",
-    "@types/node": "^20"
+    "@types/node": "^20",
+    "@vscode/vsce": "^2.24.0"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/poolpOrg/earmuff.git"
+  },
+  "license": "ISC",
+  "keywords": [
+    "earmuff",
+    "music",
+    "midi",
+    "dsl",
+    "language server"
+  ]
 }

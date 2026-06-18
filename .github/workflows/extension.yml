@@ -1,0 +1,50 @@
+# Builds the VS Code extension: cross-compiles the earmuff-lsp server for all
+# bundled platforms, compiles the TypeScript, and packages a .vsix artifact.
+name: VS Code Extension
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["editors/vscode/**", "cmd/earmuff-lsp/**", "lsp/**", ".github/workflows/extension.yml"]
+  pull_request:
+    branches: ["main"]
+    paths: ["editors/vscode/**", "cmd/earmuff-lsp/**", "lsp/**", ".github/workflows/extension.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: editors/vscode
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test the language server
+        working-directory: .
+        run: go test ./lsp/... ./parser/... ./analyzer/...
+
+      - name: Cross-compile the language server
+        run: npm run build-server
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Compile the extension
+        run: npm run compile
+
+      - name: Package the .vsix
+        run: npx vsce package --no-dependencies
+
+      - name: Upload the .vsix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: earmuff-vsix
+          path: editors/vscode/*.vsix

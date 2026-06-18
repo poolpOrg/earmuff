@@ -67,7 +67,8 @@ func (s *Server) readMessage() ([]byte, error) {
 		if line == "" {
 			break // end of headers
 		}
-		if cl, ok := strings.CutPrefix(line, "Content-Length:"); ok {
+		if strings.HasPrefix(line, "Content-Length:") {
+			cl := strings.TrimPrefix(line, "Content-Length:")
 			n, err := strconv.Atoi(strings.TrimSpace(cl))
 			if err == nil {
 				length = n
