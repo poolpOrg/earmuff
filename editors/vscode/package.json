@@ -92,13 +92,16 @@
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile",
     "build-server": "bash scripts/build-server.sh",
-    "package": "npm run build-server && npm run compile && vsce package"
+    "package": "npm run build-server && npm run compile && vsce package",
+    "publish:vsce": "vsce publish --no-dependencies",
+    "publish:ovsx": "ovsx publish --no-dependencies"
   },
   "devDependencies": {
     "typescript": "^5.4",
     "@types/vscode": "^1.75",
     "@types/node": "^20",
-    "@vscode/vsce": "^3.9.2"
+    "@vscode/vsce": "^3.9.2",
+    "ovsx": "^0.9.0"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -114,5 +117,15 @@
     "midi",
     "dsl",
     "language server"
-  ]
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#3a31c9",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/poolpOrg/earmuff#readme",
+  "bugs": {
+    "url": "https://github.com/poolpOrg/earmuff/issues"
+  },
+  "qna": false
 }
