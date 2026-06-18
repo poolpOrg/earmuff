@@ -1,122 +1,50 @@
+// 12-bar blues — earmuff v2.
+// The lead walks a I-IV-V shape; the rhythm guitar comps whole-note 7ths; the
+// bass plays root/third; the drums loop a simple groove. Repetition uses
+// `for _ in 1..N { ... }`.
 project "12 bars blues" {
-    bpm 120;
-    time 4 4;
+    bpm 120; time 4 4;
 
-    track "lead piano" {
-        instrument "piano";
+    track "lead piano" instrument "piano" {
+        pattern I  { bar quarter { C E G _ } }
+        pattern IV { bar quarter { F A C _ } }
+        pattern V  { bar quarter { G B D _ } }
 
-        bar {
-            on beat 1 play quarter note C;
-            on beat 2 play quarter note E;
-            on beat 3 play quarter note G;
-        }
-        bar {
-            on beat 1 play quarter note F;
-            on beat 2 play quarter note A;
-            on beat 3 play quarter note C;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note C;
-            on beat 2 play quarter note E;
-            on beat 3 play quarter note G;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note F;
-            on beat 2 play quarter note A;
-            on beat 3 play quarter note C;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note C;
-            on beat 2 play quarter note E;
-            on beat 3 play quarter note G;
-        }
-        bar {
-            on beat 1 play quarter note G;
-            on beat 2 play quarter note B;
-            on beat 3 play quarter note D;
-        }
-        bar {
-            on beat 1 play quarter note F;
-            on beat 2 play quarter note A;
-            on beat 3 play quarter note C;
-        }
-        bar {
-            on beat 1 play quarter note C;
-            on beat 2 play quarter note E;
-            on beat 3 play quarter note G;
-        }
-        bar {
-            on beat 1 play quarter note G;
-            on beat 2 play quarter note B;
-            on beat 3 play quarter note D;
-        }
+        I() IV()
+        for _ in 1..2 { I() }
+        for _ in 1..2 { IV() }
+        for _ in 1..2 { I() }
+        V() IV() I() V()
     }
 
-    track "rythm guitar" {
-        instrument "guitar";
-
-        bar { on beat 1 play whole chord C7; }
-        bar { on beat 1 play whole chord F7; }
-        repeat 2 times bar { on beat 1 play whole chord C7; }
-        repeat 2 times bar { on beat 1 play whole chord F7; }
-        repeat 2 times bar { on beat 1 play whole chord C7; }
-        bar { on beat 1 play whole chord G7; }
-        bar { on beat 1 play whole chord F7; }
-        bar { on beat 1 play whole chord C7; }
-        bar { on beat 1 play whole chord G7; }
+    track "rythm guitar" instrument "guitar" {
+        bar whole { C7 } bar whole { F7 }
+        for _ in 1..2 { bar whole { C7 } }
+        for _ in 1..2 { bar whole { F7 } }
+        for _ in 1..2 { bar whole { C7 } }
+        bar whole { G7 } bar whole { F7 } bar whole { C7 } bar whole { G7 }
     }
 
-    track "bass" {
-        instrument "bass";
+    track "bass" instrument "bass" {
+        // a quarter on beat 1 and beat 3 (root then third)
+        pattern walk(root, third) { bar quarter { root _ third _ } }
 
-        bar {
-            on beat 1 play quarter note C2;
-            on beat 3 play quarter note E2;
-        }
-        bar {
-            on beat 1 play quarter note F2;
-            on beat 3 play quarter note A2;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note C2;
-            on beat 3 play quarter note E2;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note F2;
-            on beat 3 play quarter note G2;
-        }
-        repeat 2 times bar {
-            on beat 1 play quarter note C2;
-            on beat 3 play quarter note E2;
-        }
-        bar {
-            on beat 1 play quarter note G2;
-            on beat 3 play quarter note B2;
-        }
-        bar {
-            on beat 1 play quarter note F2;
-            on beat 3 play quarter note G2;
-        }
-        bar {
-            on beat 1 play quarter note C2;
-            on beat 3 play quarter note E2;
-        }
-        bar {
-            on beat 1 play quarter note G2;
-            on beat 3 play quarter note B2;
-        }
+        walk(C2, E2) walk(F2, A2)
+        for _ in 1..2 { walk(C2, E2) }
+        for _ in 1..2 { walk(F2, G2) }
+        for _ in 1..2 { walk(C2, E2) }
+        walk(G2, B2) walk(F2, G2) walk(C2, E2) walk(G2, B2)
     }
 
-    track "drums" {
-        instrument "steel drums";
-
-        repeat 12 times bar {
-            on beat 1 play quarter percussion "open hi-hat";
-            on beat 1 play quarter percussion "acoustic snare";
-            on beat 1 play quarter percussion "crash cymbal 1";
-            on beat 2 play quarter percussion "closed hi-hat";
-            on beat 3 play quarter percussion "closed hi-hat";
-            on beat 4 play quarter percussion "closed hi-hat";
+    track "drums" instrument "synth drum" channel 10 {
+        kit {
+            hh = "closed hi-hat";
+            oh = "open hi-hat";
+            sn = "acoustic snare";
+            cy = "crash cymbal 1";
         }
+        // beat 1: open hat + snare + crash together; beats 2-4: closed hat
+        pattern groove { bar quarter { (oh, sn, cy) hh hh hh } }
+        for _ in 1..12 { groove() }
     }
 }

@@ -1,82 +1,25 @@
+// Minor Swing — earmuff v2.
+// One rhythm-guitar part comping four chords to the bar. The whole 16-bar form
+// repeats twice, so the body lives in `for _ in 1..2`.
 project "Minor Swing" {
-    bpm 120;
-    time 4 4;
+    bpm 120; time 4 4;
 
-    track "rythm guitar" {
-        instrument "guitar";
+    track "rythm guitar" instrument "guitar" {
+        // four down-strokes of one chord per bar
+        pattern comp(ch) { bar quarter { ch ch ch ch } }
 
-        repeat 2 times {
-
-            repeat 2 times bar {
-                on beat 1 play quarter chord Am6;
-                on beat 2 play quarter chord Am6;
-                on beat 3 play quarter chord Am6;
-                on beat 4 play quarter chord Am6;
-            }
-
-            repeat 2 times bar {
-                on beat 1 play quarter chord Dm6;
-                on beat 2 play quarter chord Dm6;
-                on beat 3 play quarter chord Dm6;
-                on beat 4 play quarter chord Dm6;
-            }
-
-            repeat 2 times bar {
-                on beat 1 play quarter chord E7;
-                on beat 2 play quarter chord E7;
-                on beat 3 play quarter chord E7;
-                on beat 4 play quarter chord E7;
-            }
-        
-            repeat 2 times bar {
-                on beat 1 play quarter chord Am6;
-                on beat 2 play quarter chord Am6;
-                on beat 3 play quarter chord Am6;
-                on beat 4 play quarter chord Am6;
-            }
-
-            repeat 2 times bar {
-                on beat 1 play quarter chord Dm6;
-                on beat 2 play quarter chord Dm6;
-                on beat 3 play quarter chord Dm6;
-                on beat 4 play quarter chord Dm6;
-            }
-
-            repeat 2 times bar {
-                on beat 1 play quarter chord Am6;
-                on beat 2 play quarter chord Am6;
-                on beat 3 play quarter chord Am6;
-                on beat 4 play quarter chord Am6;
-            }
-            
-            bar {
-                on beat 1 play quarter chord A#6;
-                on beat 2 play quarter chord A#6;
-                on beat 3 play quarter chord A#6;
-                on beat 4 play quarter chord A#6;
-            }
-
-            bar {
-                on beat 1 play quarter chord E7;
-                on beat 2 play quarter chord E7;
-                on beat 3 play quarter chord E7;
-                on beat 4 play quarter chord E7;
-            }
-
-            bar {
-                on beat 1 play quarter chord Am6;
-                on beat 2 play quarter chord Am6;
-                on beat 3 play quarter chord Am6;
-                on beat 4 play quarter chord Am6;
-            }
-            
-            bar {
-                on beat 1 play quarter chord Cm6;
-                on beat 2 play quarter chord Cm6;
-                on beat 3 play quarter chord E9;
-                on beat 4 play quarter chord E9;
-            }
-
+        for _ in 1..2 {
+            for _ in 1..2 { comp(Am6) }
+            for _ in 1..2 { comp(Dm6) }
+            for _ in 1..2 { comp(E7)  }
+            for _ in 1..2 { comp(Am6) }
+            for _ in 1..2 { comp(Dm6) }
+            for _ in 1..2 { comp(Am6) }
+            comp(A#6)
+            comp(E7)
+            comp(Am6)
+            // last bar: two beats of Cm6, two of E9
+            bar quarter { Cm6 Cm6 E9 E9 }
         }
     }
 }
