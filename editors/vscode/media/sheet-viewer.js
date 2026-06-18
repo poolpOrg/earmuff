@@ -30,14 +30,26 @@
     if (msg.type === "svg") {
       clearError();
       setStatus("");
-      // lilypond SVG carries no scripts; inject it directly. Drop any width/
-      // height in mm so it scales to the panel width via the CSS rule.
-      sheetEl.innerHTML = msg.svg;
-      const svg = sheetEl.querySelector("svg");
-      if (svg) {
-        svg.removeAttribute("width");
-        svg.removeAttribute("height");
+      // Parse as SVG (not via innerHTML — that builds HTML-namespaced nodes
+      // that don't render). lilypond SVG carries no scripts.
+      const parsed = new DOMParser().parseFromString(
+        msg.svg,
+        "image/svg+xml"
+      );
+      const svg = parsed.documentElement;
+      if (!svg || svg.nodeName.toLowerCase() !== "svg") {
+        showError("Rendered output was not valid SVG.");
+        return;
       }
+      // lilypond sizes the page in mm; let the viewBox drive the aspect ratio
+      // and scale to the panel width. Setting only CSS height:auto with no
+      // width can collapse the SVG to zero height, so set width explicitly.
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
+      svg.style.height = "auto";
+      sheetEl.replaceChildren(document.importNode(svg, true));
     } else if (msg.type === "error") {
       setStatus("");
       sheetEl.replaceChildren();
