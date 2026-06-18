@@ -56,16 +56,11 @@
     setStatus("Rendering…");
     try {
       const data = base64ToBytes(b64);
-      let doc;
-      try {
-        doc = await pdfjsLib.getDocument({ data }).promise;
-      } catch (workerErr) {
-        // Most commonly a worker-spawn failure under the webview CSP. Retry on
-        // the main thread.
-        const data2 = base64ToBytes(b64);
-        doc = await pdfjsLib.getDocument({ data: data2, disableWorker: true })
-          .promise;
-      }
+      // Run worker-less: our scores are tiny, and spawning the PDF.js worker
+      // under the webview CSP is the dominant first-open cost (it stalls for
+      // seconds before falling back). Main-thread parsing is plenty fast here.
+      const doc = await pdfjsLib.getDocument({ data, disableWorker: true })
+        .promise;
       if (token !== renderToken) {
         return;
       }
@@ -121,18 +116,14 @@
 
   // Load PDF.js as an ES module. Surface any failure visibly (the webview has
   // no console the user can easily see) and report it back to the extension.
-  setStatus("Loading PDF.js…");
+  // Warm PDF.js immediately, before the first PDF arrives, so its module
+  // compile overlaps the (parallel) lilypond render instead of adding to it.
+  // We render worker-less, so the worker URL is unused.
+  void workerUrl;
+  setStatus("Loading…");
   import(pdfjsUrl)
     .then((mod) => {
       pdfjsLib = mod;
-      // Run the worker from the bundled URL. If the worker can't start under
-      // the webview CSP, disableWorker falls PDF.js back to the main thread so
-      // rendering still succeeds (slower, but reliable).
-      try {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      } catch (e) {
-        /* ignore; covered by the worker-port fallback below */
-      }
       setStatus("");
       if (pending !== null) {
         const b64 = pending;
