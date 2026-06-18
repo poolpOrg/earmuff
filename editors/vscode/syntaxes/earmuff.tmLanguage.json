@@ -1,0 +1,126 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "earmuff",
+  "scopeName": "source.earmuff",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#chords" },
+    { "include": "#notes" },
+    { "include": "#durations" },
+    { "include": "#numbers" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.earmuff",
+          "begin": "//",
+          "end": "$"
+        },
+        {
+          "name": "comment.block.earmuff",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.earmuff",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.earmuff",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.earmuff",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.earmuff",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.earmuff",
+          "match": "\\b(for|in|if|else)\\b"
+        },
+        {
+          "name": "keyword.other.earmuff",
+          "match": "\\b(project|track|bar|pattern|kit|instrument|channel|port|bpm|time|copyright|text|lyric|marker|cue|on|beat|let|cc|bend|raw|range|pressure|program|sysex|then|over)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.earmuff",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.language.dynamic.earmuff",
+          "match": "\\b(ppp|pp|p|mp|mf|f|ff|fff)\\b"
+        }
+      ]
+    },
+    "chords": {
+      "patterns": [
+        {
+          "name": "constant.other.note.earmuff",
+          "match": "\\b[A-G](#|b)*\\d?(maj|min|dim|aug|sus|add|m|M)?\\d*(b\\d+|#\\d+)*(/[A-G](#|b)*\\d?)?\\b"
+        }
+      ]
+    },
+    "notes": {
+      "patterns": [
+        {
+          "name": "constant.other.note.earmuff",
+          "match": "\\b[A-G](#|b)*\\d?(/[A-G](#|b)*\\d?)?\\b"
+        }
+      ]
+    },
+    "durations": {
+      "patterns": [
+        {
+          "name": "support.type.duration.earmuff",
+          "match": "\\b(whole|half|quarter|eighth|sixteenth|thirtysecond|sixtyfourth)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.earmuff",
+          "match": "\\b\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.earmuff",
+          "match": "\\b\\d+\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.earmuff",
+          "match": "(==|!=|<=|>=|&&|\\|\\||\\.\\.|<|>|=|\\+|-|\\*|/|!|:|\\||@|~)"
+        }
+      ]
+    }
+  }
+}
