@@ -1,0 +1,66 @@
+{
+  "name": "earmuff",
+  "displayName": "earmuff",
+  "description": "Syntax highlighting and language server support for the earmuff music DSL (.ear files).",
+  "version": "0.1.0",
+  "publisher": "poolpOrg",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:earmuff"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "earmuff",
+        "aliases": [
+          "earmuff"
+        ],
+        "extensions": [
+          ".ear"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "scopeName": "source.earmuff",
+        "language": "earmuff",
+        "path": "./syntaxes/earmuff.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "earmuff",
+      "properties": {
+        "earmuff.languageServer.path": {
+          "type": "string",
+          "default": "earmuff-lsp",
+          "description": "Path to the earmuff-lsp binary. If a bare name is given, it is resolved from PATH."
+        },
+        "earmuff.languageServer.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the earmuff language server (diagnostics, completion, etc.)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "typescript": "^5.4",
+    "@types/vscode": "^1.75",
+    "@types/node": "^20"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}
