@@ -11,9 +11,12 @@ one-click compile/play.
 - **Language server** (`earmuff-lsp`): live diagnostics, completion, hover,
   go-to-definition, and a document-symbol outline. Diagnostics come from
   earmuff's own parser and analyzer, so they match the compiler exactly.
-- **Commands** (Command Palette, or the ▶ button on a `.ear` editor):
+- **Commands** (Command Palette, or the buttons on a `.ear` editor's title bar):
   - **earmuff: Compile to MIDI** — writes `<file>.mid` next to the source.
   - **earmuff: Play** — streams the piece to a MIDI port (e.g. FluidSynth).
+  - **earmuff: Show Sheet Preview** — opens a live sheet-music PDF preview
+    beside the editor. It re-renders automatically (debounced) as you type,
+    using the unsaved buffer, so you see the engraved score update as you write.
 
 ## Requirements
 
@@ -33,6 +36,17 @@ On an unbundled platform, also install the server:
 go install github.com/poolpOrg/earmuff/cmd/earmuff-lsp@latest
 ```
 
+The **Show Sheet Preview** command engraves the score with
+[LilyPond](https://lilypond.org/), which you must install separately:
+
+```sh
+brew install lilypond        # macOS; use your package manager elsewhere
+```
+
+LilyPond must be on your `PATH`, or point `earmuff.lilypond.path` at the
+binary. If it is missing, the preview panel shows the renderer's error instead
+of the sheet music.
+
 ## Settings
 
 | Setting | Type | Default | Description |
@@ -41,6 +55,7 @@ go install github.com/poolpOrg/earmuff/cmd/earmuff-lsp@latest
 | `earmuff.languageServer.path` | string | `earmuff-lsp` | Override the server binary. Takes precedence over the bundled one; a bare name resolves from `PATH`. |
 | `earmuff.cli.path` | string | `earmuff` | Path to the `earmuff` CLI used by the compile/play commands. |
 | `earmuff.player` | string | `""` | Player command for **Play**, e.g. `timidity {}` or `fluidsynth -a coreaudio /path/to.sf2 {}` (`{}` = the MIDI file). Empty = auto-detect. |
+| `earmuff.lilypond.path` | string | `lilypond` | Path to the LilyPond binary used by **Show Sheet Preview**. A bare name resolves from `PATH`; a non-default value is passed to the CLI as `-lilypond`. |
 
 The server is resolved in this order: an explicit `languageServer.path` →
 the bundled binary for your platform → `earmuff-lsp` on `PATH`.

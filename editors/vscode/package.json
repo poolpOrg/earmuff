@@ -14,7 +14,8 @@
   "activationEvents": [
     "onLanguage:earmuff",
     "onCommand:earmuff.compileMidi",
-    "onCommand:earmuff.play"
+    "onCommand:earmuff.play",
+    "onCommand:earmuff.showSheetPreview"
   ],
   "contributes": {
     "languages": [
@@ -47,12 +48,25 @@
         "title": "earmuff: Play",
         "category": "earmuff",
         "icon": "$(play)"
+      },
+      {
+        "command": "earmuff.showSheetPreview",
+        "title": "earmuff: Show Sheet Preview",
+        "category": "earmuff",
+        "icon": "$(preview)"
       }
     ],
     "menus": {
       "editor/title/run": [
         {
           "command": "earmuff.play",
+          "when": "resourceLangId == earmuff",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "earmuff.showSheetPreview",
           "when": "resourceLangId == earmuff",
           "group": "navigation"
         }
@@ -64,6 +78,10 @@
         },
         {
           "command": "earmuff.play",
+          "when": "resourceLangId == earmuff"
+        },
+        {
+          "command": "earmuff.showSheetPreview",
           "when": "resourceLangId == earmuff"
         }
       ]
@@ -90,14 +108,20 @@
           "type": "string",
           "default": "",
           "description": "Player command for the Play command, e.g. \"timidity {}\" or \"fluidsynth -a coreaudio /path/to.sf2 {}\" ({} = MIDI file). Empty = auto-detect (platform synth, then fluidsynth)."
+        },
+        "earmuff.lilypond.path": {
+          "type": "string",
+          "default": "lilypond",
+          "description": "Path to the lilypond binary used to render the sheet-music preview. If a bare name is given, it is resolved from PATH; a non-default value is passed to the CLI as -lilypond."
         }
       }
     }
   },
   "scripts": {
-    "compile": "npm run esbuild",
+    "copy-pdfjs": "node scripts/copy-pdfjs.js",
+    "compile": "npm run copy-pdfjs && npm run esbuild",
     "watch": "npm run esbuild -- --watch",
-    "vscode:prepublish": "npm run esbuild -- --minify",
+    "vscode:prepublish": "npm run copy-pdfjs && npm run esbuild -- --minify",
     "build-server": "bash scripts/build-server.sh",
     "package": "npm run build-server && npm run vscode:prepublish && vsce package --no-dependencies",
     "publish:vsce": "vsce publish --no-dependencies",
@@ -105,14 +129,15 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node18"
   },
   "devDependencies": {
-    "typescript": "^5.4",
-    "@types/vscode": "^1.75",
     "@types/node": "^20",
+    "@types/vscode": "^1.75",
     "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.21.0",
     "ovsx": "^0.9.0",
-    "esbuild": "^0.21.0"
+    "typescript": "^5.4"
   },
   "dependencies": {
+    "pdfjs-dist": "^4.10.38",
     "vscode-languageclient": "^9.0.1"
   },
   "repository": {

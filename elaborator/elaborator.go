@@ -23,6 +23,7 @@ package elaborator
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/poolpOrg/earmuff/ast"
 	lmidi "github.com/poolpOrg/earmuff/midi"
@@ -753,11 +754,8 @@ func (e *elab) resolveNoteRef(n *ast.NoteRef, sc *scope) ([]uint8, bool) {
 		if key, err := lmidi.PercussionKeyMap(val); err == nil {
 			return []uint8{key}, true
 		}
-		if note, err := notes.Parse(val); err == nil {
-			return []uint8{note.MIDI()}, true
-		}
-		if ch, err := chords.Parse(val); err == nil {
-			return chordKeys(ch), true
+		if keys, ok := resolvePitch(val); ok {
+			return keys, true
 		}
 		e.errorf(n.Position, "kit alias %q -> %q is not a known percussion/note/chord", n.Text, val)
 		return nil, false
@@ -775,14 +773,83 @@ func (e *elab) resolveNoteRef(n *ast.NoteRef, sc *scope) ([]uint8, bool) {
 	if key, err := lmidi.PercussionKeyMap(n.Text); err == nil {
 		return []uint8{key}, true
 	}
-	if note, err := notes.Parse(n.Text); err == nil {
-		return []uint8{note.MIDI()}, true
-	}
-	if ch, err := chords.Parse(n.Text); err == nil {
-		return chordKeys(ch), true
+	if keys, ok := resolvePitch(n.Text); ok {
+		return keys, true
 	}
 	e.errorf(n.Position, "cannot resolve %q to a note, chord, or percussion", n.Text)
 	return nil, false
+}
+
+// resolvePitch turns a text token into MIDI keys, resolving the note-vs-chord
+// ambiguity. Tokens like "C7" are valid as both a note (C in octave 7) and a
+// chord (C dominant 7); the chord reading wins, matching musical intent. A
+// "plain note" — a letter, accidentals, and an optional low octave digit (0-4),
+// which is never a chord name — stays a note. A trailing "^" forces the note
+// reading as an escape hatch for high-octave pitches (e.g. "C7^").
+func resolvePitch(text string) ([]uint8, bool) {
+	// Escape hatch: trailing '^' forces the note interpretation.
+	if strings.HasSuffix(text, "^") {
+		forced := strings.TrimSuffix(text, "^")
+		if note, err := notes.Parse(forced); err == nil {
+			return []uint8{note.MIDI()}, true
+		}
+		return nil, false
+	}
+
+	noteOK := false
+	var noteKey uint8
+	if note, err := notes.Parse(text); err == nil {
+		noteOK = true
+		noteKey = note.MIDI()
+	}
+	chordOK := false
+	var chordVal *chords.Chord
+	if ch, err := chords.Parse(text); err == nil {
+		chordOK = true
+		chordVal = ch
+	}
+
+	switch {
+	case noteOK && chordOK:
+		// Ambiguous (e.g. C, C5, C6, C7). Prefer the note only when it is a
+		// "plain pitch": a bare letter+accidentals, or with a low octave digit
+		// (0-4) that is never also a chord quality. Otherwise the chord wins.
+		if isPlainNote(text) {
+			return []uint8{noteKey}, true
+		}
+		return chordKeys(chordVal), true
+	case chordOK:
+		return chordKeys(chordVal), true
+	case noteOK:
+		return []uint8{noteKey}, true
+	}
+	return nil, false
+}
+
+// isPlainNote reports whether text is unambiguously a pitch: a note letter,
+// optional accidentals (# or b), and at most a single octave digit 0-4. The
+// bare-number chord qualities (5, 6, 7) and multi-digit forms (9, 11, 13) are
+// excluded, so "C"/"Eb"/"C4" are notes but "C7"/"C13" fall through to a chord.
+func isPlainNote(text string) bool {
+	if text == "" {
+		return false
+	}
+	i := 0
+	if text[0] < 'A' || text[0] > 'G' {
+		return false
+	}
+	i++
+	for i < len(text) && (text[i] == '#' || text[i] == 'b') {
+		i++
+	}
+	switch len(text) - i {
+	case 0:
+		return true // bare letter, e.g. C, Eb
+	case 1:
+		return text[i] >= '0' && text[i] <= '4' // low octave, never a chord
+	default:
+		return false
+	}
 }
 
 func chordKeys(c *chords.Chord) []uint8 {
