@@ -118,10 +118,9 @@
     }
   },
   "scripts": {
-    "copy-pdfjs": "node scripts/copy-pdfjs.js",
-    "compile": "npm run copy-pdfjs && npm run esbuild",
+    "compile": "npm run esbuild",
     "watch": "npm run esbuild -- --watch",
-    "vscode:prepublish": "npm run copy-pdfjs && npm run esbuild -- --minify",
+    "vscode:prepublish": "npm run esbuild -- --minify",
     "build-server": "bash scripts/build-server.sh",
     "package": "npm run build-server && npm run vscode:prepublish && vsce package --no-dependencies",
     "publish:vsce": "vsce publish --no-dependencies",
@@ -137,7 +136,6 @@
     "typescript": "^5.4"
   },
   "dependencies": {
-    "pdfjs-dist": "^4.10.38",
     "vscode-languageclient": "^9.0.1"
   },
   "repository": {

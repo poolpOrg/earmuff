@@ -47,6 +47,7 @@ func main() {
 		optPlayer   string
 		optLy       string
 		optPDF      string
+		optSVG      string
 		optLilypond string
 	)
 	flag.StringVar(&optOut, "out", "", "output file (.mid)")
@@ -55,7 +56,8 @@ func main() {
 	flag.StringVar(&optPlayer, "player", "", "player command template, e.g. \"timidity {}\" ({} = MIDI file)")
 	flag.StringVar(&optLy, "ly", "", "write LilyPond source to this file (sheet music)")
 	flag.StringVar(&optPDF, "pdf", "", "render a sheet-music PDF to this file (requires lilypond)")
-	flag.StringVar(&optLilypond, "lilypond", "lilypond", "path to the lilypond binary (for -pdf)")
+	flag.StringVar(&optSVG, "svg", "", "render sheet-music SVG to this file (requires lilypond)")
+	flag.StringVar(&optLilypond, "lilypond", "lilypond", "path to the lilypond binary (for -pdf/-svg)")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -111,7 +113,7 @@ func main() {
 
 	// Sheet music: -ly writes LilyPond source; -pdf renders a PDF via lilypond.
 	// Either short-circuits the MIDI/playback path.
-	if optLy != "" || optPDF != "" {
+	if optLy != "" || optPDF != "" || optSVG != "" {
 		ly := lilypond.Render(song)
 		if optLy != "" {
 			if err := os.WriteFile(optLy, []byte(ly), 0o644); err != nil {
@@ -120,7 +122,13 @@ func main() {
 			}
 		}
 		if optPDF != "" {
-			if err := renderPDF(ly, optPDF, optLilypond); err != nil {
+			if err := renderScore(ly, optPDF, "pdf", optLilypond); err != nil {
+				fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
+				os.Exit(1)
+			}
+		}
+		if optSVG != "" {
+			if err := renderScore(ly, optSVG, "svg", optLilypond); err != nil {
 				fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
 				os.Exit(1)
 			}
@@ -171,9 +179,10 @@ func analyze(prog *ast.Program) bool {
 	return hasErrors
 }
 
-// renderPDF writes LilyPond source to a temp dir, runs lilypond to engrave a
-// PDF there, and moves it to outPath. lilypondBin is the engraver to invoke.
-func renderPDF(ly, outPath, lilypondBin string) error {
+// renderScore writes LilyPond source to a temp dir, runs lilypond to engrave it
+// in the given format ("pdf" or "svg"), and writes the result to outPath.
+// lilypondBin is the engraver to invoke.
+func renderScore(ly, outPath, format, lilypondBin string) error {
 	bin, err := exec.LookPath(lilypondBin)
 	if err != nil {
 		return fmt.Errorf("lilypond not found (%q): install it or pass -lilypond", lilypondBin)
@@ -188,10 +197,17 @@ func renderPDF(ly, outPath, lilypondBin string) error {
 	if err := os.WriteFile(lyPath, []byte(ly), 0o644); err != nil {
 		return err
 	}
-	// lilypond writes <basename>.pdf into the output dir. Capture its (noisy)
-	// progress output and only surface it if the render fails — on success the
-	// command stays quiet, like -out.
-	cmd := exec.Command(bin, "-s", "--pdf", "-o", filepath.Join(dir, "score"), lyPath)
+
+	// Select the lilypond backend. Capture its (noisy) progress output and only
+	// surface it if the render fails — on success the command stays quiet.
+	var args []string
+	switch format {
+	case "svg":
+		args = []string{"-s", "-dbackend=svg", "-o", filepath.Join(dir, "score"), lyPath}
+	default: // pdf
+		args = []string{"-s", "--pdf", "-o", filepath.Join(dir, "score"), lyPath}
+	}
+	cmd := exec.Command(bin, args...)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -200,9 +216,17 @@ func renderPDF(ly, outPath, lilypondBin string) error {
 		}
 		return fmt.Errorf("lilypond failed: %w", err)
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "score.pdf"))
+
+	// lilypond writes score.<ext> for a single page, or score-1.<ext> etc. for
+	// multiple. Take the single-page file when present, else the first page.
+	ext := format
+	out := filepath.Join(dir, "score."+ext)
+	if _, statErr := os.Stat(out); statErr != nil {
+		out = filepath.Join(dir, "score-1."+ext)
+	}
+	data, err := os.ReadFile(out)
 	if err != nil {
-		return fmt.Errorf("lilypond produced no PDF: %w", err)
+		return fmt.Errorf("lilypond produced no %s output: %w", strings.ToUpper(format), err)
 	}
 	return os.WriteFile(outPath, data, 0o644)
 }

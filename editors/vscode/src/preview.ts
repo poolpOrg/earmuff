@@ -5,9 +5,11 @@ import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
-// Live sheet-music PDF preview. Renders the active .ear buffer to a PDF via the
-// earmuff CLI (`earmuff -pdf OUT.pdf SOURCE.ear`) and displays it in a webview
-// beside the editor, re-rendering (debounced) as the user types.
+// Live sheet-music preview. Renders the active .ear buffer to SVG via the
+// earmuff CLI (`earmuff -svg OUT.svg SOURCE.ear`) and displays it inline in a
+// webview beside the editor, re-rendering (debounced) as the user types. SVG
+// (rather than PDF) keeps the webview lightweight — no PDF.js, so first paint
+// is fast.
 
 const DEBOUNCE_MS = 600;
 
@@ -17,7 +19,7 @@ interface PreviewState {
   docPath: string;
   // Temp files we own and must clean up on dispose.
   tempEar: string;
-  tempPdf: string;
+  tempSvg: string;
   // Pending debounce timer, if any.
   timer: NodeJS.Timeout | undefined;
   disposables: vscode.Disposable[];
@@ -44,15 +46,15 @@ function lilypondArgs(): string[] {
   return [];
 }
 
-// renderPdf runs the earmuff CLI to render src -> outPdf. Resolves with the
+// renderSvg runs the earmuff CLI to render src -> outSvg. Resolves with the
 // exit code and any captured stderr; never rejects.
-function renderPdf(
+function renderSvg(
   src: string,
-  outPdf: string,
+  outSvg: string,
   cwd: string
 ): Promise<{ code: number; stderr: string }> {
   const cli = cliPath();
-  const args = [...lilypondArgs(), "-pdf", outPdf, src];
+  const args = [...lilypondArgs(), "-svg", outSvg, src];
   return new Promise((resolve) => {
     let stderr = "";
     const proc = cp.spawn(cli, args, { cwd });
@@ -93,28 +95,17 @@ function webviewHtml(
   webview: vscode.Webview,
   context: vscode.ExtensionContext
 ): string {
-  const mediaRoot = vscode.Uri.joinPath(context.extensionUri, "media", "pdfjs");
   const viewerUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(mediaRoot, "viewer.js")
-  );
-  const pdfjsUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(mediaRoot, "pdf.min.mjs")
-  );
-  const workerUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(mediaRoot, "pdf.worker.min.mjs")
+    vscode.Uri.joinPath(context.extensionUri, "media", "sheet-viewer.js")
   );
   const n = nonce();
   const csp = [
     `default-src 'none'`,
-    `img-src ${webview.cspSource} data: blob:`,
+    // Injected SVG markup (no scripts) needs inline styles and data images.
+    `img-src ${webview.cspSource} data:`,
     `style-src ${webview.cspSource} 'unsafe-inline'`,
-    // PDF.js and our viewer load as ES modules; the worker is a same-origin
-    // script. nonce gates the entry <script>; the module graph it pulls in is
-    // covered by script-src ${webview.cspSource}.
-    `script-src ${webview.cspSource} 'nonce-${n}'`,
-    `worker-src ${webview.cspSource} blob:`,
-    `connect-src ${webview.cspSource} blob: data:`,
-    `font-src ${webview.cspSource}`,
+    `font-src ${webview.cspSource} data:`,
+    `script-src 'nonce-${n}'`,
   ].join("; ");
 
   return `<!DOCTYPE html>
@@ -150,30 +141,25 @@ function webviewHtml(
     font-size: 12px;
     border-radius: 4px;
   }
-  #pages {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
+  #sheet {
     padding: 12px;
+    display: flex;
+    justify-content: center;
   }
-  canvas.page {
+  /* the engraved page renders on white, like paper */
+  #sheet svg {
     background: #fff;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
     max-width: 100%;
+    height: auto;
   }
 </style>
 </head>
 <body>
   <div id="status"></div>
   <pre id="error"></pre>
-  <div id="pages"></div>
-  <script
-    type="module"
-    nonce="${n}"
-    src="${viewerUri}"
-    data-pdfjs-url="${pdfjsUri}"
-    data-worker-url="${workerUri}"></script>
+  <div id="sheet"></div>
+  <script nonce="${n}" src="${viewerUri}"></script>
 </body>
 </html>`;
 }
@@ -193,7 +179,7 @@ async function renderInto(
     return;
   }
   const cwd = path.dirname(doc.uri.fsPath) || os.tmpdir();
-  const { code, stderr } = await renderPdf(st.tempEar, st.tempPdf, cwd);
+  const { code, stderr } = await renderSvg(st.tempEar, st.tempSvg, cwd);
   // The panel may have been disposed while the CLI ran.
   if (state !== st) {
     return;
@@ -207,20 +193,17 @@ async function renderInto(
     });
     return;
   }
-  let bytes: Buffer;
+  let svg: string;
   try {
-    bytes = fs.readFileSync(st.tempPdf);
+    svg = fs.readFileSync(st.tempSvg, "utf8");
   } catch (err) {
     st.panel.webview.postMessage({
       type: "error",
-      message: `Rendered PDF could not be read: ${String(err)}`,
+      message: `Rendered SVG could not be read: ${String(err)}`,
     });
     return;
   }
-  st.panel.webview.postMessage({
-    type: "pdf",
-    data: bytes.toString("base64"),
-  });
+  st.panel.webview.postMessage({ type: "svg", svg });
 }
 
 function scheduleRender(doc: vscode.TextDocument, st: PreviewState): void {
@@ -284,7 +267,7 @@ export function showSheetPreview(context: vscode.ExtensionContext): void {
     panel,
     docPath: doc.uri.fsPath,
     tempEar: `${base}.ear`,
-    tempPdf: `${base}.pdf`,
+    tempSvg: `${base}.svg`,
     timer: undefined,
     disposables: [],
   };
@@ -322,7 +305,7 @@ export function showSheetPreview(context: vscode.ExtensionContext): void {
       d.dispose();
     }
     st.disposables = [];
-    for (const f of [st.tempEar, st.tempPdf]) {
+    for (const f of [st.tempEar, st.tempSvg]) {
       try {
         fs.rmSync(f, { force: true });
       } catch {

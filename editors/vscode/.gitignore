@@ -2,5 +2,3 @@ node_modules/
 out/
 *.vsix
 server/
-media/pdfjs/pdf.min.mjs
-media/pdfjs/pdf.worker.min.mjs
