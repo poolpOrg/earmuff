@@ -12,7 +12,9 @@
   ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "onLanguage:earmuff"
+    "onLanguage:earmuff",
+    "onCommand:earmuff.compileMidi",
+    "onCommand:earmuff.play"
   ],
   "contributes": {
     "languages": [
