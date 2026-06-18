@@ -121,8 +121,14 @@ async function play(): Promise<void> {
   if (!file) {
     return;
   }
-  // No -quiet: the CLI streams to a MIDI port (e.g. FluidSynth).
-  const code = await run([file], path.dirname(file));
+  // Pass the configured player command through as -player, if any. No -quiet:
+  // the CLI plays through an available synth.
+  const player = vscode.workspace
+    .getConfiguration("earmuff")
+    .get<string>("player", "")
+    .trim();
+  const args = player ? ["-player", player, file] : [file];
+  const code = await run(args, path.dirname(file));
   if (code > 0) {
     vscode.window.showErrorMessage("earmuff: playback failed (see the earmuff output).");
   }
