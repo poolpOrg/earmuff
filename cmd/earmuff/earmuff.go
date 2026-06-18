@@ -11,23 +11,23 @@
 //	-out file.mid   write the elaborated SMF to file.mid
 //	-quiet          suppress the summary and skip playback
 //	-verbose        dump the elaborated event stream
+//	-player <tmpl>  player command template ("{}" = MIDI file)
 //
-// When -out is unset and not -quiet, earmuff attempts to play the result with
-// fluidsynth from a temporary file (best-effort; ignored if fluidsynth is
-// absent).
+// When -out is unset and not -quiet, earmuff plays the result through an
+// available synth (see the player package): a -player/EARMUFF_PLAYER override,
+// the platform-native player, or fluidsynth with a SoundFont.
 package main
 
 import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 
 	"github.com/poolpOrg/earmuff/analyzer"
 	"github.com/poolpOrg/earmuff/ast"
 	"github.com/poolpOrg/earmuff/elaborator"
 	"github.com/poolpOrg/earmuff/parser"
+	"github.com/poolpOrg/earmuff/player"
 	"github.com/poolpOrg/earmuff/smfwriter"
 )
 
@@ -36,10 +36,12 @@ func main() {
 		optOut     string
 		optQuiet   bool
 		optVerbose bool
+		optPlayer  string
 	)
 	flag.StringVar(&optOut, "out", "", "output file (.mid)")
 	flag.BoolVar(&optQuiet, "quiet", false, "suppress summary and playback")
 	flag.BoolVar(&optVerbose, "verbose", false, "dump the elaborated event stream")
+	flag.StringVar(&optPlayer, "player", "", "player command template, e.g. \"timidity {}\" ({} = MIDI file)")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -109,9 +111,11 @@ func main() {
 		}
 		fmt.Println()
 
-		// If we did not write to disk, offer best-effort playback.
+		// If we did not write to disk, play through an available synth.
 		if optOut == "" {
-			play(out)
+			if err := player.Play(out, optPlayer); err != nil {
+				fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
+			}
 		}
 	}
 }
@@ -128,30 +132,4 @@ func analyze(prog *ast.Program) bool {
 		}
 	}
 	return hasErrors
-}
-
-// play writes the SMF to a temp file and attempts fluidsynth playback. Any
-// failure (including a missing fluidsynth) is reported and ignored.
-func play(smfBytes []byte) {
-	fs, err := exec.LookPath("fluidsynth")
-	if err != nil {
-		return // fluidsynth not installed: silently skip
-	}
-	tmp, err := os.CreateTemp("", "earmuff-*.mid")
-	if err != nil {
-		return
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(smfBytes); err != nil {
-		tmp.Close()
-		return
-	}
-	tmp.Close()
-
-	cmd := exec.Command(fs, "-ni", filepath.Clean(tmp.Name()))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "earmuff: playback failed: %v\n", err)
-	}
 }

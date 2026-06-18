@@ -83,6 +83,11 @@
           "type": "string",
           "default": "earmuff",
           "description": "Path to the earmuff CLI used by the Compile/Play commands. If a bare name is given, it is resolved from PATH."
+        },
+        "earmuff.player": {
+          "type": "string",
+          "default": "",
+          "description": "Player command for the Play command, e.g. \"timidity {}\" or \"fluidsynth -a coreaudio /path/to.sf2 {}\" ({} = MIDI file). Empty = auto-detect (platform synth, then fluidsynth)."
         }
       }
     }

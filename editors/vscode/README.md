@@ -40,9 +40,19 @@ go install github.com/poolpOrg/earmuff/cmd/earmuff-lsp@latest
 | `earmuff.languageServer.enable` | boolean | `true` | Enable the language server. |
 | `earmuff.languageServer.path` | string | `earmuff-lsp` | Override the server binary. Takes precedence over the bundled one; a bare name resolves from `PATH`. |
 | `earmuff.cli.path` | string | `earmuff` | Path to the `earmuff` CLI used by the compile/play commands. |
+| `earmuff.player` | string | `""` | Player command for **Play**, e.g. `timidity {}` or `fluidsynth -a coreaudio /path/to.sf2 {}` (`{}` = the MIDI file). Empty = auto-detect. |
 
 The server is resolved in this order: an explicit `languageServer.path` →
 the bundled binary for your platform → `earmuff-lsp` on `PATH`.
+
+### Playback
+
+**Play** asks the `earmuff` CLI to render and play through an available synth.
+With `earmuff.player` empty, the CLI auto-detects one: a platform-native player
+(`timidity` on Linux), then `fluidsynth` if a SoundFont is found. macOS has no
+built-in headless MIDI player, so install one — `brew install fluid-synth` (a
+SoundFont comes with it) — or set `earmuff.player`. Point
+`EARMUFF_SOUNDFONT` at a `.sf2` to choose the SoundFont fluidsynth uses.
 
 ## Development
 
