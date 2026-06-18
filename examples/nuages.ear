@@ -1,43 +1,30 @@
+// Nuages — earmuff v2.
+// The lead is syncopated, so bar 1 drops to a 16th grid (the 3.25/3.75 offsets
+// are real slots) while later bars use coarser grids. `:dur` sets the sounding
+// gate; the step cursor still advances one grid step per token.
 project "nuages" {
-    bpm 80;
-    time 4 4;
+    bpm 80; time 4 4;
 
-    track "lead guitar" {
-        instrument "guitar";
-
-        bar {
-            on beat 3 play 8th note C#;
-            on beat 3.25 play 8th note D;
-            on beat 3.5 play 8th note A;
-            on beat 3.75 play 8th note G#;
-            on beat 4 play 8th note G;
-            on beat 4.5 play 8th note F#;
+    track "lead guitar" instrument "guitar" {
+        // 8th-note run on a 16th grid, beats 3-4
+        bar 16 {
+            _*8                    // beats 1-2 silent
+            C#:8 D:8 A:8 G#:8      // beats 3, 3.25, 3.5, 3.75
+            G:8  _   F#:8 _        // beat 4, 4.5
         }
-        bar {
-            on beat 1 play half note F;
-            on beat 4.5 play 8th note E;
-        }
-        bar {
-            on beat 1 play half note Fb;
-            on beat 2.5 play quarter note Eb;
-            on beat 4.5 play 8th note D;
-        }
-        bar { on beat 1 play whole note D; }
+        // half note on beat 1, late 8th on beat 4.5 (slot 14 of 16)
+        bar 16 { F:2 _*13 E:8 _ }
+        // half(1) + quarter(2.5) + 8th(4.5) all land on the 8th grid
+        bar 8  { Fb:2 _ _ Eb:4 _ _ _ D:8 }
+        // whole note
+        bar 1  { D }
     }
 
-    track "rythm piano" {
-        instrument "piano";
-
-        bar {}
-        bar { on beat 1 play whole chord Eb9; }
-        bar {
-            on beat 1 play half chord Am7b5;
-            on beat 3 play half chord D7b9;
-        }
-        bar {
-            on beat 1 play half chord Gmaj7;
-            on beat 3 play quarter chord Am7;
-            on beat 4 play quarter chord Bm7b5;
-        }
+    track "rythm piano" instrument "piano" {
+        bar {}                                    // a bar of rest
+        bar 1 { Eb9 }                             // whole chord
+        bar 2 { Am7b5 D7b9 }                      // two half chords
+        // half on 1, then quarters on 3 and 4
+        bar { on beat 1 Gmaj7:2 on beat 3 Am7:4 on beat 4 Bm7b5:4 }
     }
 }

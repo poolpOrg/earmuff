@@ -1,0 +1,33 @@
+// exp — a showcase of earmuff v2 language features.
+// (The old exp.ear sketched a syntax that was never built; this replaces it
+// with a tour of what v2 actually supports.)
+project "v2 showcase" {
+    bpm 110; time 4 4;
+
+    // for-over-a-list: iterate a chord progression as data.
+    track "comp" instrument "piano" v mp {
+        let changes = [Am7, Dm7, G7, Cmaj7];   // ii-V-I-ish
+        for ch in changes {
+            bar quarter { ch ch ch ch:v mf }   // last hit a touch louder
+        }
+    }
+
+    // if/else over a loop index, and note + interval transposition.
+    track "bass" instrument "bass" {
+        for i in 1..4 {
+            if i == 4 {
+                bar quarter { C2 (C2 + fifth) (C2 + octave) (C2 + fifth) }
+            } else {
+                bar quarter { C2 _ (C2 + fifth) _ }
+            }
+        }
+    }
+
+    // raw MIDI: program change, control change, pitch bend, aftertouch.
+    track "synth lead" instrument "lead 1 (square)" channel 3 {
+        program "lead 2 (sawtooth)";
+        bar quarter { C cc 74 = 64 E cc 74 = 100 }
+        on beat 1 bend +2;        // bend up two semitones (auto RPN range)
+        on beat 3 pressure 90;
+    }
+}
