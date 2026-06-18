@@ -1,9 +1,6 @@
-baseURL = "https://poolporg.github.io/earmuff/"
+baseURL = "https://earmuff.io/docs/"
 title = "earmuff"
 theme = "hugo-book"
-# Built site is published into the repo's docs/ folder so GitHub Pages can
-# serve it from "/docs on main".
-publishDir = "../docs"
 
 # Book theme settings
 disablePathToLower = false

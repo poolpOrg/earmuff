@@ -8,9 +8,10 @@ into a Standard MIDI File, live playback through a synth, or engraved sheet
 music. Because the source is just text, every developer tool you already use —
 git, diff, code review, scripts that generate music — works on it for free.
 
-📖 **[Documentation](https://poolporg.github.io/earmuff/)** — full guide and
-language reference. (Source under [`website/`](website/); the built site is
-published from [`docs/`](docs/).)
+📖 **[Documentation](https://earmuff.io/docs/)** — full guide and language
+reference. (Source under [`website/`](website/); the site and the
+[earmuff.io](https://earmuff.io) landing page are built and deployed by the
+[Pages workflow](.github/workflows/pages.yml).)
 
 ```
 project "12 bars blues" {

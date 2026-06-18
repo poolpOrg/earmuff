@@ -3,3 +3,4 @@ _*.log
 cmd/earmuff/earmuff
 earmuff
 website/.hugo_build.lock
+website/public/

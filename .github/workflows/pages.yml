@@ -1,0 +1,64 @@
+# Builds and deploys the combined earmuff.io site to GitHub Pages:
+#   /        -> the landing page (landing/)
+#   /docs/   -> the Hugo documentation site (website/)
+# CNAME (earmuff.io) ships at the root.
+name: Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["landing/**", "website/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HUGO_VERSION: "0.160.1"
+      SITE_BASE: "https://earmuff.io"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Hugo
+        run: |
+          curl -sSL -o hugo.deb \
+            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+          sudo dpkg -i hugo.deb
+
+      - name: Assemble the site
+        run: |
+          set -eux
+          mkdir -p _site
+          # Landing page at the root.
+          cp -r landing/. _site/
+          # Docs site under /docs (served from earmuff.io/docs/).
+          hugo --source website --gc --minify \
+            --baseURL "${SITE_BASE}/docs/" --destination "$PWD/_site/docs"
+          # Pages does not run Jekyll; keep underscore-prefixed asset dirs.
+          touch _site/.nojekyll
+          # CNAME at the root (from landing/CNAME).
+          test -f _site/CNAME
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
