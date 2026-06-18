@@ -1,5 +1,10 @@
 # earmuff
 
+[![Go](https://github.com/poolpOrg/earmuff/actions/workflows/go.yml/badge.svg)](https://github.com/poolpOrg/earmuff/actions/workflows/go.yml)
+[![Pages](https://github.com/poolpOrg/earmuff/actions/workflows/pages.yml/badge.svg)](https://github.com/poolpOrg/earmuff/actions/workflows/pages.yml)
+[![Docs](https://img.shields.io/badge/docs-earmuff.io-6b78ff)](https://earmuff.io/docs/)
+[![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+
 > Write music as code — version it, diff it, review it, generate it — then play it or print the score.
 
 **earmuff** is a small language for describing music in plain text. You write a
