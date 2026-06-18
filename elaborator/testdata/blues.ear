@@ -1,0 +1,28 @@
+project "12 bars blues" {
+    bpm 120; time 4 4;
+
+    track "lead piano" instrument "acoustic grand piano" {
+        pattern I  { bar quarter { C E G _ } }
+        pattern IV { bar quarter { F A C _ } }
+        pattern V  { bar quarter { G B D _ } }
+
+        I()  IV()
+        for _ in 1..2 { I() }
+        for _ in 1..2 { IV() }
+        for _ in 1..2 { I() }
+        V()  IV()  I()  V()
+    }
+
+    track "drums" instrument "synth drum" channel 10 {
+        kit {
+            hh  = "closed hi-hat";
+            oh  = "open hi-hat";
+            sn  = "acoustic snare";
+            cy  = "crash cymbal 1";
+        }
+        pattern beat {
+            bar 8 { (oh,sn,cy) hh hh hh _ _ _ _ }
+        }
+        for _ in 1..12 { beat() }
+    }
+}

@@ -1,0 +1,12 @@
+project "bend demo" {
+    bpm 120; time 4 4;
+
+    track "synth lead" instrument "lead 1 (square)" channel 3 {
+        program "lead 2 (sawtooth)";
+        bar quarter {
+            C   cc 74 = 64   E   cc 74 = 100
+        }
+        on beat 1 bend +2;
+        on beat 2 pressure 90;
+    }
+}

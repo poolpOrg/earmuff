@@ -1,0 +1,21 @@
+project "comp demo" {
+    bpm 120; time 4 4;
+
+    pattern comp(changes) {
+        for ch in changes {
+            bar quarter v mp { ch ch ch ch:v mf }   // last hit slightly accented
+        }
+    }
+
+    track "piano" instrument "acoustic grand piano" v p {
+        let aTune = [Am6, Dm6, E7, Am6];
+        comp(aTune)
+        comp([Dm6, Am6, E7, Am6])
+    }
+
+    track "riff" instrument "acoustic bass" {
+        for root in [C2, F2, G2] {
+            bar quarter { root (root + fifth) (root + octave) _ }
+        }
+    }
+}

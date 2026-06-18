@@ -1,71 +1,157 @@
+// Command earmuff is the v2 driver. It parses an .ear source file, runs the
+// analyzer (if present), elaborates each project to an absolute-tick event
+// stream, and writes a Standard MIDI File.
+//
+// Usage:
+//
+//	earmuff [flags] source.ear
+//
+// Flags:
+//
+//	-out file.mid   write the elaborated SMF to file.mid
+//	-quiet          suppress the summary and skip playback
+//	-verbose        dump the elaborated event stream
+//
+// When -out is unset and not -quiet, earmuff attempts to play the result with
+// fluidsynth from a temporary file (best-effort; ignored if fluidsynth is
+// absent).
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 
-	"github.com/poolpOrg/earmuff/compiler"
+	"github.com/poolpOrg/earmuff/analyzer"
+	"github.com/poolpOrg/earmuff/ast"
+	"github.com/poolpOrg/earmuff/elaborator"
 	"github.com/poolpOrg/earmuff/parser"
-	"gitlab.com/gomidi/midi/v2"
-	_ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv"
-	"gitlab.com/gomidi/midi/v2/smf"
+	"github.com/poolpOrg/earmuff/smfwriter"
 )
 
 func main() {
-	var opt_file string
-	var opt_verbose bool
-	var opt_quiet bool
-
-	flag.StringVar(&opt_file, "out", "", "output file (.mid)")
-	flag.BoolVar(&opt_quiet, "quiet", false, "do not play")
-	flag.BoolVar(&opt_verbose, "verbose", false, "extensive logging")
+	var (
+		optOut     string
+		optQuiet   bool
+		optVerbose bool
+	)
+	flag.StringVar(&optOut, "out", "", "output file (.mid)")
+	flag.BoolVar(&optQuiet, "quiet", false, "suppress summary and playback")
+	flag.BoolVar(&optVerbose, "verbose", false, "dump the elaborated event stream")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
-		log.Fatal("need a source file to process")
+		fmt.Fprintln(os.Stderr, "usage: earmuff [flags] source.ear")
+		os.Exit(2)
 	}
 
-	fp, err := os.Open(flag.Arg(0))
+	file := flag.Arg(0)
+	src, err := os.ReadFile(file)
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer fp.Close()
-
-	parser := parser.NewParser(fp)
-	project, err := parser.Parse()
-	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
+		os.Exit(1)
 	}
 
-	b := compiler.Compile(project)
-
-	if opt_file != "" {
-		fp, err := os.Create(opt_file)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fp.Write(b)
-		fp.Close()
+	// Parse: report diagnostics, abort on any.
+	prog, pdiags := parser.New(string(src), file).Parse()
+	for _, d := range pdiags {
+		fmt.Fprintln(os.Stderr, d)
+	}
+	if len(pdiags) > 0 {
+		os.Exit(1)
 	}
 
-	smf.ReadTracksFrom(bytes.NewReader(b)).Do(
-		func(te smf.TrackEvent) {
-			if opt_verbose {
-				fmt.Printf("[%v] @%vms %s\n", te.TrackNo, te.AbsMicroSeconds/1000, te.Message.String())
+	// Analyze: errors abort, warnings continue.
+	if errs := analyze(prog); errs {
+		os.Exit(1)
+	}
+
+	// Elaborate every project to a Song.
+	songs, eerrs := elaborator.Elaborate(prog)
+	for _, e := range eerrs {
+		fmt.Fprintf(os.Stderr, "elaborate: %v\n", e)
+	}
+	if len(eerrs) > 0 {
+		os.Exit(1)
+	}
+	if len(songs) == 0 {
+		fmt.Fprintln(os.Stderr, "earmuff: no projects to elaborate")
+		os.Exit(1)
+	}
+
+	if optVerbose {
+		for _, song := range songs {
+			fmt.Printf("# project %q: %d tracks, %d events\n", song.Name, len(song.Tracks), len(song.Events))
+			for _, ev := range song.Events {
+				fmt.Printf("[track %d] @%-7d %+v\n", ev.Track, ev.Tick, ev.Msg)
 			}
-		},
-	)
-
-	if opt_quiet {
-		os.Exit(0)
+		}
 	}
 
-	out, err := midi.FindOutPort("FluidSynth virtual port")
+	// Write the first project's SMF (the common single-project case).
+	song := songs[0]
+	out := smfwriter.Write(song)
+
+	if optOut != "" {
+		if err := os.WriteFile(optOut, out, 0o644); err != nil {
+			fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	if !optQuiet {
+		fmt.Printf("%s: %q: %d tracks, %d events, %d bytes",
+			file, song.Name, len(song.Tracks), len(song.Events), len(out))
+		if optOut != "" {
+			fmt.Printf(" -> %s", optOut)
+		}
+		fmt.Println()
+
+		// If we did not write to disk, offer best-effort playback.
+		if optOut == "" {
+			play(out)
+		}
+	}
+}
+
+// analyze runs the analyzer, printing diagnostics. It returns true if any
+// error-severity diagnostic was found.
+func analyze(prog *ast.Program) bool {
+	diags := analyzer.Analyze(prog)
+	hasErrors := false
+	for _, d := range diags {
+		fmt.Fprintln(os.Stderr, d)
+		if d.Severity == analyzer.Error {
+			hasErrors = true
+		}
+	}
+	return hasErrors
+}
+
+// play writes the SMF to a temp file and attempts fluidsynth playback. Any
+// failure (including a missing fluidsynth) is reported and ignored.
+func play(smfBytes []byte) {
+	fs, err := exec.LookPath("fluidsynth")
 	if err != nil {
-		log.Fatal(fmt.Errorf("can't find fluidsynth"))
+		return // fluidsynth not installed: silently skip
 	}
-	smf.ReadTracksFrom(bytes.NewReader(b)).Play(out)
+	tmp, err := os.CreateTemp("", "earmuff-*.mid")
+	if err != nil {
+		return
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(smfBytes); err != nil {
+		tmp.Close()
+		return
+	}
+	tmp.Close()
+
+	cmd := exec.Command(fs, "-ni", filepath.Clean(tmp.Name()))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "earmuff: playback failed: %v\n", err)
+	}
 }

@@ -1,0 +1,46 @@
+// docs/language-v2.md §4a — 12-bar blues on the step grid.
+project "12 bars blues" {
+    bpm 120; time 4 4;
+
+    track "lead piano" instrument "piano" {
+        pattern I  { bar quarter { C E G _ } }
+        pattern IV { bar quarter { F A C _ } }
+        pattern V  { bar quarter { G B D _ } }
+
+        I  IV
+        for _ in 1..2 { I }
+        for _ in 1..2 { IV }
+        for _ in 1..2 { I }
+        V  IV  I  V
+    }
+
+    track "rythm guitar" instrument "guitar" {
+        bar whole { C7 } bar whole { F7 }
+        for _ in 1..2 { bar whole { C7 } }
+        for _ in 1..2 { bar whole { F7 } }
+        for _ in 1..2 { bar whole { C7 } }
+        bar whole { G7 } bar whole { F7 } bar whole { C7 } bar whole { G7 }
+    }
+
+    track "bass" instrument "bass" {
+        pattern walk(root, third) { bar quarter { root _ third _ } }
+        walk(C2, E2)  walk(F2, A2)
+        for _ in 1..2 { walk(C2, E2) }
+        for _ in 1..2 { walk(F2, G2) }
+        for _ in 1..2 { walk(C2, E2) }
+        walk(G2, B2)  walk(F2, G2)  walk(C2, E2)  walk(G2, B2)
+    }
+
+    track "drums" instrument "drum kit" channel 10 {
+        kit {
+            hh  = "closed hi-hat";
+            oh  = "open hi-hat";
+            sn  = "acoustic snare";
+            cy  = "crash cymbal 1";
+        }
+        pattern beat {
+            bar 8 { (oh,sn,cy) hh hh hh _ _ _ _ }
+        }
+        for _ in 1..12 { beat() }
+    }
+}
