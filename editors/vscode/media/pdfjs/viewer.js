@@ -9,7 +9,9 @@
 
 (function () {
   const vscode = acquireVsCodeApi();
-  const self = document.currentScript;
+  // NOTE: document.currentScript is null inside an ES module, so locate our
+  // own <script> by the data attributes it carries.
+  const self = document.querySelector("script[data-pdfjs-url]");
   const pdfjsUrl = self.getAttribute("data-pdfjs-url");
   const workerUrl = self.getAttribute("data-worker-url");
 
