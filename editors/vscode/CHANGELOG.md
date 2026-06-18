@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- New command **earmuff: Show Sheet Preview** — opens a live sheet-music PDF
+  preview beside the editor that re-renders (debounced) from the unsaved buffer
+  as you type. Engraving uses LilyPond via `earmuff -pdf`; configure its
+  location with the new `earmuff.lilypond.path` setting. The PDF is rendered in
+  the webview with a bundled PDF.js.
+
 ## 0.1.0
 
 Initial release.

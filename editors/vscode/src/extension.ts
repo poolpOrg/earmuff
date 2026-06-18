@@ -8,6 +8,7 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
+import { showSheetPreview } from "./preview";
 
 let client: LanguageClient | undefined;
 let output: vscode.OutputChannel | undefined;
@@ -18,7 +19,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand("earmuff.compileMidi", () => compileMidi()),
-    vscode.commands.registerCommand("earmuff.play", () => play())
+    vscode.commands.registerCommand("earmuff.play", () => play()),
+    vscode.commands.registerCommand("earmuff.showSheetPreview", () =>
+      showSheetPreview(context)
+    )
   );
 
   const config = vscode.workspace.getConfiguration("earmuff");
