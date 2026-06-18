@@ -347,7 +347,7 @@ func TestCheck11_BeatInRange(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Positive cases drawn from docs/language-v2.md §4 (numeric grids, since the
+// Positive cases drawn from website/content/docs/language-reference.md §4 (numeric grids, since the
 // parser only accepts numeric note-value grids, not the `quarter`/`whole`
 // keyword spellings used in the prose examples).
 // ---------------------------------------------------------------------------

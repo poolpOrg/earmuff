@@ -2,3 +2,4 @@ _probe/
 _*.log
 cmd/earmuff/earmuff
 earmuff
+website/.hugo_build.lock

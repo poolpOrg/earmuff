@@ -5,7 +5,7 @@
 // purely diagnostic: it never mutates the tree and never panics on a partial or
 // nil tree (the parser can produce those after a recovered parse error).
 //
-// Checks implemented (see docs/language-v2.md):
+// Checks implemented (see website/content/docs/language-reference.md):
 //
 // Structural (Error):
 //  1. undefined pattern call

@@ -1,7 +1,13 @@
-# earmuff language v2 — design proposal
+---
+title: Language reference
+weight: 90
+---
 
-Status: **proposal / discussion**. Nothing here is implemented yet. This document
-describes a redesigned earmuff surface syntax and the execution model behind it.
+# earmuff language reference
+
+This is the complete reference for the earmuff language: its surface syntax, the
+execution model behind it, and the step-grid timing rules. Everything described
+here is implemented.
 
 ## Goals (from design discussion)
 

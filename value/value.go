@@ -4,7 +4,7 @@
 // musical values: numbers, booleans, notes, chords, intervals, and lists. This
 // package defines that tagged-union Value type, a lexical Env scope chain, and
 // Eval, which reduces an ast.Expr to a Value following the semantics in
-// docs/language-v2.md §3.
+// website/content/docs/language-reference.md §3.
 package value
 
 import (

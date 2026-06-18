@@ -1,6 +1,6 @@
 // Package elaborator turns an *ast.Program into one Song per project: a flat,
 // time-ordered stream of MIDI events stamped with absolute ticks. It is the
-// pure, deterministic phase described in docs/language-v2.md §1 — patterns,
+// pure, deterministic phase described in website/content/docs/language-reference.md §1 — patterns,
 // loops, and conditionals are expanded over compile-time-known values, so the
 // event stream is fully determined before any MIDI is emitted.
 //

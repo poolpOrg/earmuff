@@ -8,6 +8,10 @@ into a Standard MIDI File, live playback through a synth, or engraved sheet
 music. Because the source is just text, every developer tool you already use —
 git, diff, code review, scripts that generate music — works on it for free.
 
+📖 **[Documentation](https://poolporg.github.io/earmuff/)** — full guide and
+language reference. (Source under [`website/`](website/); the built site is
+published from [`docs/`](docs/).)
+
 ```
 project "12 bars blues" {
     bpm 120; time 4 4;
@@ -84,7 +88,7 @@ Browse the [`examples/`](examples/) directory for complete pieces.
 ## The language
 
 A quick tour; the full grammar and timing model are in
-[`docs/language-v2.md`](docs/language-v2.md).
+[`website/content/docs/language-reference.md`](website/content/docs/language-reference.md).
 
 **Step grid.** A bar lays events on a grid whose step is the bar's duration; the
 cursor advances one step per token. `_` is a rest, `~` ties the previous note,
@@ -217,7 +221,7 @@ event stream, which the back ends turn into MIDI or sheet music.
 | `player` | MIDI playback |
 | `midi` | General MIDI instrument / percussion maps |
 | `lsp`, `editors/vscode` | editor tooling |
-| `docs/language-v2.md` | language reference |
+| `website/content/docs/language-reference.md` | language reference |
 
 ## Contributing
 

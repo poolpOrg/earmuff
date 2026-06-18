@@ -2,7 +2,7 @@
 //
 // Every node carries a token.Position (via Pos()) so the analyzer and
 // elaborator can attach precise diagnostics. The tree mirrors the grammar in
-// docs/language-v2.md: a Program holds top-level items (projects, shared
+// website/content/docs/language-reference.md: a Program holds top-level items (projects, shared
 // patterns); a Project holds settings and tracks; a Track holds bars, control
 // flow, pattern calls, and raw events; a Bar holds step-grid items.
 package ast

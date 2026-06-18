@@ -1,0 +1,25 @@
+baseURL = "https://poolporg.github.io/earmuff/"
+title = "earmuff"
+theme = "hugo-book"
+# Built site is published into the repo's docs/ folder so GitHub Pages can
+# serve it from "/docs on main".
+publishDir = "../docs"
+
+# Book theme settings
+disablePathToLower = false
+enableGitInfo = false
+
+[params]
+  BookTheme = "auto"
+  BookToC = true
+  BookRepo = "https://github.com/poolpOrg/earmuff"
+  BookEditPath = "edit/main/website/content"
+  BookSearch = true
+  description = "Write music as code — earmuff language documentation."
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[markup.highlight]
+  noClasses = false
+  style = "github"

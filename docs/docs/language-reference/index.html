@@ -1,0 +1,319 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="earmuff language reference# This is the complete reference for the earmuff language: its surface syntax, the execution model behind it, and the step-grid timing rules. Everything described here is implemented.
+Goals (from design discussion)# Express the entire MIDI set (notes, CC, pitch bend, aftertouch, program change, sysex, per-event channel/port). Stay developer-friendly and less verbose than v1. Add functions, patterns, loops. Be able to interpret and emit MIDI live as the source is processed, not only compile to an SMF file. Design decisions# Step-grid is the default note-entry surface. A block sets a default step duration; events auto-advance one step. on beat remains as an explicit escape hatch for absolute placement. Patterns and functions are pure. Source elaborates deterministically into a flat, time-ordered event stream. User code never touches the clock or the MIDI port — only the scheduler does. Live playback and SMF export consume the same elaborated stream. Full MIDI now. Raw primitives (cc, bend, pressure, program, sysex, per-event @channel) are first-class, with named sugar over raw numbers. Structured control flow, evaluated at elaboration time and pure. Real if/else, for x in <range|list>, boolean operators, and immutable let bindings. They run during elaboration over compile-time-known values — they are not live/runtime branches — so the event stream is fully determined before any MIDI is emitted. Loops are bounded (range or list, no while), bindings are immutable: this guarantees termination and keeps music diffable and deterministic. Domain language, not general-purpose. Values are musical: number, boolean, note, chord, duration, interval, list, and pattern. No mutable state, no strings-as-data arithmetic, no I/O from user code, no recursion/while — no Turing-completeness creep. 1. Execution model# Two phases, one stream:
+"><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#2e3440"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://poolporg.github.io/earmuff/docs/language-reference/"><meta property="og:site_name" content="earmuff"><meta property="og:title" content="Language reference"><meta property="og:description" content="earmuff language reference# This is the complete reference for the earmuff language: its surface syntax, the execution model behind it, and the step-grid timing rules. Everything described here is implemented.
+Goals (from design discussion)# Express the entire MIDI set (notes, CC, pitch bend, aftertouch, program change, sysex, per-event channel/port). Stay developer-friendly and less verbose than v1. Add functions, patterns, loops. Be able to interpret and emit MIDI live as the source is processed, not only compile to an SMF file. Design decisions# Step-grid is the default note-entry surface. A block sets a default step duration; events auto-advance one step. on beat remains as an explicit escape hatch for absolute placement. Patterns and functions are pure. Source elaborates deterministically into a flat, time-ordered event stream. User code never touches the clock or the MIDI port — only the scheduler does. Live playback and SMF export consume the same elaborated stream. Full MIDI now. Raw primitives (cc, bend, pressure, program, sysex, per-event @channel) are first-class, with named sugar over raw numbers. Structured control flow, evaluated at elaboration time and pure. Real if/else, for x in <range|list>, boolean operators, and immutable let bindings. They run during elaboration over compile-time-known values — they are not live/runtime branches — so the event stream is fully determined before any MIDI is emitted. Loops are bounded (range or list, no while), bindings are immutable: this guarantees termination and keeps music diffable and deterministic. Domain language, not general-purpose. Values are musical: number, boolean, note, chord, duration, interval, list, and pattern. No mutable state, no strings-as-data arithmetic, no I/O from user code, no recursion/while — no Turing-completeness creep. 1. Execution model# Two phases, one stream:"><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="article:section" content="docs"><meta itemprop=name content="Language reference"><meta itemprop=description content="earmuff language reference# This is the complete reference for the earmuff language: its surface syntax, the execution model behind it, and the step-grid timing rules. Everything described here is implemented.
+Goals (from design discussion)# Express the entire MIDI set (notes, CC, pitch bend, aftertouch, program change, sysex, per-event channel/port). Stay developer-friendly and less verbose than v1. Add functions, patterns, loops. Be able to interpret and emit MIDI live as the source is processed, not only compile to an SMF file. Design decisions# Step-grid is the default note-entry surface. A block sets a default step duration; events auto-advance one step. on beat remains as an explicit escape hatch for absolute placement. Patterns and functions are pure. Source elaborates deterministically into a flat, time-ordered event stream. User code never touches the clock or the MIDI port — only the scheduler does. Live playback and SMF export consume the same elaborated stream. Full MIDI now. Raw primitives (cc, bend, pressure, program, sysex, per-event @channel) are first-class, with named sugar over raw numbers. Structured control flow, evaluated at elaboration time and pure. Real if/else, for x in <range|list>, boolean operators, and immutable let bindings. They run during elaboration over compile-time-known values — they are not live/runtime branches — so the event stream is fully determined before any MIDI is emitted. Loops are bounded (range or list, no while), bindings are immutable: this guarantees termination and keeps music diffable and deterministic. Domain language, not general-purpose. Values are musical: number, boolean, note, chord, duration, interval, list, and pattern. No mutable state, no strings-as-data arithmetic, no I/O from user code, no recursion/while — no Turing-completeness creep. 1. Execution model# Two phases, one stream:"><meta itemprop=wordCount content="3599"><title>Language reference • earmuff</title><link rel=icon href=/earmuff/favicon.png><link rel=manifest href=/earmuff/manifest.json><link rel=canonical href=https://poolporg.github.io/earmuff/docs/language-reference/><link rel=stylesheet href=/earmuff/book.min.48f33d5a3eb3d0043703a18061032a2d9ba8b975a98e31188faf67aac93a8b44.css integrity="sha256-SPM9Wj6z0AQ3A6GAYQMqLZuouXWpjjEYj69nqsk6i0Q=" crossorigin=anonymous><script defer type=module src=/earmuff/en.search.min.7a27ef3fc4ca57f6812c5983fd27286f086fcf7e32e07463300f81615105a884.js integrity="sha256-eifvP8TKV/aBLFmD/Scobwhvz34y4HRjMA+BYVEFqIQ=" crossorigin=anonymous></script></head><body dir=ltr class="book-kind-page book-type-docs"><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/earmuff/><span>earmuff</span></a></h2><div class="book-search hidden"><input id=book-search-input type=text placeholder=Search aria-label=Search maxlength=64><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><script>document.querySelector(".book-search").classList.remove("hidden")</script><ul><li><a href=/earmuff/docs/introduction/>Introduction</a></li><li><a href=/earmuff/docs/install/>Install</a></li><li><input type=checkbox id=section-03f7d34a1262b57aee5661c329ff68ce class=toggle>
+<label for=section-03f7d34a1262b57aee5661c329ff68ce class=flex><a href=/earmuff/docs/language/>Language</a>
+<img src=/earmuff/icons/chevron-right.svg class=book-icon alt=Expand></label><ul><li><a href=/earmuff/docs/language/bars-and-the-step-grid/>Bars and the step grid</a></li><li><a href=/earmuff/docs/language/notes-and-chords/>Notes and chords</a></li><li><a href=/earmuff/docs/language/patterns-and-control-flow/>Patterns and control flow</a></li><li><a href=/earmuff/docs/language/midi-and-dynamics/>MIDI and dynamics</a></li></ul></li><li><a href=/earmuff/docs/command-line/>Command line</a></li><li><a href=/earmuff/docs/sheet-music/>Sheet music</a></li><li><a href=/earmuff/docs/editor-support/>Editor support</a></li><li><a href=/earmuff/docs/examples/>Examples</a></li><li><a href=/earmuff/docs/language-reference/ class=active>Language reference</a></li></ul></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class="book-header hidden"><div class="flex align-center justify-between"><label for=menu-control><img src=/earmuff/icons/menu.svg class=book-icon alt=Menu></label><h3>Language reference</h3><label for=toc-control><img src=/earmuff/icons/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class=hidden><nav id=TableOfContents><ul><li><a href=#goals-from-design-discussion>Goals (from design discussion)</a></li><li><a href=#design-decisions>Design decisions</a></li><li><a href=#1-execution-model>1. Execution model</a></li><li><a href=#2-lexical-changes>2. Lexical changes</a><ul><li><a href=#durations>Durations</a></li></ul></li><li><a href=#3-grammar-ebnf-ish>3. Grammar (EBNF-ish)</a><ul><li><a href=#pattern-operators-composition>Pattern operators (composition)</a></li></ul></li><li><a href=#3a-step-grid-semantics-the-timing-model>3a. Step-grid semantics (the timing model)</a></li><li><a href=#3b-velocity-dynamics-and-bend-semantics>3b. Velocity, dynamics, and bend semantics</a></li><li><a href=#4-examples-rewritten>4. Examples rewritten</a><ul><li><a href=#4a-12-bar-blues-lead--step-grid>4a. 12-bar blues (lead) — step grid</a></li><li><a href=#4b-nuages--the-full-port-the-case-that-drove-3a>4b. nuages — the full port (the case that drove §3a)</a></li><li><a href=#4c-loop-index--ifelse-from-expear>4c. loop index + if/else (from exp.ear)</a></li><li><a href=#4d-for-over-a-list--iterate-a-chord-progression>4d. for over a list — iterate a chord progression</a></li><li><a href=#4e-full-midi-primitives>4e. Full-MIDI primitives</a></li><li><a href=#4f-first-class-lists--dynamics--a-reusable-comping-pattern>4f. First-class lists + dynamics — a reusable comping pattern</a></li></ul></li><li><a href=#5-migration--compatibility>5. Migration / compatibility</a></li><li><a href=#6-resolved-design-decisions>6. Resolved design decisions</a></li><li><a href=#7-remaining-work-before-implementation>7. Remaining work before implementation</a></li><li><a href=#8-port-findings-stress-testing-the-syntax-against-the-examples>8. Port findings (stress-testing the syntax against the examples)</a><ul><li><a href=#blocker-1-resolved--3a--gate-vs-cursor-advance>BLOCKER 1 (RESOLVED → §3a) — gate vs. cursor advance</a></li><li><a href=#blocker-2-resolved--3a--mixed-subdivisions-in-one-bar>BLOCKER 2 (RESOLVED → §3a) — mixed subdivisions in one bar</a></li><li><a href=#paper-cut-1-resolved--3a--resthold-run-verbosity>PAPER-CUT 1 (RESOLVED → §3a) — rest/hold-run verbosity</a></li><li><a href=#paper-cut-2-resolved--3a--long-percussion-names>PAPER-CUT 2 (RESOLVED → §3a) — long percussion names</a></li><li><a href=#confirmed-ok-no-blocker>CONFIRMED OK (no blocker)</a></li></ul></li></ul></nav></aside></header><article class="markdown book-article"><h1 id=earmuff-language-reference>earmuff language reference<a class=anchor href=#earmuff-language-reference>#</a></h1><p>This is the complete reference for the earmuff language: its surface syntax, the
+execution model behind it, and the step-grid timing rules. Everything described
+here is implemented.</p><h2 id=goals-from-design-discussion>Goals (from design discussion)<a class=anchor href=#goals-from-design-discussion>#</a></h2><ol><li>Express the <strong>entire MIDI set</strong> (notes, CC, pitch bend, aftertouch, program
+change, sysex, per-event channel/port).</li><li>Stay <strong>developer-friendly</strong> and <strong>less verbose</strong> than v1.</li><li>Add <strong>functions, patterns, loops</strong>.</li><li>Be able to <strong>interpret and emit MIDI live</strong> as the source is processed, not
+only compile to an SMF file.</li></ol><h2 id=design-decisions>Design decisions<a class=anchor href=#design-decisions>#</a></h2><ul><li><strong>Step-grid is the default note-entry surface.</strong> A block sets a default step
+duration; events auto-advance one step. <code>on beat</code> remains as an explicit
+escape hatch for absolute placement.</li><li><strong>Patterns and functions are pure.</strong> Source elaborates deterministically into a
+flat, time-ordered event stream. User code never touches the clock or the MIDI
+port — only the scheduler does. Live playback and SMF export consume the same
+elaborated stream.</li><li><strong>Full MIDI now.</strong> Raw primitives (<code>cc</code>, <code>bend</code>, <code>pressure</code>, <code>program</code>,
+<code>sysex</code>, per-event <code>@channel</code>) are first-class, with named sugar over raw
+numbers.</li><li><strong>Structured control flow, evaluated at elaboration time and pure.</strong> Real
+<code>if</code>/<code>else</code>, <code>for x in &lt;range|list></code>, boolean operators, and immutable <code>let</code>
+bindings. They run during elaboration over compile-time-known values — they are
+<strong>not</strong> live/runtime branches — so the event stream is fully determined before
+any MIDI is emitted. Loops are bounded (range or list, no <code>while</code>), bindings
+are immutable: this guarantees termination and keeps music diffable and
+deterministic.</li><li><strong>Domain language, not general-purpose.</strong> Values are musical: number, boolean,
+note, chord, duration, interval, list, and pattern. No mutable state, no
+strings-as-data arithmetic, no I/O from user code, no recursion/<code>while</code> — no
+Turing-completeness creep.</li></ul><hr><h2 id=1-execution-model>1. Execution model<a class=anchor href=#1-execution-model>#</a></h2><p>Two phases, one stream:</p><pre tabindex=0><code>source ──parse──▶ AST ──elaborate──▶ Event Stream ──┬─▶ SMF writer  (offline)
+                          (pure)     (abs. ticks)    └─▶ Scheduler   (live MIDI)</code></pre><ul><li><strong>Elaborate</strong>: expand patterns, loops, and function calls into a flat list of
+events, each stamped with an <strong>absolute rational tick</strong> (numerator/denominator
+of a whole note × PPQ), a channel, and a port. Pure and deterministic.</li><li><strong>Schedule</strong>: walk the stream in tick order against a clock. Offline → SMF
+bytes. Live → emit to a MIDI port as wall-clock catches each tick.</li></ul><p>A single source of truth for PPQ (e.g. 960). Every event carries an absolute
+tick from elaboration onward; the parser never computes final ticks (this fixes
+the v1 parser/compiler tick-model split).</p><hr><h2 id=2-lexical-changes>2. Lexical changes<a class=anchor href=#2-lexical-changes>#</a></h2><ul><li>Note/chord literals are recognized in musical position; the <code>note</code>/<code>chord</code>
+keywords become optional.</li><li>New punctuation: <code>|</code> (bar/step group separator, optional sugar), <code>:</code>
+(duration suffix), <code>_</code> (rest), <code>~</code> (tie/hold), <code>@</code> (channel/raw qualifier),
+<code>..</code> (range), <code>=</code> (assignment in cc/bend), <code>,</code> (chord-tone / arg separator),
+<code>(</code> <code>)</code> (grouping & calls).</li><li>Comments stay <code>//</code> and <code>/* */</code>.</li><li>Strings stay <code>"..."</code>.</li></ul><h3 id=durations>Durations<a class=anchor href=#durations>#</a></h3><table><thead><tr><th>token</th><th>meaning</th></tr></thead><tbody><tr><td><code>1</code> / <code>whole</code></td><td>whole note</td></tr><tr><td><code>2</code> / <code>half</code></td><td>half</td></tr><tr><td><code>4</code> / <code>quarter</code></td><td>quarter</td></tr><tr><td><code>8</code>,<code>16</code>,<code>32</code>,<code>64</code>,<code>128</code></td><td>nth notes</td></tr><tr><td>suffix <code>.</code></td><td>dotted (×1.5)</td></tr><tr><td>suffix <code>t</code></td><td>triplet (×2/3)</td></tr></tbody></table><p>Duration appears as a <strong>block default</strong> (<code>bar quarter { … }</code>) or a <strong>per-event
+suffix</strong> (<code>C:8</code>, <code>G:2.</code>, <code>D:8t</code>).</p><hr><h2 id=3-grammar-ebnf-ish>3. Grammar (EBNF-ish)<a class=anchor href=#3-grammar-ebnf-ish>#</a></h2><div class=highlight><pre tabindex=0 class=chroma><code class=language-ebnf data-lang=ebnf><span class=line><span class=cl><span class=k>program      </span><span class=o>=</span> <span class=p>{</span> <span class=k>statement </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>statement    </span><span class=o>=</span> <span class=k>project </span><span class=p>|</span> <span class=k>pattern_def </span><span class=p>|</span> <span class=k>track </span><span class=p>|</span> <span class=k>tempo </span><span class=p>|</span> <span class=k>timesig </span><span class=p>|</span> <span class=k>meta </span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>project      </span><span class=o>=</span> <span class=s2>&#34;project&#34;</span> <span class=k>string </span><span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>proj_item </span><span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>proj_item    </span><span class=o>=</span> <span class=k>tempo </span><span class=p>|</span> <span class=k>timesig </span><span class=p>|</span> <span class=k>copyright </span><span class=p>|</span> <span class=k>text </span><span class=p>|</span> <span class=k>track </span><span class=p>|</span> <span class=k>pattern_def </span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>tempo        </span><span class=o>=</span> <span class=s2>&#34;bpm&#34;</span> <span class=k>number </span><span class=s2>&#34;;&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>timesig      </span><span class=o>=</span> <span class=s2>&#34;time&#34;</span> <span class=k>number number </span><span class=s2>&#34;;&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>copyright    </span><span class=o>=</span> <span class=s2>&#34;copyright&#34;</span> <span class=k>string </span><span class=s2>&#34;;&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>text         </span><span class=o>=</span> <span class=s2>&#34;text&#34;</span> <span class=k>string </span><span class=s2>&#34;;&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>track        </span><span class=o>=</span> <span class=s2>&#34;track&#34;</span> <span class=k>string </span><span class=p>[</span> <span class=s2>&#34;instrument&#34;</span> <span class=p>(</span><span class=k>string</span><span class=p>|</span><span class=k>number</span><span class=p>)</span> <span class=p>]</span>
+</span></span><span class=line><span class=cl>                            <span class=p>[</span> <span class=s2>&#34;channel&#34;</span> <span class=k>number </span><span class=p>]</span> <span class=p>[</span> <span class=s2>&#34;port&#34;</span> <span class=p>(</span><span class=k>number</span><span class=p>|</span><span class=k>string</span><span class=p>)</span> <span class=p>]</span>
+</span></span><span class=line><span class=cl>                            <span class=p>[</span> <span class=k>velocity </span><span class=p>]</span>
+</span></span><span class=line><span class=cl>               <span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>track_item </span><span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>track_item   </span><span class=o>=</span> <span class=k>bar </span><span class=p>|</span> <span class=k>flow </span><span class=p>|</span> <span class=k>let </span><span class=p>|</span> <span class=k>kit </span><span class=p>|</span> <span class=k>pattern_call </span><span class=p>|</span> <span class=k>event_stmt</span>
+</span></span><span class=line><span class=cl>             <span class=p>|</span> <span class=k>tempo </span><span class=p>|</span> <span class=k>timesig </span><span class=p>|</span> <span class=k>meta </span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* per-track aliases for long percussion / note names (pure name bindings) *)</span>
+</span></span><span class=line><span class=cl><span class=k>kit          </span><span class=o>=</span> <span class=s2>&#34;kit&#34;</span> <span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>ident </span><span class=s2>&#34;=&#34;</span> <span class=p>(</span><span class=k>string</span><span class=p>|</span><span class=k>note</span><span class=p>)</span> <span class=s2>&#34;;&#34;</span> <span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>pattern_def  </span><span class=o>=</span> <span class=s2>&#34;pattern&#34;</span> <span class=k>ident </span><span class=s2>&#34;(&#34;</span> <span class=p>[</span> <span class=k>params </span><span class=p>]</span> <span class=s2>&#34;)&#34;</span> <span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>track_item </span><span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>params       </span><span class=o>=</span> <span class=k>ident </span><span class=p>{</span> <span class=s2>&#34;,&#34;</span> <span class=k>ident </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>pattern_call </span><span class=o>=</span> <span class=k>ident </span><span class=s2>&#34;(&#34;</span> <span class=p>[</span> <span class=k>args </span><span class=p>]</span> <span class=s2>&#34;)&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>args         </span><span class=o>=</span> <span class=k>expr </span><span class=p>{</span> <span class=s2>&#34;,&#34;</span> <span class=k>expr </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* --- structured control flow: pure, elaboration-time, bounded --- *)</span>
+</span></span><span class=line><span class=cl><span class=k>flow         </span><span class=o>=</span> <span class=k>for </span><span class=p>|</span> <span class=k>if </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>for          </span><span class=o>=</span> <span class=s2>&#34;for&#34;</span> <span class=k>ident </span><span class=s2>&#34;in&#34;</span> <span class=k>iterable block </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>iterable     </span><span class=o>=</span> <span class=k>range </span><span class=p>|</span> <span class=k>list </span><span class=p>|</span> <span class=k>expr </span><span class=p>;</span>          <span class=cm>(* expr must evaluate to a list *)</span>
+</span></span><span class=line><span class=cl><span class=k>range        </span><span class=o>=</span> <span class=k>expr </span><span class=s2>&#34;..&#34;</span> <span class=k>expr </span><span class=p>;</span>               <span class=cm>(* inclusive, integer endpoints *)</span>
+</span></span><span class=line><span class=cl><span class=k>list         </span><span class=o>=</span> <span class=s2>&#34;[&#34;</span> <span class=p>[</span> <span class=k>expr </span><span class=p>{</span> <span class=s2>&#34;,&#34;</span> <span class=k>expr </span><span class=p>}</span> <span class=p>]</span> <span class=s2>&#34;]&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>if           </span><span class=o>=</span> <span class=s2>&#34;if&#34;</span> <span class=k>expr block </span><span class=p>[</span> <span class=s2>&#34;else&#34;</span> <span class=p>(</span> <span class=k>if </span><span class=p>|</span> <span class=k>block </span><span class=p>)</span> <span class=p>]</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>let          </span><span class=o>=</span> <span class=s2>&#34;let&#34;</span> <span class=k>ident </span><span class=s2>&#34;=&#34;</span> <span class=k>expr </span><span class=s2>&#34;;&#34;</span> <span class=p>;</span>      <span class=cm>(* immutable binding *)</span>
+</span></span><span class=line><span class=cl><span class=k>block        </span><span class=o>=</span> <span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>track_item </span><span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>bar          </span><span class=o>=</span> <span class=s2>&#34;bar&#34;</span> <span class=p>[</span> <span class=k>duration </span><span class=p>]</span> <span class=p>[</span> <span class=k>velocity </span><span class=p>]</span> <span class=s2>&#34;{&#34;</span> <span class=p>{</span> <span class=k>bar_item </span><span class=p>}</span> <span class=s2>&#34;}&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>bar_item     </span><span class=o>=</span> <span class=k>step </span><span class=p>|</span> <span class=k>grid_switch </span><span class=p>|</span> <span class=k>absolute </span><span class=p>|</span> <span class=k>event_stmt </span><span class=p>|</span> <span class=k>bar_flow </span><span class=p>|</span> <span class=s2>&#34;|&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>bar_flow     </span><span class=o>=</span> <span class=k>for </span><span class=p>|</span> <span class=k>if </span><span class=p>;</span>                       <span class=cm>(* same flow, scoped to a bar *)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* region grid switch: rebinds the step duration for following tokens
+</span></span></span><span class=line><span class=cl><span class=cm>   until the next switch, a &#34;|&#34;, or end of bar (see §3a) *)</span>
+</span></span><span class=line><span class=cl><span class=k>grid_switch  </span><span class=o>=</span> <span class=k>duration </span><span class=s2>&#34;:&#34;</span> <span class=p>;</span>                   <span class=cm>(* e.g.  16:  *)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* step-grid: cursor advances ONE grid step per step-token (see §3a).
+</span></span></span><span class=line><span class=cl><span class=cm>   &#34;:&#34; duration sets the GATE (sounding length), not the advance.
+</span></span></span><span class=line><span class=cl><span class=cm>   trailing &#34;*&#34; number repeats the step k times. *)</span>
+</span></span><span class=line><span class=cl><span class=k>step         </span><span class=o>=</span> <span class=k>step_atom </span><span class=p>[</span> <span class=s2>&#34;*&#34;</span> <span class=k>number </span><span class=p>]</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>step_atom    </span><span class=o>=</span> <span class=k>playable </span><span class=p>[</span> <span class=s2>&#34;:&#34;</span> <span class=k>duration </span><span class=p>]</span> <span class=p>[</span> <span class=k>velocity </span><span class=p>]</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>playable     </span><span class=o>=</span> <span class=k>note </span><span class=p>|</span> <span class=k>chord </span><span class=p>|</span> <span class=k>percussion </span><span class=p>|</span> <span class=s2>&#34;_&#34;</span> <span class=p>|</span> <span class=s2>&#34;~&#34;</span> <span class=p>|</span> <span class=k>group </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>group        </span><span class=o>=</span> <span class=s2>&#34;(&#34;</span> <span class=k>playable </span><span class=p>{</span> <span class=s2>&#34;,&#34;</span> <span class=k>playable </span><span class=p>}</span> <span class=s2>&#34;)&#34;</span> <span class=p>;</span>   <span class=cm>(* simultaneous *)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* escape hatch: explicit placement *)</span>
+</span></span><span class=line><span class=cl><span class=k>absolute     </span><span class=o>=</span> <span class=s2>&#34;on&#34;</span> <span class=s2>&#34;beat&#34;</span> <span class=k>expr event_stmt </span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* raw MIDI + meta, placeable in a step slot or via &#39;on beat&#39; *)</span>
+</span></span><span class=line><span class=cl><span class=k>event_stmt   </span><span class=o>=</span> <span class=k>note_evt </span><span class=p>|</span> <span class=k>cc </span><span class=p>|</span> <span class=k>bend </span><span class=p>|</span> <span class=k>pressure </span><span class=p>|</span> <span class=k>program </span><span class=p>|</span> <span class=k>sysex </span><span class=p>|</span> <span class=k>meta </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>note_evt     </span><span class=o>=</span> <span class=k>playable </span><span class=p>[</span> <span class=s2>&#34;@&#34;</span> <span class=k>channel </span><span class=p>]</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>cc           </span><span class=o>=</span> <span class=s2>&#34;cc&#34;</span> <span class=p>(</span><span class=k>number</span><span class=p>|</span><span class=k>cc_name</span><span class=p>)</span> <span class=s2>&#34;=&#34;</span> <span class=k>expr </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>bend         </span><span class=o>=</span> <span class=s2>&#34;bend&#34;</span> <span class=p>(</span> <span class=k>signed_expr </span><span class=p>|</span> <span class=s2>&#34;raw&#34;</span> <span class=k>expr </span><span class=p>|</span> <span class=s2>&#34;range&#34;</span> <span class=k>expr </span><span class=p>)</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>                                                <span class=cm>(* semitones (auto-RPN), or raw
+</span></span></span><span class=line><span class=cl><span class=cm>                                                   14-bit, or set the range *)</span>
+</span></span><span class=line><span class=cl><span class=k>pressure     </span><span class=o>=</span> <span class=s2>&#34;pressure&#34;</span> <span class=k>expr </span><span class=p>;</span>                <span class=cm>(* channel aftertouch *)</span>
+</span></span><span class=line><span class=cl><span class=k>program      </span><span class=o>=</span> <span class=s2>&#34;program&#34;</span> <span class=p>(</span><span class=k>string</span><span class=p>|</span><span class=k>number</span><span class=p>)</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>sysex        </span><span class=o>=</span> <span class=s2>&#34;sysex&#34;</span> <span class=p>{</span> <span class=k>hexbyte </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>meta         </span><span class=o>=</span> <span class=s2>&#34;text&#34;</span> <span class=k>string </span><span class=p>|</span> <span class=s2>&#34;lyric&#34;</span> <span class=k>string </span><span class=p>|</span> <span class=s2>&#34;marker&#34;</span> <span class=k>string </span><span class=p>|</span> <span class=s2>&#34;cue&#34;</span> <span class=k>string </span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>note         </span><span class=o>=</span> <span class=k>NOTE_LITERAL </span><span class=p>;</span>                  <span class=cm>(* C, C#, Eb, C5, F#3 ... *)</span>
+</span></span><span class=line><span class=cl><span class=k>chord        </span><span class=o>=</span> <span class=k>CHORD_LITERAL </span><span class=p>;</span>                 <span class=cm>(* Am7, C7, Gmaj7, C7/E ... *)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* velocity: a value usable as a per-note suffix, a bar/block default, or a
+</span></span></span><span class=line><span class=cl><span class=cm>   track default. precedence per-note &gt; block &gt; track &gt; built-in 64 (see §3b) *)</span>
+</span></span><span class=line><span class=cl><span class=k>velocity     </span><span class=o>=</span> <span class=s2>&#34;v&#34;</span> <span class=p>(</span> <span class=k>number </span><span class=p>|</span> <span class=k>dynamic </span><span class=p>)</span> <span class=p>;</span>      <span class=cm>(* v100  or  v mf *)</span>
+</span></span><span class=line><span class=cl><span class=k>dynamic      </span><span class=o>=</span> <span class=s2>&#34;ppp&#34;</span><span class=p>|</span><span class=s2>&#34;pp&#34;</span><span class=p>|</span><span class=s2>&#34;p&#34;</span><span class=p>|</span><span class=s2>&#34;mp&#34;</span><span class=p>|</span><span class=s2>&#34;mf&#34;</span><span class=p>|</span><span class=s2>&#34;f&#34;</span><span class=p>|</span><span class=s2>&#34;ff&#34;</span><span class=p>|</span><span class=s2>&#34;fff&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=cm>(* --- expression language (musical values; precedence high→low) --- *)</span>
+</span></span><span class=line><span class=cl><span class=k>expr         </span><span class=o>=</span> <span class=k>or_expr </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>or_expr      </span><span class=o>=</span> <span class=k>and_expr </span><span class=p>{</span> <span class=s2>&#34;||&#34;</span> <span class=k>and_expr </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>and_expr     </span><span class=o>=</span> <span class=k>cmp_expr </span><span class=p>{</span> <span class=s2>&#34;&amp;&amp;&#34;</span> <span class=k>cmp_expr </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>cmp_expr     </span><span class=o>=</span> <span class=k>add_expr </span><span class=p>[</span> <span class=p>(</span> <span class=s2>&#34;==&#34;</span> <span class=p>|</span> <span class=s2>&#34;!=&#34;</span> <span class=p>|</span> <span class=s2>&#34;&lt;&#34;</span> <span class=p>|</span> <span class=s2>&#34;&lt;=&#34;</span> <span class=p>|</span> <span class=s2>&#34;&gt;&#34;</span> <span class=p>|</span> <span class=s2>&#34;&gt;=&#34;</span> <span class=p>)</span> <span class=k>add_expr </span><span class=p>]</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>add_expr     </span><span class=o>=</span> <span class=k>mul_expr </span><span class=p>{</span> <span class=p>(</span> <span class=s2>&#34;+&#34;</span> <span class=p>|</span> <span class=s2>&#34;-&#34;</span> <span class=p>)</span> <span class=k>mul_expr </span><span class=p>}</span> <span class=p>;</span>   <span class=cm>(* note+interval, ints *)</span>
+</span></span><span class=line><span class=cl><span class=k>mul_expr     </span><span class=o>=</span> <span class=k>unary    </span><span class=p>{</span> <span class=p>(</span> <span class=s2>&#34;*&#34;</span> <span class=p>|</span> <span class=s2>&#34;/&#34;</span> <span class=p>)</span> <span class=k>unary </span><span class=p>}</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>unary        </span><span class=o>=</span> <span class=p>[</span> <span class=s2>&#34;!&#34;</span> <span class=p>|</span> <span class=s2>&#34;-&#34;</span> <span class=p>]</span> <span class=k>primary </span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>primary      </span><span class=o>=</span> <span class=k>number </span><span class=p>|</span> <span class=k>bool </span><span class=p>|</span> <span class=k>note </span><span class=p>|</span> <span class=k>chord </span><span class=p>|</span> <span class=k>interval </span><span class=p>|</span> <span class=k>dynamic </span><span class=p>|</span> <span class=k>list</span>
+</span></span><span class=line><span class=cl>             <span class=p>|</span> <span class=k>ident </span><span class=p>|</span> <span class=k>pattern_call </span><span class=p>|</span> <span class=s2>&#34;(&#34;</span> <span class=k>expr </span><span class=s2>&#34;)&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>signed_expr  </span><span class=o>=</span> <span class=p>[</span> <span class=s2>&#34;+&#34;</span> <span class=p>|</span> <span class=s2>&#34;-&#34;</span> <span class=p>]</span> <span class=k>expr </span><span class=p>;</span>            <span class=cm>(* explicit sign, e.g. bend +2 *)</span>
+</span></span><span class=line><span class=cl><span class=k>bool         </span><span class=o>=</span> <span class=s2>&#34;true&#34;</span> <span class=p>|</span> <span class=s2>&#34;false&#34;</span> <span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>interval     </span><span class=o>=</span> <span class=s2>&#34;min2&#34;</span><span class=p>|</span><span class=s2>&#34;maj2&#34;</span><span class=p>|</span><span class=s2>&#34;min3&#34;</span><span class=p>|</span><span class=s2>&#34;maj3&#34;</span><span class=p>|</span><span class=s2>&#34;fourth&#34;</span><span class=p>|</span><span class=s2>&#34;fifth&#34;</span>
+</span></span><span class=line><span class=cl>             <span class=p>|</span><span class=s2>&#34;min7&#34;</span><span class=p>|</span><span class=s2>&#34;maj7&#34;</span><span class=p>|</span><span class=s2>&#34;octave&#34;</span><span class=p>|</span> <span class=p>.</span><span class=err>..</span> <span class=err>;</span></span></span></code></pre></div><p>Notes on the expression language:</p><ul><li><code>note + interval</code> yields a transposed note (<code>C + maj3</code> → <code>E</code>); <code>+</code>/<code>-</code> on
+numbers are ordinary arithmetic. The operand types decide the operation.</li><li><code>==</code>/<code>!=</code> compare any same-typed values (numbers, notes, chords, bools).</li><li><strong>Lists are first-class values</strong>: a <code>let</code> may bind a list, a <code>pattern</code> may take
+a list parameter and iterate it, and list literals may nest. The element type
+is uniform within a list (all notes, all chords, all numbers, …).</li><li>Everything is evaluated during elaboration; an expression that can&rsquo;t be
+reduced to a value then (e.g. references an undefined binding) is an error,
+not a runtime decision.</li></ul><h3 id=pattern-operators-composition>Pattern operators (composition)<a class=anchor href=#pattern-operators-composition>#</a></h3><pre tabindex=0><code>a then b      sequence a, then b
+a over b      layer a and b in parallel (same start)
+a * 4         repeat a four times</code></pre><h2 id=3a-step-grid-semantics-the-timing-model>3a. Step-grid semantics (the timing model)<a class=anchor href=#3a-step-grid-semantics-the-timing-model>#</a></h2><p>This is the heart of v2 and the resolution of the porting blockers. All four
+rules below are validated against the examples to tick precision.</p><p><strong>Position vs. gate are independent.</strong> A bar maintains a <em>cursor</em> in absolute
+ticks. Two separate concepts:</p><ul><li><strong>Advance</strong> — how far the cursor moves to the next token. This is <strong>always one
+grid step</strong>, period. A step-token (note, chord, rest, tie, group) occupies
+exactly one slot. Nothing about a note&rsquo;s duration changes the advance.</li><li><strong>Gate</strong> — how long a note <em>sounds</em>. Default gate = one grid step (so a bare
+<code>C</code> on a quarter grid is a quarter note — the intuitive case). A <code>:dur</code> suffix
+sets the gate to an <strong>absolute</strong> note value, independent of the advance. This
+is what enables overlap/legato (<code>C:2</code> on a 16th grid rings 8 slots while the
+next token is one slot later) and staccato (<code>C:16</code> on a quarter grid).</li></ul><p><strong>Ties.</strong> <code>~</code> extends the <strong>previous</strong> note&rsquo;s gate by one grid step and advances
+the cursor one step. So a held note has two equivalent spellings — pick by
+readability, never combine them:</p><pre tabindex=0><code>F:2                 // gate = absolute half note
+F ~ ~ ~ ~ ~ ~ ~     // gate = 8 sixteenths = a half note (on a 16th grid)</code></pre><p><strong>Region grid switch (<code>N:</code>).</strong> Inside a bar, <code>N:</code> rebinds the grid step for the
+tokens that follow, until the next switch, a <code>|</code>, or end of bar. The cursor stays
+in ticks, so mixing grids never drifts. This makes mixed-subdivision bars
+writable without dropping the whole bar to the finest grid:</p><pre tabindex=0><code>bar quarter { C  16: D E F G  | A }   // C &amp; A are quarters; D E F G are 16ths</code></pre><p><strong>Step repeat (<code>*k</code>).</strong> A trailing <code>*k</code> on any step-token repeats it k times —
+sugar for rest/hold/ostinato runs:</p><pre tabindex=0><code>_*8                 // eight rests
+~*7                 // hold previous note seven more steps
+(C,E,G)*4           // the triad four times</code></pre><p><strong>Bar fill.</strong> The sum of advances should equal exactly one bar
+(<code>beats × whole/denominator</code>). Less → the rest of the bar is silent; more → the
+bar <strong>overflows</strong>, which the elaborator reports as an error (catches miscounted
+grids). <code>|</code> is an optional visual separator and a region-switch terminator; it
+does not itself advance the cursor.</p><p><strong><code>on beat</code> escape hatch</strong> places an event at an absolute beat regardless of the
+cursor, and does not move the cursor. Mix freely with step tokens in one bar.</p><h2 id=3b-velocity-dynamics-and-bend-semantics>3b. Velocity, dynamics, and bend semantics<a class=anchor href=#3b-velocity-dynamics-and-bend-semantics>#</a></h2><p><strong>Velocity is one concept (a 0–127 value) settable in three places</strong>, resolved
+by precedence — nearest wins:</p><pre tabindex=0><code>per-note suffix  &gt;  bar/block default  &gt;  track default  &gt;  built-in (64)</code></pre><pre tabindex=0><code>track &#34;lead&#34; instrument &#34;violin&#34; v mp {     // track default = mp
+    bar quarter v f { C D E:v ff F }        // bar default = f; E accented to ff
+}</code></pre><p><strong>Dynamics keywords are named velocity values</strong>, usable anywhere a velocity is
+(<code>v mf</code>, <code>bar quarter v p { … }</code>, track default). Proposed mapping (tunable):</p><table><thead><tr><th>dyn</th><th>vel</th><th></th><th>dyn</th><th>vel</th></tr></thead><tbody><tr><td>ppp</td><td>16</td><td></td><td>mf</td><td>80</td></tr><tr><td>pp</td><td>32</td><td></td><td>f</td><td>96</td></tr><tr><td>p</td><td>48</td><td></td><td>ff</td><td>112</td></tr><tr><td>mp</td><td>64</td><td></td><td>fff</td><td>127</td></tr></tbody></table><p>A bare number (<code>v100</code>) is an exact velocity and bypasses the table.</p><p><strong>Bend is in semitones with automatic range setup.</strong> <code>bend +2</code> means two
+semitones up; the elaborator emits the RPN pitch-bend-range message (RPN 0) once
+per track so the result is correct regardless of the synth&rsquo;s default range, then
+the 14-bit value for the requested semitone offset. Escapes: <code>bend raw 8192</code>
+(direct 14-bit) and <code>bend range 12</code> (set range to ±12 explicitly).</p><hr><h2 id=4-examples-rewritten>4. Examples rewritten<a class=anchor href=#4-examples-rewritten>#</a></h2><h3 id=4a-12-bar-blues-lead--step-grid>4a. 12-bar blues (lead) — step grid<a class=anchor href=#4a-12-bar-blues-lead--step-grid>#</a></h3><p>v1 (excerpt):</p><pre tabindex=0><code>bar {
+    on beat 1 play quarter note C;
+    on beat 2 play quarter note E;
+    on beat 3 play quarter note G;
+}</code></pre><p>v2:</p><pre tabindex=0><code>project &#34;12 bars blues&#34; {
+    bpm 120; time 4 4;
+
+    track &#34;lead piano&#34; instrument &#34;piano&#34; {
+        pattern I  { bar quarter { C E G _ } }
+        pattern IV { bar quarter { F A C _ } }
+        pattern V  { bar quarter { G B D _ } }
+
+        I  IV
+        for _ in 1..2 { I }
+        for _ in 1..2 { IV }
+        for _ in 1..2 { I }
+        V  IV  I  V
+    }
+
+    track &#34;rythm guitar&#34; instrument &#34;guitar&#34; {
+        bar whole { C7 } bar whole { F7 }
+        for _ in 1..2 { bar whole { C7 } }
+        for _ in 1..2 { bar whole { F7 } }
+        for _ in 1..2 { bar whole { C7 } }
+        bar whole { G7 } bar whole { F7 } bar whole { C7 } bar whole { G7 }
+    }
+
+    track &#34;bass&#34; instrument &#34;bass&#34; {
+        pattern walk(root, third) { bar quarter { root _ third _ } }
+        walk(C2, E2)  walk(F2, A2)
+        for _ in 1..2 { walk(C2, E2) }
+        for _ in 1..2 { walk(F2, G2) }
+        for _ in 1..2 { walk(C2, E2) }
+        walk(G2, B2)  walk(F2, G2)  walk(C2, E2)  walk(G2, B2)
+    }
+
+    track &#34;drums&#34; instrument &#34;drum kit&#34; channel 10 {
+        kit {
+            hh  = &#34;closed hi-hat&#34;;
+            oh  = &#34;open hi-hat&#34;;
+            sn  = &#34;acoustic snare&#34;;
+            cy  = &#34;crash cymbal 1&#34;;
+        }
+        pattern beat {
+            bar 8 { (oh,sn,cy) hh hh hh _ _ _ _ }
+        }
+        for _ in 1..12 { beat() }
+    }
+}</code></pre><p><code>for _ in 1..N</code> is the counted-repeat idiom (<code>_</code> discards the index). Bind the
+index when you need it (see 4c).</p><h3 id=4b-nuages--the-full-port-the-case-that-drove-3a>4b. nuages — the full port (the case that drove §3a)<a class=anchor href=#4b-nuages--the-full-port-the-case-that-drove-3a>#</a></h3><p>This is the file that exposed the gate-vs-advance blocker. With the §3a rules it
+ports cleanly and was verified tick-for-tick against the original.</p><p>v1 lead, bar 1:</p><pre tabindex=0><code>bar {
+    on beat 3    play 8th note C#;
+    on beat 3.25 play 8th note D;
+    on beat 3.5  play 8th note A;
+    on beat 3.75 play 8th note G#;
+    on beat 4    play 8th note G;
+    on beat 4.5  play 8th note F#;
+}</code></pre><p>v2 — full lead guitar track:</p><pre tabindex=0><code>track &#34;lead guitar&#34; instrument &#34;guitar&#34; {
+    // bar 1: 8th notes on a 16th grid (so 3.25/3.75 are real slots).
+    // :8 sets each note&#39;s gate; the cursor still advances one 16th per token.
+    bar 16 {
+        _*8                       // beats 1-2 silent
+        C#:8 D:8 A:8 G#:8         // beats 3, 3.25, 3.5, 3.75
+        G:8  _   F#:8 _           // beat 4, 4.5
+    }
+    // bar 2: half note on 1, late 8th on 4.5 (slot 14 of 16); 13 rests between
+    bar 16 { F:2  _*13  E:8 _ }
+    // bar 3: half(1) + quarter(2.5) + 8th(4.5) all land on the 8th grid
+    bar 8  { F:2  _ _ Eb:4  _ _ _ D:8 }
+    // bar 4: whole note
+    bar 1  { D }
+}</code></pre><p>v2 — piano track (even durations are the grid&rsquo;s sweet spot; last bar mixes in
+<code>on beat</code> where it reads better):</p><pre tabindex=0><code>track &#34;rythm piano&#34; instrument &#34;piano&#34; {
+    bar {}                        // one bar of rest
+    bar 1 { Eb9 }                 // whole chord
+    bar 2 { Am7b5 D7b9 }          // two half chords
+    bar { on beat 1 Gmaj7:2  on beat 3 Am7:4  on beat 4 Bm7b5:4 }
+}</code></pre><h3 id=4c-loop-index--ifelse-from-expear>4c. loop index + if/else (from exp.ear)<a class=anchor href=#4c-loop-index--ifelse-from-expear>#</a></h3><p>The <code>exp.ear</code> scratch used postfix <code>if loop == 2</code> guards; with structured flow
+this becomes a real <code>if/else</code> over the bound loop index:</p><pre tabindex=0><code>track &#34;rythm guitar&#34; instrument &#34;guitar&#34; {
+    for i in 1..2 {
+        if i == 2 {
+            bar whole { C7/G }      // last pass: voice the fifth in the bass
+        } else {
+            bar whole { C7/E }
+        }
+    }
+}</code></pre><h3 id=4d-for-over-a-list--iterate-a-chord-progression>4d. for over a list — iterate a chord progression<a class=anchor href=#4d-for-over-a-list--iterate-a-chord-progression>#</a></h3><p>The reason the loop primitive is <code>for x in &lt;list></code> and not just a counted
+repeat: progressions become data you can walk.</p><pre tabindex=0><code>track &#34;comp&#34; instrument &#34;piano&#34; {
+    let changes = [Am6, Dm6, E7, Am6];   // ii-V-i-ish
+
+    for ch in changes {
+        bar quarter { ch ch ch ch }      // 4-to-the-bar comping
+    }
+}</code></pre><p>Combine with transposition for sequences:</p><pre tabindex=0><code>track &#34;riff&#34; instrument &#34;bass&#34; {
+    // play the same shape rooted on each scale degree
+    for root in [C2, F2, G2] {
+        bar quarter { root (root + fifth) (root + octave) _ }
+    }
+}</code></pre><h3 id=4e-full-midi-primitives>4e. Full-MIDI primitives<a class=anchor href=#4e-full-midi-primitives>#</a></h3><pre tabindex=0><code>track &#34;synth lead&#34; instrument &#34;lead 1 (square)&#34; channel 3 {
+    program &#34;lead 2 (sawtooth)&#34;;     // mid-track patch change
+    bar quarter {
+        C   cc cutoff = 64   E   cc cutoff = 100
+    }
+    on beat 1 bend +2;               // pitch bend up 2 semitones (raw escape: bend raw 8192)
+    on beat 2 pressure 90;
+    sysex F0 7E 7F 09 01 F7;         // GM reset
+}</code></pre><h3 id=4f-first-class-lists--dynamics--a-reusable-comping-pattern>4f. First-class lists + dynamics — a reusable comping pattern<a class=anchor href=#4f-first-class-lists--dynamics--a-reusable-comping-pattern>#</a></h3><p>Lists as values let a pattern take a progression as a parameter; dynamics make
+the feel concise:</p><pre tabindex=0><code>project &#34;comp demo&#34; {
+    bpm 120; time 4 4;
+
+    // a pattern that comps any progression, soft, four-to-the-bar
+    pattern comp(changes) {
+        for ch in changes {
+            bar quarter v mp { ch ch ch ch:v mf }   // last hit slightly accented
+        }
+    }
+
+    track &#34;piano&#34; instrument &#34;piano&#34; v p {          // track sits at p by default
+        let aTune = [Am6, Dm6, E7, Am6];
+        comp(aTune)
+        comp([Dm6, Am6, E7, Am6])                   // list literal inline
+    }
+}</code></pre><hr><h2 id=5-migration--compatibility>5. Migration / compatibility<a class=anchor href=#5-migration--compatibility>#</a></h2><ul><li>v1 syntax (<code>on beat N play &lt;dur> note/chord X;</code>) can remain valid as a strict
+subset, so existing <code>.ear</code> files keep working while the step-grid surface is
+added on top. A <code>--strict-v1</code> flag (or a per-file pragma) can gate the old
+grammar if we later want to retire it.</li><li>The four shipped examples can be ported incrementally; 4a–4f above show target
+forms.</li></ul><h2 id=6-resolved-design-decisions>6. Resolved design decisions<a class=anchor href=#6-resolved-design-decisions>#</a></h2><p>All of the original open questions are now decided:</p><ul><li><strong>Bend</strong> — semitones with <strong>automatic RPN range setup</strong>; <code>bend raw N</code> (14-bit)
+and <code>bend range N</code> escapes. (§3b)</li><li><strong>Velocity</strong> — one 0–127 value settable per-note / per-block / per-track, plus
+named <strong>dynamics</strong> (<code>ppp</code>…<code>fff</code>); precedence per-note > block > track > 64. (§3b)</li><li><strong>Lists</strong> — <strong>first-class values</strong>: bindable with <code>let</code>, passable to patterns,
+iterable with <code>for</code>; uniform element type. (§3, §4f)</li><li><strong>Channel vs. port</strong> — a track binds one <code>channel</code> and one <code>port</code>; events
+inherit them. Per-event <code>@channel</code> override exists for the full-MIDI cases; no
+per-event port override for now (rare; can be added without grammar churn).</li><li><strong>Scoping</strong> — <strong>lexical</strong>. Patterns/<code>let</code> bindings are visible in their
+enclosing block and nested blocks; project-level patterns are shared across all
+tracks; inner bindings shadow outer. <code>let</code> is immutable.</li><li><strong><code>for</code> altitude</strong> — a <code>for</code>/<code>if</code> adapts to context: in a track/pattern body it
+yields bars and pattern calls; inside a bar it yields steps (advancing the
+cursor). Nesting (track-level <code>for</code> of bars containing a bar-level <code>for</code> of
+steps) is allowed and reads cleanly.</li><li><strong>Tie across a group</strong> — <code>~</code> extends the gate of the <strong>whole</strong> preceding
+simultaneous group <code>(a,b,c)</code> by one step (every voice is held together). To
+tie only one voice, place that voice as its own step.</li></ul><h2 id=7-remaining-work-before-implementation>7. Remaining work before implementation<a class=anchor href=#7-remaining-work-before-implementation>#</a></h2><p>Design is complete enough to build; these are implementation-time details, not
+open language questions:</p><ul><li>Exact dynamics→velocity numbers (table in §3b is a tunable starting point).</li><li>Lexer/parser rewrite to the v2 grammar; reuse v1 as a recognized subset.</li><li>The elaboration pass (AST → absolute-tick event stream) — the simulator in the
+design notes is the reference semantics for the step grid.</li><li>The live scheduler (the second consumer of the event stream).</li></ul><h2 id=8-port-findings-stress-testing-the-syntax-against-the-examples>8. Port findings (stress-testing the syntax against the examples)<a class=anchor href=#8-port-findings-stress-testing-the-syntax-against-the-examples>#</a></h2><p>Porting all four example files to v2 surfaced the issues below. The step grid
+handles the <em>common</em> case beautifully (minor-swing&rsquo;s 96 lines collapse to one
+<code>pattern comp(ch)</code> + a few <code>for</code>s; blues comping is one line per bar) and nuages
+exposed real gaps. <strong>All blockers are now resolved</strong> — see §3a for the formal
+rules; the resolutions were validated against every nuages bar to tick precision.</p><h3 id=blocker-1-resolved--3a--gate-vs-cursor-advance>BLOCKER 1 (RESOLVED → §3a) — gate vs. cursor advance<a class=anchor href=#blocker-1-resolved--3a--gate-vs-cursor-advance>#</a></h3><p><code>:dur</code> was overloaded: it tried to mean both &ldquo;how long the note sounds&rdquo; and
+&ldquo;where the next note goes.&rdquo; <strong>Resolution:</strong> split them. The cursor <em>always</em>
+advances one grid step (S1); <code>:dur</code> sets only the <strong>gate</strong> (sounding length).
+<code>~</code> extends the previous gate by one step. <code>F:2</code> and <code>F ~*7</code> are equivalent and
+never combined. This is the central §3a rule.</p><h3 id=blocker-2-resolved--3a--mixed-subdivisions-in-one-bar>BLOCKER 2 (RESOLVED → §3a) — mixed subdivisions in one bar<a class=anchor href=#blocker-2-resolved--3a--mixed-subdivisions-in-one-bar>#</a></h3><p>nuages bar 1 mixes 8th and 16th offsets. <strong>Resolution:</strong> the in-bar region
+switch <code>N:</code> rebinds the grid step for the following tokens (until the next
+switch, <code>|</code>, or end of bar). Verified to introduce no timing drift across grid
+changes within a bar.</p><h3 id=paper-cut-1-resolved--3a--resthold-run-verbosity>PAPER-CUT 1 (RESOLVED → §3a) — rest/hold-run verbosity<a class=anchor href=#paper-cut-1-resolved--3a--resthold-run-verbosity>#</a></h3><p><strong>Resolution:</strong> step-level repeat <code>*k</code> — <code>_*8</code>, <code>~*7</code>, <code>(C,E,G)*4</code>.</p><h3 id=paper-cut-2-resolved--3a--long-percussion-names>PAPER-CUT 2 (RESOLVED → §3a) — long percussion names<a class=anchor href=#paper-cut-2-resolved--3a--long-percussion-names>#</a></h3><p><strong>Resolution:</strong> per-track <code>kit { hh = "closed hi-hat"; ... }</code> alias block; then
+<code>bar 8 { (oh,sn,cy) hh hh hh _*4 }</code>. Aliases are pure name bindings.</p><h3 id=confirmed-ok-no-blocker>CONFIRMED OK (no blocker)<a class=anchor href=#confirmed-ok-no-blocker>#</a></h3><ul><li>Empty bar <code>bar {}</code> = one bar of rest — clean.</li><li>Whole note/chord per bar (<code>bar 1 { D }</code>, <code>bar 1 { Eb9 }</code>) — clean.</li><li>Multiple even durations per bar (<code>bar 2 { Am7b5 D7b9 }</code>) — the grid&rsquo;s sweet spot.</li><li>Nested counted repeats (minor-swing) via nested <code>for _ in 1..N</code> + a <code>pattern</code>.</li><li>Mixing step-grid and <code>on beat</code> in one bar (nuages piano bar 4) — works as the
+designed escape hatch.</li><li><code>for</code>-over-list for chord progressions — natural and a clear win.</li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div></div><div></div></div><div class="flex flex-wrap justify-between"><span><a href=/earmuff/docs/examples/ class="flex align-center"><img src=/earmuff/icons/backward.svg class=book-icon alt=Backward>
+<span>Examples</span>
+</a></span><span></span></div><div class=book-comments></div><script>(function(){document.querySelectorAll("pre:has(code)").forEach(e=>{e.addEventListener("click",e.focus),e.addEventListener("copy",function(t){if(t.preventDefault(),navigator.clipboard){const t=window.getSelection().toString()||e.textContent;navigator.clipboard.writeText(t)}})})})()</script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#goals-from-design-discussion>Goals (from design discussion)</a></li><li><a href=#design-decisions>Design decisions</a></li><li><a href=#1-execution-model>1. Execution model</a></li><li><a href=#2-lexical-changes>2. Lexical changes</a><ul><li><a href=#durations>Durations</a></li></ul></li><li><a href=#3-grammar-ebnf-ish>3. Grammar (EBNF-ish)</a><ul><li><a href=#pattern-operators-composition>Pattern operators (composition)</a></li></ul></li><li><a href=#3a-step-grid-semantics-the-timing-model>3a. Step-grid semantics (the timing model)</a></li><li><a href=#3b-velocity-dynamics-and-bend-semantics>3b. Velocity, dynamics, and bend semantics</a></li><li><a href=#4-examples-rewritten>4. Examples rewritten</a><ul><li><a href=#4a-12-bar-blues-lead--step-grid>4a. 12-bar blues (lead) — step grid</a></li><li><a href=#4b-nuages--the-full-port-the-case-that-drove-3a>4b. nuages — the full port (the case that drove §3a)</a></li><li><a href=#4c-loop-index--ifelse-from-expear>4c. loop index + if/else (from exp.ear)</a></li><li><a href=#4d-for-over-a-list--iterate-a-chord-progression>4d. for over a list — iterate a chord progression</a></li><li><a href=#4e-full-midi-primitives>4e. Full-MIDI primitives</a></li><li><a href=#4f-first-class-lists--dynamics--a-reusable-comping-pattern>4f. First-class lists + dynamics — a reusable comping pattern</a></li></ul></li><li><a href=#5-migration--compatibility>5. Migration / compatibility</a></li><li><a href=#6-resolved-design-decisions>6. Resolved design decisions</a></li><li><a href=#7-remaining-work-before-implementation>7. Remaining work before implementation</a></li><li><a href=#8-port-findings-stress-testing-the-syntax-against-the-examples>8. Port findings (stress-testing the syntax against the examples)</a><ul><li><a href=#blocker-1-resolved--3a--gate-vs-cursor-advance>BLOCKER 1 (RESOLVED → §3a) — gate vs. cursor advance</a></li><li><a href=#blocker-2-resolved--3a--mixed-subdivisions-in-one-bar>BLOCKER 2 (RESOLVED → §3a) — mixed subdivisions in one bar</a></li><li><a href=#paper-cut-1-resolved--3a--resthold-run-verbosity>PAPER-CUT 1 (RESOLVED → §3a) — rest/hold-run verbosity</a></li><li><a href=#paper-cut-2-resolved--3a--long-percussion-names>PAPER-CUT 2 (RESOLVED → §3a) — long percussion names</a></li><li><a href=#confirmed-ok-no-blocker>CONFIRMED OK (no blocker)</a></li></ul></li></ul></nav></div></aside></main></body></html>

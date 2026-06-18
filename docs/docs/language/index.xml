@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Language on earmuff</title><link>https://poolporg.github.io/earmuff/docs/language/</link><description>Recent content in Language on earmuff</description><generator>Hugo</generator><language>en</language><atom:link href="https://poolporg.github.io/earmuff/docs/language/index.xml" rel="self" type="application/rss+xml"/><item><title>Bars and the step grid</title><link>https://poolporg.github.io/earmuff/docs/language/bars-and-the-step-grid/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://poolporg.github.io/earmuff/docs/language/bars-and-the-step-grid/</guid><description>&lt;h1 id="bars-and-the-step-grid"&gt;Bars and the step grid&lt;a class="anchor" href="#bars-and-the-step-grid"&gt;#&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;A &lt;code&gt;bar&lt;/code&gt; lays events on a grid. The grid&amp;rsquo;s step is the bar&amp;rsquo;s duration, and the
+cursor advances exactly &lt;strong&gt;one step per token&lt;/strong&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;bar quarter { C E G _ } // four quarter-note slots
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;bar 8 { C C C C C C C C } // an eighth-note grid: eight slots&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A duration can be a word (&lt;code&gt;whole&lt;/code&gt;, &lt;code&gt;half&lt;/code&gt;, &lt;code&gt;quarter&lt;/code&gt;) or a number (&lt;code&gt;1&lt;/code&gt;, &lt;code&gt;2&lt;/code&gt;,
+&lt;code&gt;4&lt;/code&gt;, &lt;code&gt;8&lt;/code&gt;, &lt;code&gt;16&lt;/code&gt;, &lt;code&gt;32&lt;/code&gt;, &lt;code&gt;64&lt;/code&gt;, &lt;code&gt;128&lt;/code&gt;), with the suffix &lt;code&gt;.&lt;/code&gt; for dotted (×1.5) and
+&lt;code&gt;t&lt;/code&gt; for triplet (×2/3).&lt;/p&gt;</description></item><item><title>Notes and chords</title><link>https://poolporg.github.io/earmuff/docs/language/notes-and-chords/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://poolporg.github.io/earmuff/docs/language/notes-and-chords/</guid><description>&lt;h1 id="notes-and-chords"&gt;Notes and chords&lt;a class="anchor" href="#notes-and-chords"&gt;#&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Notes and chords are written by name, directly in musical position — the
+&lt;code&gt;note&lt;/code&gt;/&lt;code&gt;chord&lt;/code&gt; keywords are optional.&lt;/p&gt;
+&lt;h2 id="notes"&gt;Notes&lt;a class="anchor" href="#notes"&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;A note is a letter &lt;code&gt;A&lt;/code&gt;–&lt;code&gt;G&lt;/code&gt;, an optional accidental (&lt;code&gt;#&lt;/code&gt; or &lt;code&gt;b&lt;/code&gt;), and an optional
+octave number:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;C C# Eb F#3 Cb&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Without an octave, a default register is used; an explicit number (&lt;code&gt;C5&lt;/code&gt;, &lt;code&gt;F#3&lt;/code&gt;,
+&lt;code&gt;E2&lt;/code&gt;) pins the octave.&lt;/p&gt;
+&lt;h2 id="chords"&gt;Chords&lt;a class="anchor" href="#chords"&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Chords are written by name:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;Am7 Gmaj7 C7 Dm7b5 C7/E&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Slash chords (&lt;code&gt;C7/E&lt;/code&gt;) specify the bass note.&lt;/p&gt;</description></item><item><title>Patterns and control flow</title><link>https://poolporg.github.io/earmuff/docs/language/patterns-and-control-flow/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://poolporg.github.io/earmuff/docs/language/patterns-and-control-flow/</guid><description>&lt;h1 id="patterns-and-control-flow"&gt;Patterns and control flow&lt;a class="anchor" href="#patterns-and-control-flow"&gt;#&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Patterns and control flow are evaluated at &lt;strong&gt;compile time&lt;/strong&gt;. There is no runtime
+branching: &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;if&lt;/code&gt;, &lt;code&gt;let&lt;/code&gt;, and pattern calls all run during elaboration over
+compile-time-known values, so the event stream is fully determined before any
+MIDI is emitted. Loops are bounded and bindings are immutable, which guarantees
+termination and keeps the music deterministic and diffable.&lt;/p&gt;
+&lt;h2 id="patterns"&gt;Patterns&lt;a class="anchor" href="#patterns"&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;A &lt;code&gt;pattern&lt;/code&gt; is a named, reusable block. It can take parameters and is invoked
+with a call:&lt;/p&gt;</description></item><item><title>MIDI and dynamics</title><link>https://poolporg.github.io/earmuff/docs/language/midi-and-dynamics/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://poolporg.github.io/earmuff/docs/language/midi-and-dynamics/</guid><description>&lt;h1 id="midi-and-dynamics"&gt;MIDI and dynamics&lt;a class="anchor" href="#midi-and-dynamics"&gt;#&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;earmuff exposes the full MIDI set as first-class statements, alongside notes and
+chords.&lt;/p&gt;
+&lt;h2 id="raw-events"&gt;Raw events&lt;a class="anchor" href="#raw-events"&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-text" data-lang="text"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;program &amp;#34;violin&amp;#34;; // program change (by name or number)
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;cc 74 = 64; // control change
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;bend +2; // pitch bend, in semitones
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;pressure 90; // channel aftertouch
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;sysex F0 7E 7F 09 01 F7; // raw system-exclusive bytes&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;These can sit in a step slot or be placed with &lt;code&gt;on beat&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="bend"&gt;Bend&lt;a class="anchor" href="#bend"&gt;#&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;bend&lt;/code&gt; is expressed in &lt;strong&gt;semitones&lt;/strong&gt;. &lt;code&gt;bend +2&lt;/code&gt; bends two semitones up; the
+elaborator emits the RPN pitch-bend-range message once per track so the result
+is correct regardless of the synth&amp;rsquo;s default range, then the 14-bit value for
+the requested offset. Escape hatches:&lt;/p&gt;</description></item></channel></rss>
