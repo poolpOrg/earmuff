@@ -1,0 +1,21 @@
+// Prelude in C major — earmuff v2.
+// Excerpt from Bach, The Well-Tempered Clavier, Book I, BWV 846 (1722):
+// the opening eight bars of the famous arpeggio prelude.
+project "prelude in c major" {
+    bpm 72; time 4 4;
+
+    track "harpsichord" instrument "piano" v mf {
+        pattern prelude {
+            bar 16 { C4 E4 G4 C5 E5 G4 C5 E4 G4 C5 E5 G4 C5 E4 G4 C5 }
+            bar 16 { G4 C5 E5 G4 C5 E5 G4 C5 G4 C5 E5 G4 C5 E5 G4 C5 }
+            bar 16 { A3 C4 E4 A4 C5 E4 A4 C5 A3 C4 E4 A4 C5 E4 A4 C5 }
+            bar 16 { E3 A3 C4 E4 A4 C5 E4 A4 E3 A3 C4 E4 A4 C5 E4 A4 }
+            bar 16 { F3 C4 F4 A4 C5 F4 A4 C5 F3 C4 F4 A4 C5 F4 A4 C5 }
+            bar 16 { D3 F3 A3 D4 F4 A4 D4 F4 D3 F3 A3 D4 F4 A4 D4 F4 }
+            bar 16 { G3 B3 D4 G4 B4 D4 G4 B4 G3 B3 D4 G4 B4 D4 G4 B4 }
+            bar 16 { C4 E4 G4 C5 E4 G4 C5 E4 C4 E4 G4 C5 E4 G4 C5 E4 }
+        }
+
+        prelude()
+    }
+}

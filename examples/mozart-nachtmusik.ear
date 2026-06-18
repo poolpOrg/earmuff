@@ -1,0 +1,58 @@
+// Eine kleine Nachtmusik — earmuff v2.
+// Excerpt from Mozart, Serenade No. 13 in G major, K. 525, I. Allegro (1787):
+// the main theme (bars 1–10). String trio reduction — violin melody, violin 2
+// in parallel thirds, cello on the bass.
+project "eine kleine nachtmusik" {
+    bpm 132; time 4 4;
+
+    track "violin 1" instrument "violin" v f {
+        pattern theme {
+            bar 8 { G4:8 G4:8 F#4:8 E4:8 D4:8 D4:8 _ _ }
+            bar 8 { C4:8 C4:8 B3:8 A3:8 G4:8 G4:8 _ _ }
+            bar 8 { D5:8 D5:8 D5:8 D5:8 C5:8 B4:8 A4:8 G4:8 }
+            bar 8 { G4:8 F#4:8 G4:8 A4:8 G4:8 F#4:8 G4:8 _ }
+            bar 8 { G4:8 G4:8 F#4:8 E4:8 D4:8 D4:8 _ _ }
+            bar 8 { C4:8 C4:8 B3:8 A3:8 G4:8 G4:8 _ _ }
+            bar 8 { D5:8 B4:8 G4:8 B4:8 D5:8 G5:8 _ _ }
+            bar 8 { B5:8 A5:8 G5:8 F#5:8 G5:8 E5:8 _ _ }
+            bar 8 { D5:8 C5:8 B4:8 A4:8 G4:8 F#4:8 G4:8 _ }
+            bar 1  { G4 }
+        }
+
+        theme()
+    }
+
+    track "violin 2" instrument "violin" v mf {
+        pattern harmony {
+            bar 8 { E4:8 E4:8 D4:8 C#4:8 B3:8 B3:8 _ _ }
+            bar 8 { A3:8 A3:8 G3:8 F#3:8 D4:8 D4:8 _ _ }
+            bar 8 { B4:8 B4:8 B4:8 B4:8 A4:8 G4:8 F#4:8 E4:8 }
+            bar 8 { E4:8 D4:8 E4:8 F#4:8 E4:8 D4:8 E4:8 _ }
+            bar 8 { E4:8 E4:8 D4:8 C#4:8 B3:8 B3:8 _ _ }
+            bar 8 { A3:8 A3:8 G3:8 F#3:8 D4:8 D4:8 _ _ }
+            bar 8 { B4:8 G4:8 D4:8 G4:8 B4:8 D5:8 _ _ }
+            bar 8 { G5:8 F#5:8 E5:8 D5:8 E5:8 C#5:8 _ _ }
+            bar 8 { B4:8 A4:8 G4:8 F#4:8 E4:8 D4:8 E4:8 _ }
+            bar 1  { B3 }
+        }
+
+        harmony()
+    }
+
+    track "cello" instrument "cello" v mf {
+        pattern bass {
+            bar quarter { G2 _ D2 _ }
+            bar quarter { G2 _ C3 _ }
+            bar quarter { G2 _ D2 _ }
+            bar quarter { G2 _ D2 _ }
+            bar quarter { G2 _ D2 _ }
+            bar quarter { G2 _ C3 _ }
+            bar quarter { G2 _ B2 _ }
+            bar quarter { C3 _ D3 _ }
+            bar quarter { G2 _ D2 _ }
+            bar 1 { G2 }
+        }
+
+        bass()
+    }
+}

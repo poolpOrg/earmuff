@@ -1,0 +1,62 @@
+// Small jazz — earmuff v2.
+// A compact 8-bar ii-V-I turnaround in C, played twice: trumpet head, piano
+// comping, walking bass, and a light swing groove.
+project "sidewalk session" {
+    bpm 120; time 4 4;
+
+    track "trumpet" instrument "trumpet" v mf {
+        pattern head {
+            bar 8 { _ E5:4 _ D5:4 C5:4 _ _ _ }     // Am7
+            bar 8 { B4:4 _ A4:4 _ G4:4 _ _ _ }       // D7
+            bar 8 { A4:2 _ _ C5:4 _ E5:4 _ _ }       // Gmaj7
+            bar 8 { G4:4 _ _ _ _ _ _ _ }             // Gmaj7
+            bar 8 { _ G4:4 _ F4:4 E4:4 _ _ _ }       // Em7
+            bar 8 { D4:4 _ C4:4 _ B3:4 _ _ _ }       // A7
+            bar 8 { A3:2 _ _ D4:4 _ F4:4 _ _ }       // Dm7
+            bar 8 { G3:4 _ _ _ _ _ _ _ }             // G7
+        }
+
+        for _ in 1..2 { head() }
+    }
+
+    track "piano" instrument "piano" v mp {
+        let form = [Am7, D7, Gmaj7, Gmaj7, Em7, A7, Dm7, G7];
+
+        pattern comp(ch) { bar quarter v mf { ch _ ch:v f _ } }
+
+        for _ in 1..2 {
+            for ch in form { comp(ch) }
+        }
+    }
+
+    track "bass" instrument "acoustic bass" v mf {
+        pattern walk(n1, n2, n3, n4) { bar quarter { n1 n2 n3 n4 } }
+
+        for _ in 1..2 {
+            walk(A2, C3, E3, G3)
+            walk(F#2, A2, C3, E3)
+            walk(G2, B2, D3, F#3)
+            walk(G2, B2, D3, F#3)
+            walk(E2, G2, B2, D3)
+            walk(A2, C#3, E3, G3)
+            walk(D2, F2, A2, C3)
+            walk(G2, B2, D2, F2)
+        }
+    }
+
+    track "drums" instrument "synth drum" channel 10 v mf {
+        kit {
+            hh = "closed hi-hat";
+            sn = "acoustic snare";
+            bd = "acoustic bass drum";
+            rd = "ride cymbal 1";
+        }
+        // feathered kick, snare on 2 & 4, ride time
+        pattern swing {
+            bar 8 { rd _ hh sn _ hh sn _ }
+            bar 8 { bd _ hh sn _ hh sn _ }
+        }
+
+        for _ in 1..8 { swing() }
+    }
+}
