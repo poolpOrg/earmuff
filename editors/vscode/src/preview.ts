@@ -158,12 +158,16 @@ function webviewHtml(
     display: flex;
     justify-content: center;
   }
-  /* the engraved page renders on white, like paper */
+  /* The engraved page renders on white like paper. lilypond paints with
+     fill="currentColor", so force color:#000 — otherwise the notation inherits
+     the (dark-theme) editor foreground and is nearly invisible. */
   #sheet svg {
     background: #fff;
+    color: #000;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
     max-width: 100%;
     height: auto;
+    padding: 8px;
   }
 </style>
 </head>
