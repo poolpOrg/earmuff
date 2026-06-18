@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>earmuff — write music as code</title>
+<meta name="description" content="earmuff is a language for writing music as code. Describe a piece in plain text, then compile it to MIDI, play it, or engrave real sheet music." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="earmuff — write music as code" />
+<meta property="og:description" content="Describe music in plain text. Compile to MIDI, play it, or engrave sheet music — with git, diffs, and review for free." />
+<meta property="og:url" content="https://earmuff.io/" />
+
+<style>
+  :root {
+    --bg: #0c0d16;
+    --bg-2: #12131f;
+    --panel: #171827;
+    --border: #262838;
+    --text: #e7e8f0;
+    --muted: #9aa0b4;
+    --brand: #6b78ff;
+    --brand-2: #3a31c9;
+    --accent: #8a93ff;
+    --code-bg: #0f1019;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: #fff; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ---- nav ---- */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(12,13,22,0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #fff; }
+  .brand img { width: 28px; height: 28px; border-radius: 7px; }
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--muted); font-weight: 500; }
+  .nav-links a:hover { color: #fff; }
+
+  /* ---- buttons ---- */
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 10px;
+    font-weight: 600; font-size: 15px; cursor: pointer; transition: transform .08s ease, filter .15s ease;
+    border: 1px solid transparent;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(180deg, var(--brand), var(--brand-2)); color: #fff; }
+  .btn-primary:hover { color: #fff; filter: brightness(1.08); }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-ghost:hover { color: #fff; border-color: var(--brand); }
+
+  /* ---- hero ---- */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 96px 0 80px;
+    background:
+      radial-gradient(900px 400px at 70% -10%, rgba(107,120,255,0.18), transparent 60%),
+      radial-gradient(700px 500px at 10% 10%, rgba(58,49,201,0.14), transparent 55%);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+  .eyebrow {
+    display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: .04em;
+    color: var(--accent); background: rgba(107,120,255,0.12);
+    border: 1px solid rgba(107,120,255,0.25); padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
+  }
+  h1 { font-size: 52px; line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.02em; color: #fff; }
+  h1 .grad { background: linear-gradient(90deg, var(--accent), #b9c0ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 36ch; }
+  .cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .cta .hint { margin-top: 14px; font-size: 13px; color: var(--muted); width: 100%; }
+  .cta code { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 7px; border-radius: 6px; color: #cdd2ff; }
+
+  /* ---- code card ---- */
+  .code-card {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.6); overflow: hidden;
+  }
+  .code-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5f56; } .dot.y { background: #ffbd2e; } .dot.g { background: #27c93f; }
+  .code-name { margin-left: 8px; color: var(--muted); font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre { margin: 0; padding: 20px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.7; }
+  pre .k { color: #8a93ff; }   /* keyword */
+  pre .s { color: #6cd0a8; }   /* string  */
+  pre .n { color: #e3b341; }   /* note/chord */
+  pre .c { color: #5d6377; }   /* comment */
+  pre .p { color: #c7cbe0; }   /* punctuation/plain */
+
+  /* ---- sections ---- */
+  section { padding: 80px 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 48px; }
+  .section-head h2 { font-size: 34px; margin: 0 0 12px; letter-spacing: -0.02em; color: #fff; }
+  .section-head p { color: var(--muted); font-size: 17px; margin: 0; }
+  .alt { background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  /* ---- feature cards ---- */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color .15s ease, transform .12s ease; }
+  .card:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .card .ico { font-size: 24px; margin-bottom: 12px; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* ---- pipeline ---- */
+  .pipeline { display: flex; align-items: stretch; justify-content: center; gap: 0; flex-wrap: wrap; }
+  .stage { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; text-align: center; min-width: 150px; }
+  .stage .t { font-weight: 600; color: #fff; }
+  .stage .d { font-size: 13px; color: var(--muted); }
+  .arrow { display: flex; align-items: center; color: var(--brand); font-size: 22px; padding: 0 14px; }
+  .outs { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ---- footer ---- */
+  footer { border-top: 1px solid var(--border); padding: 48px 0; color: var(--muted); }
+  .foot-grid { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+  .foot-links { display: flex; gap: 28px; flex-wrap: wrap; }
+  .foot-links a { color: var(--muted); font-weight: 500; }
+  .foot-note { font-size: 13px; margin-top: 12px; }
+
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 40px; }
+    .features { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .pipeline { flex-direction: column; align-items: center; }
+    .arrow { transform: rotate(90deg); padding: 8px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand"><img src="assets/logo.svg" alt="" /> earmuff</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/poolpOrg/earmuff">GitHub</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">music · as · code</span>
+      <h1>Write music in <span class="grad">plain text</span>.<br />Play it. Print it.</h1>
+      <p class="lede">earmuff is a language for composing music as source code — so you
+        get git, diffs, review, and scripting for free. Compile to MIDI, play it
+        live, or engrave real sheet music.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="/docs/">Get started</a>
+        <a class="btn btn-ghost" href="https://github.com/poolpOrg/earmuff">View on GitHub</a>
+        <div class="hint">Install: <code>go install github.com/poolpOrg/earmuff/cmd/earmuff@latest</code></div>
+      </div>
+    </div>
+
+    <div class="code-card">
+      <div class="code-head">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="code-name">song.ear</span>
+      </div>
+<pre><span class="k">project</span> <span class="s">"demo"</span> <span class="p">{</span>
+    <span class="k">bpm</span> 96<span class="p">;</span> <span class="k">time</span> 4 4<span class="p">;</span>
+
+    <span class="k">track</span> <span class="s">"piano"</span> <span class="k">instrument</span> <span class="s">"piano"</span> <span class="p">{</span>
+        <span class="k">let</span> changes <span class="p">=</span> <span class="p">[</span><span class="n">Cmaj7</span><span class="p">,</span> <span class="n">Am7</span><span class="p">,</span> <span class="n">Dm7</span><span class="p">,</span> <span class="n">G7</span><span class="p">];</span>
+        <span class="k">for</span> ch <span class="k">in</span> changes <span class="p">{</span> <span class="k">bar</span> <span class="k">quarter</span> <span class="p">{</span> ch ch ch ch <span class="p">} }</span>
+    <span class="p">}</span>
+
+    <span class="k">track</span> <span class="s">"lead"</span> <span class="k">instrument</span> <span class="s">"violin"</span> <span class="p">{</span>
+        <span class="k">bar</span> <span class="k">quarter</span> <span class="p">{</span> <span class="n">E5</span> <span class="n">G5</span> <span class="n">B5</span> <span class="p">(</span><span class="n">E5</span> <span class="k">+</span> <span class="k">octave</span><span class="p">) }</span>
+    <span class="p">}</span>
+<span class="p">}</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>A composer's tools, a developer's workflow</h2>
+      <p>Everything you'd want from a real toolchain — because earmuff source is just text.</p>
+    </div>
+    <div class="features">
+      <div class="card">
+        <div class="ico">📝</div>
+        <h3>Readable syntax</h3>
+        <p>A step grid for rhythm, named notes and chords (<code>C#</code>, <code>Am7</code>), and an escape hatch for exact timing.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🔁</div>
+        <h3>Programmable</h3>
+        <p>Reusable patterns, <code>for</code> loops over chord progressions, conditionals — all resolved at compile time, so it's deterministic.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🎛️</div>
+        <h3>Full MIDI</h3>
+        <p>Notes and chords alongside control change, pitch bend, aftertouch, program change, and sysex.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🎼</div>
+        <h3>Sheet music</h3>
+        <p>Engrave a real score to PDF or SVG via LilyPond — from the exact same source.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🎹</div>
+        <h3>Hear it instantly</h3>
+        <p>Play straight to a synth, or write a Standard MIDI File for any DAW.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🧩</div>
+        <h3>Editor support</h3>
+        <p>A VS Code extension with diagnostics, autocomplete, and a live score preview that updates as you type.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>One source, three outputs</h2>
+      <p>earmuff parses and analyzes your piece, expands it into a precise event stream, then renders it however you need.</p>
+    </div>
+    <div class="pipeline">
+      <div class="stage"><div class="t">song.ear</div><div class="d">your source</div></div>
+      <div class="arrow">→</div>
+      <div class="stage"><div class="t">elaborate</div><div class="d">parse · analyze · expand</div></div>
+      <div class="arrow">→</div>
+      <div class="outs">
+        <div class="stage"><div class="t">🎹 MIDI &amp; playback</div></div>
+        <div class="stage"><div class="t">🎼 sheet music</div></div>
+        <div class="stage"><div class="t">📄 LilyPond</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA STRIP ============ -->
+<section class="alt" style="text-align:center;">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:24px;">
+      <h2>Start composing in text</h2>
+      <p>Free and open source. Written in Go.</p>
+    </div>
+    <div class="cta" style="justify-content:center;">
+      <a class="btn btn-primary" href="/docs/">Read the docs</a>
+      <a class="btn btn-ghost" href="https://github.com/poolpOrg/earmuff">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap foot-grid">
+    <div>
+      <div class="brand"><img src="assets/logo.svg" alt="" style="width:24px;height:24px;" /> earmuff</div>
+      <div class="foot-note">Write music as code. ISC licensed.</div>
+    </div>
+    <div class="foot-links">
+      <a href="/docs/">Documentation</a>
+      <a href="https://github.com/poolpOrg/earmuff">GitHub</a>
+      <a href="https://github.com/poolpOrg/earmuff/tree/main/examples">Examples</a>
+      <a href="https://github.com/poolpOrg/earmuff/blob/main/LICENSE">License</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
