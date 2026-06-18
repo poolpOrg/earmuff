@@ -28,6 +28,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/poolpOrg/earmuff/analyzer"
 	"github.com/poolpOrg/earmuff/ast"
@@ -187,10 +188,16 @@ func renderPDF(ly, outPath, lilypondBin string) error {
 	if err := os.WriteFile(lyPath, []byte(ly), 0o644); err != nil {
 		return err
 	}
-	// lilypond writes <basename>.pdf into the output dir.
-	cmd := exec.Command(bin, "--pdf", "-o", filepath.Join(dir, "score"), lyPath)
-	cmd.Stderr = os.Stderr
+	// lilypond writes <basename>.pdf into the output dir. Capture its (noisy)
+	// progress output and only surface it if the render fails — on success the
+	// command stays quiet, like -out.
+	cmd := exec.Command(bin, "-s", "--pdf", "-o", filepath.Join(dir, "score"), lyPath)
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			fmt.Fprintln(os.Stderr, msg)
+		}
 		return fmt.Errorf("lilypond failed: %w", err)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, "score.pdf"))
