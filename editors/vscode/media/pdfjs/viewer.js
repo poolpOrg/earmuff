@@ -56,7 +56,16 @@
     setStatus("Rendering…");
     try {
       const data = base64ToBytes(b64);
-      const doc = await pdfjsLib.getDocument({ data }).promise;
+      let doc;
+      try {
+        doc = await pdfjsLib.getDocument({ data }).promise;
+      } catch (workerErr) {
+        // Most commonly a worker-spawn failure under the webview CSP. Retry on
+        // the main thread.
+        const data2 = base64ToBytes(b64);
+        doc = await pdfjsLib.getDocument({ data: data2, disableWorker: true })
+          .promise;
+      }
       if (token !== renderToken) {
         return;
       }
@@ -110,11 +119,21 @@
     }
   });
 
-  // Load PDF.js as an ES module, then wire up its worker.
+  // Load PDF.js as an ES module. Surface any failure visibly (the webview has
+  // no console the user can easily see) and report it back to the extension.
+  setStatus("Loading PDF.js…");
   import(pdfjsUrl)
     .then((mod) => {
       pdfjsLib = mod;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+      // Run the worker from the bundled URL. If the worker can't start under
+      // the webview CSP, disableWorker falls PDF.js back to the main thread so
+      // rendering still succeeds (slower, but reliable).
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+      } catch (e) {
+        /* ignore; covered by the worker-port fallback below */
+      }
+      setStatus("");
       if (pending !== null) {
         const b64 = pending;
         pending = null;
@@ -122,7 +141,12 @@
       }
     })
     .catch((err) => {
-      showError("Failed to load PDF.js: " + String(err && err.message ? err.message : err));
+      showError(
+        "Failed to load PDF.js module:\n" +
+          String(err && err.message ? err.message : err) +
+          "\n\nurl: " + pdfjsUrl
+      );
+      vscode.postMessage({ type: "viewerError", message: String(err) });
     });
 
   vscode.postMessage({ type: "ready" });
