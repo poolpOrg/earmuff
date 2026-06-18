@@ -1,0 +1,18 @@
+project "nuages" {
+    bpm 120; time 4 4;
+
+    track "lead guitar" instrument "electric guitar (clean)" {
+        // bar 1: 8th notes on a 16th grid (so 3.25/3.75 are real slots).
+        bar 16 {
+            _*8                       // beats 1-2 silent
+            C#:8 D:8 A:8 G#:8         // beats 3, 3.25, 3.5, 3.75
+            G:8  _   F#:8 _           // beat 4, 4.5
+        }
+        // bar 2: half note on 1, late 8th on 4.5 (slot 14 of 16); 13 rests between
+        bar 16 { F:2  _*13  E:8 _ }
+        // bar 3: half(1) + quarter(2.5) + 8th(4.5) all land on the 8th grid
+        bar 8  { F:2  _ _ Eb:4  _ _ _ D:8 }
+        // bar 4: whole note
+        bar 1  { D }
+    }
+}

@@ -1,0 +1,20 @@
+// docs/language-v2.md §4d — for over a list: iterate a chord progression, plus
+// transposition for sequences.
+project "for list" {
+    bpm 120; time 4 4;
+
+    track "comp" instrument "piano" {
+        let changes = [Am6, Dm6, E7, Am6];   // ii-V-i-ish
+
+        for ch in changes {
+            bar quarter { ch ch ch ch }      // 4-to-the-bar comping
+        }
+    }
+
+    track "riff" instrument "bass" {
+        // play the same shape rooted on each scale degree
+        for root in [C2, F2, G2] {
+            bar quarter { root (root + fifth) (root + octave) _ }
+        }
+    }
+}

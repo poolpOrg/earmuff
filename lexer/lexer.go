@@ -1,353 +1,320 @@
+// Package lexer turns earmuff v2 source into a stream of tokens.
+//
+// The lexer is deliberately decoupled from music theory: it recognizes lexical
+// *shapes* (words, numbers, strings, operators) and reserved keywords, but it
+// does not decide whether a word is a note ("C#") or a chord ("Am7"). That
+// classification depends on go-harmony and on grammatical context, so it is left
+// to the parser. A word-shaped token is emitted as token.IDENT; its Literal
+// holds the exact source text (including accidentals and any slash-chord tail).
 package lexer
 
 import (
-	"bufio"
-	"bytes"
-	"io"
-	"strings"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/poolpOrg/earmuff/token"
 )
 
-type Token int
+const eof = rune(0)
 
-const (
-	ILLEGAL Token = iota
-	EOF
-	WHITESPACE
-	COMMENT
+// Lexer scans a source buffer into tokens, tracking line/column for diagnostics.
+type Lexer struct {
+	src      string
+	filename string
 
-	REPEAT
+	offset     int // byte offset of the current rune (ch)
+	readOffset int // byte offset of the next rune
+	ch         rune
 
-	IDENTIFIER
-	NUMBER
-	FLOAT
-	STRING
-	SEMICOLON
-	BRACKET_OPEN
-	BRACKET_CLOSE
-
-	BPM
-	COPYRIGHT
-	TIME
-	PROJECT
-	INSTRUMENT
-	TRACK
-	TIMES
-	BAR
-	BEAT
-	TEXT
-	LYRIC
-	MARKER
-	CUE
-
-	PLAY
-
-	WHOLE
-	HALF
-	QUARTER
-	TH
-	ND
-
-	ON
-
-	CYMBAL
-	SNARE
-	OPEN_HI_HAT
-
-	NOTE
-	INTERVAL
-	CHORD
-	PERCUSSION
-
-	VELOCITY
-)
-
-func isWhitespace(ch rune) bool {
-	return ch == ' ' || ch == '\t' || ch == '\n'
+	line   int
+	column int
 }
 
-func isLetter(ch rune) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+// New creates a Lexer over src. filename is used only for diagnostics.
+func New(src, filename string) *Lexer {
+	l := &Lexer{src: src, filename: filename, line: 1, column: 0}
+	l.readRune()
+	return l
 }
 
-func isDigit(ch rune) bool {
-	return (ch >= '0' && ch <= '9')
+func (l *Lexer) readRune() {
+	if l.readOffset >= len(l.src) {
+		l.offset = len(l.src)
+		l.ch = eof
+		return
+	}
+	r, size := utf8.DecodeRuneInString(l.src[l.readOffset:])
+	l.offset = l.readOffset
+	l.readOffset += size
+	if l.ch == '\n' {
+		l.line++
+		l.column = 1
+	} else {
+		l.column++
+	}
+	l.ch = r
 }
 
-var eof = rune(0)
-
-type Scanner struct {
-	r *bufio.Reader
-}
-
-func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{r: bufio.NewReader(r)}
-}
-
-func (s *Scanner) read() rune {
-	ch, _, err := s.r.ReadRune()
-	if err != nil {
+func (l *Lexer) peek() rune {
+	if l.readOffset >= len(l.src) {
 		return eof
 	}
-	return ch
+	r, _ := utf8.DecodeRuneInString(l.src[l.readOffset:])
+	return r
 }
 
-func (s *Scanner) unread() { _ = s.r.UnreadRune() }
+func (l *Lexer) pos() token.Position {
+	return token.Position{Filename: l.filename, Line: l.line, Column: l.column}
+}
 
-func (s *Scanner) Scan() (tok Token, lit string) {
-	ch := s.read()
+func isWordStart(ch rune) bool {
+	return unicode.IsLetter(ch) || ch == '_'
+}
 
-	if isWhitespace(ch) {
-		s.unread()
-		return s.scanWhitespace()
-	} else if isDigit(ch) || ch == '.' {
-		s.unread()
-		return s.scanNumber()
-	} else if isLetter(ch) {
-		s.unread()
-		return s.scanIdent()
-	} else if ch == '"' || ch == '\'' {
-		s.unread()
-		return s.scanString()
-	} else if ch == '/' {
-		ch = s.read()
-		if ch == '/' {
-			s.unread()
-			return s.scanSingleLineComment()
-		} else if ch == '*' {
-			s.unread()
-			return s.scanMultiLineComment()
-		} else {
-			s.unread()
-		}
+// isWordPart accepts the characters that may appear inside a word token. This is
+// broad on purpose: it includes accidentals (#, ^) and digits so that "C#",
+// "Am7", and "F#3" lex as a single IDENT. The slash-chord tail ("C7/E") is
+// handled separately in scanWord.
+func isWordPart(ch rune) bool {
+	return unicode.IsLetter(ch) || unicode.IsDigit(ch) || ch == '_' || ch == '#' || ch == '^'
+}
+
+func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
+
+func isHexDigit(ch rune) bool {
+	return isDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')
+}
+
+// Next returns the next token. Whitespace and comments are skipped.
+func (l *Lexer) Next() token.Token {
+	l.skipTrivia()
+
+	pos := l.pos()
+	ch := l.ch
+
+	switch {
+	case ch == eof:
+		return token.Token{Type: token.EOF, Literal: "", Pos: pos}
+	case ch == '"' || ch == '\'':
+		return l.scanString()
+	case isWordStart(ch):
+		return l.scanWord()
+	case isDigit(ch):
+		return l.scanNumber()
+	case ch == '.' && l.peek() == '.':
+		l.readRune()
+		l.readRune()
+		return token.Token{Type: token.DOTDOT, Literal: "..", Pos: pos}
+	case ch == '.' && isDigit(l.peek()):
+		return l.scanNumber()
 	}
 
-	// Otherwise read the individual character.
 	switch ch {
-	case eof:
-		return EOF, ""
 	case '{':
-		return BRACKET_OPEN, string(ch)
+		return l.emit(token.LBRACE, pos)
 	case '}':
-		return BRACKET_CLOSE, string(ch)
+		return l.emit(token.RBRACE, pos)
+	case '[':
+		return l.emit(token.LBRACKET, pos)
+	case ']':
+		return l.emit(token.RBRACKET, pos)
+	case '(':
+		return l.emit(token.LPAREN, pos)
+	case ')':
+		return l.emit(token.RPAREN, pos)
 	case ';':
-		return SEMICOLON, string(ch)
-
-	}
-
-	return ILLEGAL, string(ch)
-}
-
-// scanWhitespace consumes the current rune and all contiguous whitespace.
-func (s *Scanner) scanWhitespace() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent whitespace character into the buffer.
-	// Non-whitespace characters and EOF will cause the loop to exit.
-	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if !isWhitespace(ch) {
-			s.unread()
-			break
-		} else {
-			buf.WriteRune(ch)
+		return l.emit(token.SEMICOLON, pos)
+	case ',':
+		return l.emit(token.COMMA, pos)
+	case ':':
+		return l.emit(token.COLON, pos)
+	case '|':
+		if l.peek() == '|' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.OR, Literal: "||", Pos: pos}
+		}
+		return l.emit(token.BAR_SEP, pos)
+	case '~':
+		return l.emit(token.TILDE, pos)
+	case '@':
+		return l.emit(token.AT, pos)
+	case '*':
+		return l.emit(token.STAR, pos)
+	case '/':
+		return l.emit(token.SLASH, pos)
+	case '+':
+		return l.emit(token.PLUS, pos)
+	case '-':
+		return l.emit(token.MINUS, pos)
+	case '=':
+		if l.peek() == '=' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.EQ, Literal: "==", Pos: pos}
+		}
+		return l.emit(token.ASSIGN, pos)
+	case '!':
+		if l.peek() == '=' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.NEQ, Literal: "!=", Pos: pos}
+		}
+		return l.emit(token.NOT, pos)
+	case '<':
+		if l.peek() == '=' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.LTE, Literal: "<=", Pos: pos}
+		}
+		return l.emit(token.LT, pos)
+	case '>':
+		if l.peek() == '=' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.GTE, Literal: ">=", Pos: pos}
+		}
+		return l.emit(token.GT, pos)
+	case '&':
+		if l.peek() == '&' {
+			l.readRune()
+			l.readRune()
+			return token.Token{Type: token.AND, Literal: "&&", Pos: pos}
 		}
 	}
 
-	return WHITESPACE, buf.String()
+	lit := string(ch)
+	l.readRune()
+	return token.Token{Type: token.ILLEGAL, Literal: lit, Pos: pos}
 }
 
-func (s *Scanner) scanString() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	r := s.read()
-	escaped := false
+func (l *Lexer) emit(t token.Type, pos token.Position) token.Token {
+	lit := string(l.ch)
+	l.readRune()
+	return token.Token{Type: t, Literal: lit, Pos: pos}
+}
 
-	// Read every subsequent whitespace character into the buffer.
-	// Non-whitespace characters and EOF will cause the loop to exit.
+func (l *Lexer) skipTrivia() {
 	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if ch == '\\' {
-			escaped = true
-		} else {
-			if ch == r {
-				if !escaped {
-					break
-				}
+		switch {
+		case l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r':
+			l.readRune()
+		case l.ch == '/' && l.peek() == '/':
+			for l.ch != '\n' && l.ch != eof {
+				l.readRune()
 			}
-			buf.WriteRune(ch)
-			escaped = false
+		case l.ch == '/' && l.peek() == '*':
+			l.readRune() // /
+			l.readRune() // *
+			for !(l.ch == '*' && l.peek() == '/') && l.ch != eof {
+				l.readRune()
+			}
+			if l.ch != eof {
+				l.readRune() // *
+				l.readRune() // /
+			}
+		default:
+			return
 		}
 	}
-	return STRING, buf.String()
 }
 
-func (s *Scanner) scanMultiLineComment() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent whitespace character into the buffer.
-	// Non-whitespace characters and EOF will cause the loop to exit.
-	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if ch == '*' {
-			ch = s.read()
-			if ch == '/' {
+func (l *Lexer) scanString() token.Token {
+	pos := l.pos()
+	quote := l.ch
+	l.readRune() // opening quote
+	var sb []rune
+	for l.ch != quote && l.ch != eof {
+		if l.ch == '\\' {
+			l.readRune()
+			if l.ch == eof {
 				break
 			}
-			s.unread()
-		} else {
-			buf.WriteRune(ch)
 		}
+		sb = append(sb, l.ch)
+		l.readRune()
 	}
-	return COMMENT, buf.String()
+	if l.ch != quote {
+		// unterminated string
+		return token.Token{Type: token.ILLEGAL, Literal: string(sb), Pos: pos}
+	}
+	l.readRune() // closing quote
+	return token.Token{Type: token.STRING, Literal: string(sb), Pos: pos}
 }
 
-func (s *Scanner) scanSingleLineComment() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent whitespace character into the buffer.
-	// Non-whitespace characters and EOF will cause the loop to exit.
-	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if ch == '\n' {
-			break
-		} else {
-			buf.WriteRune(ch)
+func (l *Lexer) scanWord() token.Token {
+	pos := l.pos()
+	start := l.offset
+	for isWordPart(l.ch) {
+		l.readRune()
+	}
+	// allow a single slash-chord tail: C7/E, F7/1  (slash then word/digit)
+	if l.ch == '/' && (isWordPart(l.peek()) || isDigit(l.peek())) {
+		l.readRune() // '/'
+		for isWordPart(l.ch) {
+			l.readRune()
 		}
 	}
-	return COMMENT, buf.String()
+	lit := l.src[start:l.offset]
+
+	if t := token.LookupKeyword(lit); t != token.IDENT {
+		return token.Token{Type: t, Literal: lit, Pos: pos}
+	}
+	return token.Token{Type: token.IDENT, Literal: lit, Pos: pos}
 }
 
-func (s *Scanner) scanIdent() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent ident character into the buffer.
-	// Non-ident characters and EOF will cause the loop to exit.
-	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' && ch != '#' && ch != '^' {
-			s.unread()
-			break
-		} else {
-			_, _ = buf.WriteRune(ch)
-		}
-	}
-
-	// If the string matches a keyword then return that keyword.
-	switch strings.ToUpper(buf.String()) {
-	case "BPM":
-		return BPM, buf.String()
-	case "TIME":
-		return TIME, buf.String()
-	case "REPEAT":
-		return REPEAT, buf.String()
-	case "TIMES":
-		return TIMES, buf.String()
-
-	case "TEXT":
-		return TEXT, buf.String()
-	case "COPYRIGHT":
-		return COPYRIGHT, buf.String()
-	case "LYRIC":
-		return LYRIC, buf.String()
-	case "MARKER":
-		return MARKER, buf.String()
-	case "CUE":
-		return CUE, buf.String()
-
-		//case "NAME":
-	//	return NAME, buf.String()
-	case "INSTRUMENT":
-		return INSTRUMENT, buf.String()
-
-	case "PROJECT":
-		return PROJECT, buf.String()
-	case "TRACK":
-		return TRACK, buf.String()
-	case "BAR":
-		return BAR, buf.String()
-	case "BEAT":
-		return BEAT, buf.String()
-
-	case "PLAY":
-		return PLAY, buf.String()
-
-	case "WHOLE":
-		return WHOLE, buf.String()
-	case "HALF":
-		return HALF, buf.String()
-	case "QUARTER":
-		return QUARTER, buf.String()
-	case "TH":
-		return TH, buf.String()
-	case "ND":
-		return ND, buf.String()
-
-	case "NOTE":
-		return NOTE, buf.String()
-	case "INTERVAL":
-		return INTERVAL, buf.String()
-	case "CHORD":
-		return CHORD, buf.String()
-	case "PERCUSSION":
-		return PERCUSSION, buf.String()
-
-	case "VELOCITY":
-		return VELOCITY, buf.String()
-
-	case "CYMBAL":
-		return CYMBAL, buf.String()
-	case "SNARE":
-		return SNARE, buf.String()
-	case "OPEN_HI_HAT":
-		return OPEN_HI_HAT, buf.String()
-
-	case "ON":
-		return ON, buf.String()
-
-	}
-
-	// Otherwise return as a regular identifier.
-	return IDENTIFIER, buf.String()
-}
-
-func (s *Scanner) scanNumber() (tok Token, lit string) {
-	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent ident character into the buffer.
-	// Non-ident characters and EOF will cause the loop to exit.
+func (l *Lexer) scanNumber() token.Token {
+	pos := l.pos()
+	start := l.offset
 	isFloat := false
-	for {
-		if ch := s.read(); ch == eof {
-			break
-		} else if !isDigit(ch) && ch != '.' {
-			s.unread()
-			break
-		} else {
-			if ch == '.' {
-				isFloat = true
-			}
-			_, _ = buf.WriteRune(ch)
+	for isDigit(l.ch) {
+		l.readRune()
+	}
+	if l.ch == '.' && l.peek() != '.' { // a single '.', not a ".." range
+		isFloat = true
+		l.readRune() // '.'
+		for isDigit(l.ch) {
+			l.readRune()
 		}
 	}
-
-	// Otherwise return as a regular identifier.
+	lit := l.src[start:l.offset]
 	if isFloat {
-		return FLOAT, buf.String()
+		return token.Token{Type: token.FLOAT, Literal: lit, Pos: pos}
 	}
-	return NUMBER, buf.String()
+	return token.Token{Type: token.NUMBER, Literal: lit, Pos: pos}
+}
+
+// ScanHexByte reads a two-hex-digit byte at the current position, used by the
+// parser for `sysex` payloads. Returns ok=false if the next token is not a
+// standalone hex byte (so the caller can fall back to Next).
+func (l *Lexer) ScanHexByte() (token.Token, bool) {
+	l.skipTrivia()
+	pos := l.pos()
+	if !isHexDigit(l.ch) || !isHexDigit(l.peek()) {
+		return token.Token{}, false
+	}
+	r0 := l.ch
+	start := l.offset
+	l.readRune()
+	l.readRune()
+	// a hex byte is exactly two digits and not the prefix of a longer word
+	if isWordPart(l.ch) && !(isHexDigit(r0)) {
+		return token.Token{}, false
+	}
+	if isWordPart(l.ch) {
+		return token.Token{}, false
+	}
+	return token.Token{Type: token.HEXBYTE, Literal: l.src[start:l.offset], Pos: pos}, true
+}
+
+// Tokens lexes the entire source into a slice (terminated by EOF).
+func (l *Lexer) Tokens() []token.Token {
+	var out []token.Token
+	for {
+		t := l.Next()
+		out = append(out, t)
+		if t.Type == token.EOF {
+			return out
+		}
+	}
 }
