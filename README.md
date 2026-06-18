@@ -1,94 +1,118 @@
 # earmuff
 
-WIP: this is a work in progress, incomplete and very buggys
+earmuff is a language for writing music as code. You describe a piece in plain
+text — projects, tracks, bars, notes, chords — and earmuff compiles it to a
+Standard MIDI File or streams it live to a synthesizer.
 
+Because the source is text, you get every software-development tool for free:
+version control, diffing, code review, and programmatic generation. earmuff is
+not a replacement for a score editor; it is an intermediate, diffable format
+that reads and produces MIDI.
 
-## What is earmuff ?
+> Status: the v2 language and toolchain (parser, analyzer, MIDI backend,
+> language server, and VS Code extension) are in place. See
+> [`docs/language-v2.md`](docs/language-v2.md) for the full language reference.
 
-earmuff is a language to program music as code and either interpret source as a MIDI stream or compile source as an SMF file.
+## Install
 
+Requires Go 1.18+.
 
-## What can you do with earmuff ?
+```sh
+# the compiler / player
+go install github.com/poolpOrg/earmuff/cmd/earmuff@latest
 
-You can write music using your favorite IDE (vscode, vim, emacs, ...),
-any of your usual development tools to match your workflow (git, diff, patch, ...),
-and either playback the music by having it stream to a synthesizer or build a MIDI file to be imported in your other applications.
+# the language server (for editors)
+go install github.com/poolpOrg/earmuff/cmd/earmuff-lsp@latest
+```
 
-
-## How does it look like ?
-
-You can have a look at the `examples/` directory that comes with the project for some samples,
-but basicall you describe a project,
-its tracks and bars within each tracks.
-
-It supports repetitions,
-recognizes note and chord names,
-and is able to perform a few sanity checks on the structure of bars and tracks.
-
+## What it looks like
 
 ```
-project "small project" {
-    bpm 120;
-    time 4 4;
+project "12 bars blues" {
+    bpm 120; time 4 4;
 
-    track "lead piano" {
-        instrument "piano";
+    track "lead piano" instrument "piano" {
+        pattern I  { bar quarter { C E G _ } }
+        pattern IV { bar quarter { F A C _ } }
+        pattern V  { bar quarter { G B D _ } }
 
-        bar {
-            on beat 1 play quarter note C;
-            on beat 2 play quarter note E;
-            on beat 3 play quarter note G;
-        }
-        bar {
-            on beat 1 play quarter note F;
-            on beat 2 play quarter note A;
-            on beat 3 play quarter note C;
-        }
+        I() IV()
+        for _ in 1..2 { I() }
+        for _ in 1..2 { IV() }
+        for _ in 1..2 { I() }
+        V() IV() I() V()
     }
 
-    track "rythm guitar" {
-        instrument "guitar";
-
-        bar { on beat 1 play whole chord C7; }
-        bar { on beat 1 play whole chord F7; }
+    track "rythm guitar" instrument "guitar" {
+        bar whole { C7 } bar whole { F7 }
+        for _ in 1..2 { bar whole { C7 } }
     }
 
-    track "bass" {
-        instrument "bass";
-
-        bar {
-            on beat 1 play quarter note C2;
-            on beat 3 play quarter note E2;
-        }
-        bar {
-            on beat 1 play quarter note F2;
-            on beat 3 play quarter note A2;
-        }
-    }
-
-    track "drums" {
-        instrument "steel drums";
-
-        repeat 2 times bar {
-            on beat 1 play quarter percussion "open hi-hat";
-            on beat 1 play quarter percussion "acoustic snare";
-            on beat 1 play quarter percussion "crash cymbal 1";
-            on beat 2 play quarter percussion "closed hi-hat";
-            on beat 3 play quarter percussion "closed hi-hat";
-            on beat 4 play quarter percussion "closed hi-hat";
-        }
+    track "drums" instrument "synth drum" channel 10 {
+        kit { hh = "closed hi-hat"; sn = "acoustic snare"; cy = "crash cymbal 1"; }
+        pattern groove { bar quarter { (cy, sn) hh hh hh } }
+        for _ in 1..12 { groove() }
     }
 }
 ```
 
-## Is it intended to replace scores ?
+More complete programs live in [`examples/`](examples/).
 
-Nope,it is intended to be an intermediate format to read and produce MIDI.
+## Language essentials
 
-Because MIDI can be used by a wide variety of software,
-including software that manipulate scores...
-they can either be converted to earmuff or the other way around.
+- **Step grid.** A `bar quarter { C E G _ }` lays notes on a grid whose step is
+  the bar's duration; the cursor advances one step per token. `_` is a rest,
+  `~` ties (extends the previous note), and `:dur` sets a note's sounding length
+  independently (`C:8`). Switch the grid mid-bar with `16:` and repeat a token
+  with `*` (`_*4`).
+- **Notes & chords** are recognized by name: `C`, `C#`, `Eb`, `F#3`, `Am7`,
+  `Gmaj7`, `C7/E`. Transpose with intervals: `C + fifth`.
+- **Patterns & control flow.** `pattern name(args) { ... }` defines reusable,
+  parameterized bodies; `for x in 1..4 { ... }` / `for c in [Am7, D7] { ... }`,
+  `if/else`, and immutable `let` bindings run at compile time, so output is
+  deterministic and diffable.
+- **Full MIDI.** Raw events are first class: `cc 74 = 64`, `bend +2`,
+  `pressure 90`, `program "violin"`, `sysex F0 ... F7`, per-event `@channel`.
+- **Velocity & dynamics.** `v100` or named dynamics (`v mf`), settable per note,
+  per bar, or per track.
+- **Escape hatch.** `on beat 2.5 ...` places an event at an absolute beat when
+  the grid is inconvenient.
 
-This makes it easier to use development tools,
-write code that generates earmuff dynamically,
-then export as scores.
+The full grammar and timing model are documented in
+[`docs/language-v2.md`](docs/language-v2.md).
+
+## Usage
+
+```sh
+earmuff song.ear                 # play to a MIDI port (e.g. FluidSynth)
+earmuff -quiet -out song.mid song.ear   # compile to a Standard MIDI File
+earmuff -verbose song.ear        # dump the elaborated event stream
+```
+
+earmuff parses, statically analyzes (reporting harmony and structural problems),
+elaborates the program to a time-ordered event stream, and then writes MIDI or
+plays it.
+
+## Editor support
+
+A language server (`earmuff-lsp`) and a VS Code extension provide diagnostics,
+completion, hover, go-to-definition, a symbol outline, and compile/play
+commands. See [`editors/vscode/`](editors/vscode/).
+
+## Project layout
+
+| Path | What |
+| --- | --- |
+| `cmd/earmuff` | the compiler / player CLI |
+| `cmd/earmuff-lsp` | the language server |
+| `lexer`, `parser`, `ast` | front end (Pratt expression parser) |
+| `analyzer` | static analysis (structural + light harmony) |
+| `value`, `elaborator` | compile-time evaluation → absolute-tick event stream |
+| `smfwriter` | event stream → Standard MIDI File |
+| `midi` | General MIDI instrument / percussion maps |
+| `lsp`, `editors/vscode` | editor tooling |
+| `docs/language-v2.md` | language reference |
+
+## License
+
+ISC. See [LICENSE](LICENSE).
