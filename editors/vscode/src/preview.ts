@@ -23,9 +23,21 @@ interface PreviewState {
   // Pending debounce timer, if any.
   timer: NodeJS.Timeout | undefined;
   disposables: vscode.Disposable[];
+  // Whether the webview has signalled it's ready to receive content.
+  ready: boolean;
+  // The most recent successful SVG, replayed once the webview is ready.
+  lastSvg: string | undefined;
 }
 
 let state: PreviewState | undefined;
+
+let output: vscode.OutputChannel | undefined;
+function log(msg: string): void {
+  if (!output) {
+    output = vscode.window.createOutputChannel("earmuff sheet preview");
+  }
+  output.appendLine(msg);
+}
 
 function cliPath(): string {
   return vscode.workspace
@@ -203,7 +215,14 @@ async function renderInto(
     });
     return;
   }
-  st.panel.webview.postMessage({ type: "svg", svg });
+  // Cache it and post only once the webview has signalled ready; otherwise the
+  // message races the script load and is dropped (blank panel). The "ready"
+  // handler replays lastSvg.
+  st.lastSvg = svg;
+  log(`[preview] rendered ${svg.length} bytes; ready=${st.ready}`);
+  if (st.ready) {
+    st.panel.webview.postMessage({ type: "svg", svg });
+  }
 }
 
 function scheduleRender(doc: vscode.TextDocument, st: PreviewState): void {
@@ -270,12 +289,33 @@ export function showSheetPreview(context: vscode.ExtensionContext): void {
     tempSvg: `${base}.svg`,
     timer: undefined,
     disposables: [],
+    ready: false,
+    lastSvg: undefined,
   };
   state = st;
 
   panel.webview.html = webviewHtml(panel.webview, context);
 
   // Re-render the previewed doc as it changes.
+  // Webview -> extension messages: "ready" (replay the latest SVG, avoiding the
+  // load race) and "log" (diagnostics into the output channel).
+  st.disposables.push(
+    panel.webview.onDidReceiveMessage((m: { type?: string; message?: string }) => {
+      if (state !== st || !m) {
+        return;
+      }
+      if (m.type === "ready") {
+        st.ready = true;
+        log("[webview] ready");
+        if (st.lastSvg) {
+          panel.webview.postMessage({ type: "svg", svg: st.lastSvg });
+        }
+      } else if (m.type === "log") {
+        log(`[webview] ${m.message}`);
+      }
+    })
+  );
+
   st.disposables.push(
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (state === st && e.document.uri.fsPath === st.docPath) {
