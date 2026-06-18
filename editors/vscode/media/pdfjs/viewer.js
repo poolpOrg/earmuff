@@ -118,12 +118,14 @@
   // no console the user can easily see) and report it back to the extension.
   // Warm PDF.js immediately, before the first PDF arrives, so its module
   // compile overlaps the (parallel) lilypond render instead of adding to it.
-  // We render worker-less, so the worker URL is unused.
-  void workerUrl;
   setStatus("Loading…");
   import(pdfjsUrl)
     .then((mod) => {
       pdfjsLib = mod;
+      // PDF.js requires workerSrc to be set even when we render worker-less
+      // (disableWorker uses a same-thread "fake worker"). Point it at the
+      // bundled worker URL to satisfy the check without spawning a real worker.
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
       setStatus("");
       if (pending !== null) {
         const b64 = pending;
