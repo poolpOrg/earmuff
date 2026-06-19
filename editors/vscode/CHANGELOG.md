@@ -1,7 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
+- **Language catch-up.** Highlighting and the bundled language server now track
+  the current grammar:
+  - Notes carry their octave after a caret (`C^5`, `Eb^3`); a bare letter is a
+    note at the default octave. A digit or quality after the letter is a chord
+    (`C7`, `Am7`, `C5`). `C^5` is no longer flagged as an error.
+  - `repeat N { … }`, `section name { … }`, and `swing N` are recognized.
+  - Slash chords whose bass is not a chord tone (`Dm7/G`, `Bm7b5/E`) resolve.
+  - Notes and chords highlight as distinct scopes.
 - New command **earmuff: Show Sheet Preview** — opens a live sheet-music PDF
   preview beside the editor that re-renders (debounced) from the unsaved buffer
   as you type. Engraving uses LilyPond via `earmuff -pdf`; configure its

@@ -23,16 +23,16 @@ project "12 bars blues" {
         pattern V  { bar quarter { G B D _ } }
 
         I() IV()
-        for _ in 1..2 { I() }
-        for _ in 1..2 { IV() }
-        for _ in 1..2 { I() }
+        repeat 2 { I() }
+        repeat 2 { IV() }
+        repeat 2 { I() }
         V() IV() I() V()
     }
 
     track "drums" instrument "synth drum" channel 10 {
         kit { hh = "closed hi-hat"; sn = "acoustic snare"; cy = "crash cymbal 1"; }
         pattern groove { bar quarter { (cy, sn) hh hh hh } }
-        for _ in 1..12 { groove() }
+        repeat 12 { groove() }
     }
 }
 ```

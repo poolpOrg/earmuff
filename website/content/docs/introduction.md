@@ -44,13 +44,15 @@ emit LilyPond for notation.
 
 - **Readable, diffable syntax** — a step grid for rhythm, named notes and
   chords (`C#`, `Am7`, `Gmaj7`), and an `on beat` escape hatch for exact timing.
-- **Programmable** — reusable `pattern`s with parameters, `for` loops over
-  ranges and lists, `if`/`else`, and immutable `let` bindings, all resolved at
+- **Programmable** — reusable `pattern`s and `section`s, `for` loops, `repeat`,
+  a `swing` feel, `if`/`else`, and immutable `let` bindings, all resolved at
   compile time so output is deterministic.
 - **Full MIDI** — control change, pitch bend, aftertouch, program change,
   sysex, and per-event channels, alongside notes and chords.
 - **Three outputs from one source** — a Standard MIDI File, live playback, or
   engraved sheet music (PDF/SVG via LilyPond).
+- **Imports MIDI, too** — `earmuff -import song.mid` turns a Standard MIDI File
+  back into editable `.ear` source, so you can bring existing tunes in.
 - **Editor support** — a language server (diagnostics, completion, hover,
   go-to-definition, outline) and a VS Code extension with a live sheet-music
   preview that updates as you type.

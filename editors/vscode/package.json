@@ -2,7 +2,7 @@
   "name": "earmuff",
   "displayName": "earmuff",
   "description": "Syntax highlighting, language server, and build commands for the earmuff music DSL (.ear files).",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "poolpOrg",
   "engines": {
     "vscode": "^1.75.0"

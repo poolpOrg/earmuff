@@ -19,16 +19,38 @@ earmuff [flags] source.ear
 | `-lilypond <path>` | path to the lilypond binary (for `-pdf`/`-svg`) |
 | `-quiet` | suppress the summary and skip playback |
 | `-verbose` | dump the elaborated event stream |
+| `-import` | read a `.mid` and emit `.ear` source (the reverse direction) |
+| `-faithful` | with `-import`: exact `on beat` timing instead of a quantized grid |
+| `-grid N` | with `-import`: quantization grid as a note value (default 16) |
 
 With no `-out`/`-pdf`/`-svg` and without `-quiet`, earmuff **plays** the piece.
 
 ```sh
 earmuff song.ear                 # play it (auto-detects an available synth)
-earmuff -out song.mid song.ear   # write a Standard MIDI File
+earmuff -out song.mid song.ear   # export a Standard MIDI File
 earmuff -pdf song.pdf song.ear   # engrave sheet music
 ```
 
 See [Sheet music]({{< relref "/docs/sheet-music" >}}) for the notation flags.
+
+## Importing MIDI
+
+earmuff also goes the other way: `-import` turns a Standard MIDI File into
+editable earmuff source on stdout (or to `-out`).
+
+```sh
+earmuff -import song.mid > song.ear            # readable, quantized to a grid
+earmuff -import -faithful song.mid > song.ear  # exact timing via `on beat`
+```
+
+Import is heuristic — MIDI is a flat event stream, so the result is a faithful
+reconstruction, not the original source. Simultaneous notes are named as chords
+when a name fits (otherwise emitted as a note group), and percussion tracks
+become a `kit`. The readable mode quantizes onsets for clean bars; `-faithful`
+places every note at its exact beat so re-compiling reproduces the timing.
+
+(The same import is built into the [playground]({{< relref "/playground" >}}) —
+drop a `.mid` or `.ear` file onto the page.)
 
 ## Playback
 

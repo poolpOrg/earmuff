@@ -135,6 +135,16 @@
   .foot-links a { color: var(--muted); font-weight: 500; }
   .foot-note { font-size: 13px; margin-top: 12px; }
 
+  /* Screenshots */
+  .shot { margin: 0 0 2.5rem; }
+  .shot img {
+    display: block; width: 100%; height: auto;
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+  }
+  .shot figcaption { color: var(--muted); font-size: 14px; margin-top: 0.75rem; text-align: center; }
+  .shot figcaption a { color: var(--accent); }
+
   @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; }
     h1 { font-size: 40px; }
@@ -192,7 +202,8 @@
     <span class="p">}</span>
 
     <span class="k">track</span> <span class="s">"lead"</span> <span class="k">instrument</span> <span class="s">"violin"</span> <span class="p">{</span>
-        <span class="k">bar</span> <span class="k">quarter</span> <span class="p">{</span> <span class="n">E5</span> <span class="n">G5</span> <span class="n">B5</span> <span class="p">(</span><span class="n">E5</span> <span class="k">+</span> <span class="k">octave</span><span class="p">) }</span>
+        <span class="c">// a caret carries a note's octave: E^5 is E in octave 5</span>
+        <span class="k">bar</span> <span class="k">quarter</span> <span class="p">{</span> <span class="n">E^5</span> <span class="n">G^5</span> <span class="n">B^5</span> <span class="p">(</span><span class="n">E^5</span> <span class="k">+</span> <span class="k">octave</span><span class="p">) }</span>
     <span class="p">}</span>
 <span class="p">}</span></pre>
     </div>
@@ -259,6 +270,30 @@
         <div class="stage"><div class="t">📄 LilyPond</div></div>
       </div>
     </div>
+    <p style="text-align:center; color:var(--muted); margin-top:1.5rem;">
+      Bring tunes in, too: <code>earmuff -import song.mid</code> turns a Standard
+      MIDI File back into editable <code>.ear</code> source — or drop a
+      <code>.mid</code> (or <code>.ear</code>) right onto the playground. And
+      every piece exports to a Standard MIDI File with <code>-out</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ============ SCREENSHOTS ============ -->
+<section id="screens" class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>See it in action</h2>
+      <p>Write music as code, hear it, and watch it engrave — in your editor or right in the browser.</p>
+    </div>
+    <figure class="shot">
+      <a href="/docs/playground/"><img src="assets/screens/playground.png" alt="The earmuff playground: source on the left, engraved sheet music on the right, live events streaming below." loading="lazy" /></a>
+      <figcaption>The <a href="/docs/playground/">playground</a> — edit, play, and see the score and the live event stream, all in the browser. Import a <code>.mid</code> or <code>.ear</code> by dropping it on the page.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screens/vscode-extension.png" alt="The earmuff VS Code extension: highlighted .ear source with a live engraved sheet-music preview beside it." loading="lazy" />
+      <figcaption>The <a href="/docs/editor-support/">VS Code extension</a> — syntax highlighting, live diagnostics, and a sheet-music preview that re-renders as you type.</figcaption>
+    </figure>
   </div>
 </section>
 
