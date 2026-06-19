@@ -25,16 +25,10 @@ walk(C2, E2)  walk(F2, A2)
 Patterns defined at the project level are shared across all tracks; patterns
 defined in a track are local to it. Scoping is lexical.
 
-## for-in
+## for
 
-`for` iterates over a range or a list. A range is inclusive with integer
-endpoints:
-
-```text
-for _ in 1..12 { groove() }   // repeat 12 times; _ discards the index
-```
-
-Bind the index when you need it:
+`for` comes in two forms. The **bound** form names a variable that takes each
+value in turn:
 
 ```text
 for i in 1..4 {
@@ -42,11 +36,27 @@ for i in 1..4 {
 }
 ```
 
-Iterating a list walks its elements — progressions become data:
+The **unbound** form uses the keyword `each` to iterate without a variable —
+the natural way to write a counted repeat:
 
 ```text
+for each 1..12 { groove() }   // repeat 12 times, no binding
+```
+
+What you loop over is one of:
+
+- a **range** — inclusive, integer endpoints: `1..4`;
+- a **bare sequence** — space-separated values, no brackets or commas:
+  `1 2 3`, `C E G`, `Am7 Dm7 G7`;
+- a **list** — a bracketed literal or a `let` binding that holds one.
+
+```text
+for i in C E G { bar quarter { i _ _ _ } }   // bare sequence, bound
+
 let changes = [Am7, Dm7, G7, Cmaj7];
-for ch in changes { bar quarter { ch ch ch ch } }
+for ch in changes { bar quarter { ch ch ch ch } }   // list, bound
+
+for each Am7 Dm7 G7 { bar quarter { C } }   // bare sequence, unbound
 ```
 
 A `for`/`if` adapts to its context: in a track or pattern body it yields bars

@@ -126,21 +126,68 @@ func (p *Parser) parseKit() *ast.Kit {
 	return n
 }
 
+// parseFor handles two forms:
+//
+//	for i in <iterable> { ... }   // bound: i takes each value
+//	for each <iterable> { ... }   // unbound: iterate, no variable
+//
+// The iterable is a bare space-separated sequence (1 2 3, C E G, Am7 Dm7), a
+// range (1..4), a [..] list literal, or a binding/expression yielding a list.
 func (p *Parser) parseFor() *ast.For {
 	n := &ast.For{Position: p.cur.Pos}
 	p.next() // 'for'
-	if p.curIs(token.IDENT) {
+
+	if p.curIs(token.IDENT) && p.cur.Literal == "each" {
+		p.next() // 'each' — unbound, Var stays ""
+	} else if p.curIs(token.IDENT) {
 		n.Var = p.cur.Literal
 		p.next()
+		if !p.expect(token.IN) {
+			return nil
+		}
 	} else {
-		p.errorf(p.cur.Pos, "expected loop variable after 'for', found %q", p.cur.Literal)
-	}
-	if !p.expect(token.IN) {
+		p.errorf(p.cur.Pos, "expected a loop variable or 'each' after 'for', found %q", p.cur.Literal)
 		return nil
 	}
-	n.Iterable = p.parseExpr(LOWEST)
+
+	n.Iterable = p.parseIterable()
 	n.Body = p.parseBlock()
 	return n
+}
+
+// parseIterable parses what a `for` loops over. It accepts a bare sequence of
+// space-separated primaries (e.g. `1 2 3`, `C E G`) in addition to a single
+// range / list / expression. A bare sequence becomes a ListLit.
+func (p *Parser) parseIterable() ast.Expr {
+	first := p.parseExpr(LOWEST)
+	if first == nil {
+		return nil
+	}
+	// If the next token begins another element (not the body '{' or EOF), this
+	// is a bare sequence: gather the rest as primaries into a list.
+	if !p.iterableSeqContinues() {
+		return first
+	}
+	list := &ast.ListLit{Position: first.Pos(), Elements: []ast.Expr{first}}
+	for p.iterableSeqContinues() {
+		el := p.parsePrefix()
+		if el == nil {
+			break
+		}
+		list.Elements = append(list.Elements, el)
+	}
+	return list
+}
+
+// iterableSeqContinues reports whether the current token can start another
+// element of a bare for-sequence (a value), as opposed to the loop body.
+func (p *Parser) iterableSeqContinues() bool {
+	switch p.cur.Type {
+	case token.NUMBER, token.FLOAT, token.IDENT, token.MINUS, token.LPAREN:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *Parser) parseIf() *ast.If {

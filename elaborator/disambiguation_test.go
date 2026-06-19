@@ -50,3 +50,21 @@ func TestDisambig_NoteVsChord(t *testing.T) {
 		t.Fatalf("Am7 -> %v, want 4-note chord", got)
 	}
 }
+
+func TestFor_BareSequenceAndEach(t *testing.T) {
+	tr := func(body string) string {
+		return `project "t"{time 4 4;track "g" instrument "piano"{` + body + `}}`
+	}
+	// `for i in C E G` binds i across three pitches.
+	if got := disambigKeys(t, tr(`for i in C E G { bar quarter { i _ _ _ } }`)); len(got) != 3 {
+		t.Fatalf("for i in C E G -> %v, want 3 notes (C,E,G)", got)
+	}
+	// `for each 1 2 3` iterates three times with no binding.
+	if got := disambigKeys(t, tr(`for each 1 2 3 { bar 1 { C } }`)); len(got) != 3 {
+		t.Fatalf("for each 1 2 3 -> %v, want 3 iterations of C", got)
+	}
+	// ranges still work.
+	if got := disambigKeys(t, tr(`for each 1..3 { bar 1 { C } }`)); len(got) != 3 {
+		t.Fatalf("for each 1..3 -> %v, want 3", got)
+	}
+}

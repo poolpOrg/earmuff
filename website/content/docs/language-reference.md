@@ -31,7 +31,8 @@ here is implemented.
   `sysex`, per-event `@channel`) are first-class, with named sugar over raw
   numbers.
 - **Structured control flow, evaluated at elaboration time and pure.** Real
-  `if`/`else`, `for x in <range|list>`, boolean operators, and immutable `let`
+  `if`/`else`, `for x in <range|list|sequence>` (or unbound `for each …`),
+  boolean operators, and immutable `let`
   bindings. They run during elaboration over compile-time-known values — they are
   **not** live/runtime branches — so the event stream is fully determined before
   any MIDI is emitted. Loops are bounded (range or list, no `while`), bindings
@@ -317,26 +318,26 @@ project "12 bars blues" {
         pattern V  { bar quarter { G B D _ } }
 
         I  IV
-        for _ in 1..2 { I }
-        for _ in 1..2 { IV }
-        for _ in 1..2 { I }
+        for each 1..2 { I }
+        for each 1..2 { IV }
+        for each 1..2 { I }
         V  IV  I  V
     }
 
     track "rythm guitar" instrument "guitar" {
         bar whole { C7 } bar whole { F7 }
-        for _ in 1..2 { bar whole { C7 } }
-        for _ in 1..2 { bar whole { F7 } }
-        for _ in 1..2 { bar whole { C7 } }
+        for each 1..2 { bar whole { C7 } }
+        for each 1..2 { bar whole { F7 } }
+        for each 1..2 { bar whole { C7 } }
         bar whole { G7 } bar whole { F7 } bar whole { C7 } bar whole { G7 }
     }
 
     track "bass" instrument "bass" {
         pattern walk(root, third) { bar quarter { root _ third _ } }
         walk(C2, E2)  walk(F2, A2)
-        for _ in 1..2 { walk(C2, E2) }
-        for _ in 1..2 { walk(F2, G2) }
-        for _ in 1..2 { walk(C2, E2) }
+        for each 1..2 { walk(C2, E2) }
+        for each 1..2 { walk(F2, G2) }
+        for each 1..2 { walk(C2, E2) }
         walk(G2, B2)  walk(F2, G2)  walk(C2, E2)  walk(G2, B2)
     }
 
@@ -350,13 +351,13 @@ project "12 bars blues" {
         pattern beat {
             bar 8 { (oh,sn,cy) hh hh hh _ _ _ _ }
         }
-        for _ in 1..12 { beat() }
+        for each 1..12 { beat() }
     }
 }
 ```
 
-`for _ in 1..N` is the counted-repeat idiom (`_` discards the index). Bind the
-index when you need it (see 4c).
+`for each 1..N` is the counted-repeat idiom (`each` iterates with no binding).
+Bind the index instead — `for i in 1..N` — when you need it (see 4c).
 
 ### 4b. nuages — the full port (the case that drove §3a)
 
@@ -569,7 +570,7 @@ changes within a bar.
 - Empty bar `bar {}` = one bar of rest — clean.
 - Whole note/chord per bar (`bar 1 { D }`, `bar 1 { Eb9 }`) — clean.
 - Multiple even durations per bar (`bar 2 { Am7b5 D7b9 }`) — the grid's sweet spot.
-- Nested counted repeats (minor-swing) via nested `for _ in 1..N` + a `pattern`.
+- Nested counted repeats (minor-swing) via nested `for each 1..N` + a `pattern`.
 - Mixing step-grid and `on beat` in one bar (nuages piano bar 4) — works as the
   designed escape hatch.
 - `for`-over-list for chord progressions — natural and a clear win.

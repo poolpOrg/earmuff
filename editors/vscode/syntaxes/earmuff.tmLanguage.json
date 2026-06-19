@@ -58,7 +58,7 @@
       "patterns": [
         {
           "name": "keyword.control.earmuff",
-          "match": "\\b(for|in|if|else)\\b"
+          "match": "\\b(for|each|in|if|else)\\b"
         },
         {
           "name": "keyword.other.earmuff",

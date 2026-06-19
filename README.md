@@ -28,16 +28,16 @@ project "12 bars blues" {
         pattern V  { bar quarter { G B D _ } }
 
         I() IV()
-        for _ in 1..2 { I() }
-        for _ in 1..2 { IV() }
-        for _ in 1..2 { I() }
+        for each 1 2 { I() }
+        for each 1 2 { IV() }
+        for each 1 2 { I() }
         V() IV() I() V()
     }
 
     track "drums" instrument "synth drum" channel 10 {
         kit { hh = "closed hi-hat"; sn = "acoustic snare"; cy = "crash cymbal 1"; }
         pattern groove { bar quarter { (cy, sn) hh hh hh } }
-        for _ in 1..12 { groove() }
+        for each 1..12 { groove() }
     }
 }
 ```
@@ -47,8 +47,9 @@ project "12 bars blues" {
 - **Readable, diffable syntax** — a step grid for rhythm, named notes and
   chords (`C#`, `Am7`, `Gmaj7`), and an `on beat` escape hatch for exact timing.
 - **Programmable** — reusable `pattern`s with parameters, `for` loops over
-  ranges and lists, `if`/`else`, and immutable `let` bindings, all resolved at
-  compile time so output is deterministic.
+  ranges, lists, and bare sequences (`for i in C E G` / `for each 1..12`),
+  `if`/`else`, and immutable `let` bindings, all resolved at compile time so
+  output is deterministic.
 - **Full MIDI** — control change, pitch bend, aftertouch, program change,
   sysex, and per-event channels, alongside notes and chords.
 - **Three outputs from one source** — a Standard MIDI File, live playback, or
@@ -125,6 +126,8 @@ for ch in changes { bar quarter { ch ch ch ch } }
 for i in 1..4 {
     if i == 4 { bar whole { C7 } } else { bar whole { C } }
 }
+
+for each Am7 Dm7 G7 { bar quarter { C } }   // bare sequence; no binding
 ```
 
 **Raw MIDI** events are first class:
