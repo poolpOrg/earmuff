@@ -193,12 +193,22 @@
       sheetRendered = false; // re-render sheet lazily on tab view
       renderEvents(res);
       if (activeTab() === "sheet") renderSheet();
-      setStatus(statusLine(res), "ok");
-      playBtn.disabled = false;
+      if (live) {
+        // Edited mid-playback: fold the change into the running scheduler so
+        // it keeps playing from the current spot with the new notes/tempo.
+        relinkLive(res);
+      } else {
+        setStatus(statusLine(res), "ok");
+        playBtn.disabled = false;
+      }
     } else {
       lastResult = null;
-      playBtn.disabled = true;
-      setStatus(errorCount(res) + " error(s)", "err");
+      if (!live) {
+        playBtn.disabled = true;
+        setStatus(errorCount(res) + " error(s)", "err");
+      }
+      // If a live edit broke the source, keep playing the last good version
+      // and surface the error in the inline buffer (renderDiagnostics already did).
     }
   }
 
@@ -482,6 +492,21 @@
   // the old one cleanly even across the async synth-load.
   var playToken = 0;
   var schedTimer = null;
+  var LOOKAHEAD = 25; // ms; dispatch slightly ahead so timing stays tight
+
+  // `live` holds the in-flight playback state so an edit can be re-rendered
+  // into it without restarting (see relinkLive). null when not playing.
+  var live = null;
+
+  function nowMs() { return (window.performance && performance.now()) || Date.now(); }
+
+  // queueFromResult builds a time-sorted dispatch list (ms from start) for a
+  // compiled result at the given seconds-per-tick.
+  function queueFromResult(res, secPerTick) {
+    var q = res.events.map(function (e) { return { ms: e.t * secPerTick * 1000, e: e }; });
+    q.sort(function (a, b) { return a.ms - b.ms; });
+    return q;
+  }
 
   function play() {
     stop();                 // cancel any current playback first
@@ -499,36 +524,30 @@
     ensureSynth(function (sy) {
       if (myToken !== playToken) return; // superseded while loading
       var res = lastResult;
-      var ppq = res.ppq || 960;
-      var secPerTick = (60 / (res.bpm || 120)) / ppq;
+      var secPerTick = (60 / (res.bpm || 120)) / res.ppq;
 
-      // Set each track's program immediately so timbres differ; ch 9 = GM drums.
-      (res.tracks || []).forEach(function (tr) {
-        if (tr.channel !== 9) sy.program(tr.channel & 0x0f, tr.program);
-      });
-
-      // Build a flat, time-sorted dispatch list in ms from start.
-      var queue = res.events.map(function (e) {
-        return { ms: e.t * secPerTick * 1000, e: e };
-      });
-      queue.sort(function (a, b) { return a.ms - b.ms; });
-
-      var startMs = (window.performance && performance.now()) || Date.now();
-      var i = 0;
-      var LOOKAHEAD = 25; // ms; dispatch slightly ahead so timing stays tight
+      live = {
+        token: myToken,
+        sy: sy,
+        startMs: nowMs(),
+        secPerTick: secPerTick,
+        queue: queueFromResult(res, secPerTick),
+        i: 0,
+      };
+      sendPrograms(sy, res);   // set each track's instrument up front
 
       function tick() {
-        if (myToken !== playToken) return; // stopped or superseded
-        var now = ((window.performance && performance.now()) || Date.now()) - startMs;
-        while (i < queue.length && queue[i].ms <= now + LOOKAHEAD) {
-          dispatch(sy, queue[i++].e);
+        if (!live || live.token !== myToken) return; // stopped or superseded
+        var now = nowMs() - live.startMs;
+        while (live.i < live.queue.length && live.queue[live.i].ms <= now + LOOKAHEAD) {
+          dispatch(live.sy, live.queue[live.i++].e);
         }
-        if (i < queue.length) {
+        if (live.i < live.queue.length) {
           schedTimer = setTimeout(tick, 10);
         } else {
           // Done: let tails ring, then reset the UI if still our turn.
           schedTimer = setTimeout(function () {
-            if (myToken === playToken) finishPlayback();
+            if (live && live.token === myToken) finishPlayback();
           }, 400);
         }
       }
@@ -537,6 +556,28 @@
       setStatus("playing…", "ok");
       tick();
     });
+  }
+
+  function sendPrograms(sy, res) {
+    (res.tracks || []).forEach(function (tr) {
+      if (tr.channel !== 9) sy.program(tr.channel & 0x0f, tr.program);
+    });
+  }
+
+  // relinkLive swaps a freshly compiled result into the running playback
+  // without restarting: it rebuilds the queue, re-sends instruments, and skips
+  // the cursor past events already due, keeping the wall-clock position. A BPM
+  // change retimes the remainder from where we are now.
+  function relinkLive(res) {
+    if (!live) return;
+    live.secPerTick = (60 / (res.bpm || 120)) / res.ppq;
+    live.queue = queueFromResult(res, live.secPerTick);
+    var elapsed = nowMs() - live.startMs;
+    // Resume at the first event still in the future (don't re-fire the past).
+    var i = 0;
+    while (i < live.queue.length && live.queue[i].ms <= elapsed) i++;
+    live.i = i;
+    sendPrograms(live.sy, res); // apply instrument changes immediately
   }
 
   function dispatch(sy, e) {
@@ -554,6 +595,7 @@
   }
 
   function finishPlayback() {
+    live = null;
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
     stopBtn.disabled = true;
@@ -563,6 +605,7 @@
 
   function stop() {
     playToken++;            // invalidate any running loop
+    live = null;
     if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
