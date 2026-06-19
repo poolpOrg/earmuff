@@ -5,7 +5,10 @@ earmuff
 website/.hugo_build.lock
 website/public/
 
-# Playground WASM artifacts — built in CI (see .github/workflows/pages.yml),
+# Playground assets — built/fetched in CI (see .github/workflows/pages.yml),
 # never committed.
 website/static/playground/earmuff.wasm
 website/static/playground/wasm_exec.js
+website/static/playground/monaco/
+website/static/playground/vexflow.js
+website/static/playground/examples/

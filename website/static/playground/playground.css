@@ -1,0 +1,233 @@
+/* earmuff playground — full-bleed editor + output layout. */
+
+:root {
+  --pg-bg: #ffffff;
+  --pg-fg: #1b1b1f;
+  --pg-muted: #6a6a78;
+  --pg-border: #e2e2ea;
+  --pg-panel: #f7f7fb;
+  --pg-accent: #6b78ff;
+  --pg-accent-fg: #ffffff;
+  --pg-err: #d2294b;
+  --pg-warn: #b07a00;
+  --pg-topbar-h: 52px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pg-bg: #16161a;
+    --pg-fg: #e8e8ef;
+    --pg-muted: #9a9aa8;
+    --pg-border: #2a2a33;
+    --pg-panel: #1d1d23;
+    --pg-accent: #8b95ff;
+    --pg-err: #ff6b86;
+    --pg-warn: #e0a94a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+.pg-body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--pg-bg);
+  color: var(--pg-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#pg-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ---- Top bar ---------------------------------------------------------- */
+.pg-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--pg-topbar-h);
+  padding: 0 14px;
+  border-bottom: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+  flex: 0 0 auto;
+}
+.pg-brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--pg-fg);
+  text-decoration: none;
+}
+.pg-title { color: var(--pg-muted); font-size: 14px; }
+.pg-spacer { flex: 1 1 auto; }
+
+.pg-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--pg-muted);
+}
+.pg-field select {
+  background: var(--pg-bg);
+  color: var(--pg-fg);
+  border: 1px solid var(--pg-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  max-width: 220px;
+}
+
+.pg-btn {
+  border: 1px solid var(--pg-border);
+  background: var(--pg-bg);
+  color: var(--pg-fg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.4;
+}
+.pg-btn:hover:not(:disabled) { border-color: var(--pg-accent); }
+.pg-btn:disabled { opacity: 0.45; cursor: default; }
+.pg-btn-primary {
+  background: var(--pg-accent);
+  color: var(--pg-accent-fg);
+  border-color: var(--pg-accent);
+}
+.pg-ghost { color: var(--pg-muted); }
+
+.pg-menu { position: relative; }
+.pg-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--pg-bg);
+  border: 1px solid var(--pg-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  min-width: 200px;
+  z-index: 20;
+  overflow: hidden;
+}
+.pg-menu-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--pg-fg);
+  padding: 9px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pg-menu-list button:hover { background: var(--pg-panel); }
+
+/* ---- Main split ------------------------------------------------------- */
+.pg-main {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+.pg-editor-pane,
+.pg-output-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.pg-editor-pane { border-right: 1px solid var(--pg-border); }
+.pg-editor { flex: 1 1 auto; min-height: 0; }
+.pg-status {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--pg-muted);
+  padding: 5px 12px;
+  border-top: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+}
+.pg-status.pg-ok { color: #2c9f5a; }
+.pg-status.pg-err { color: var(--pg-err); }
+
+/* ---- Output tabs ------------------------------------------------------ */
+.pg-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+  flex: 0 0 auto;
+}
+.pg-tab {
+  border: 0;
+  background: transparent;
+  color: var(--pg-muted);
+  padding: 10px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.pg-tab-active {
+  color: var(--pg-fg);
+  border-bottom-color: var(--pg-accent);
+}
+.pg-badge {
+  display: inline-block;
+  min-width: 16px;
+  font-size: 11px;
+  color: var(--pg-accent-fg);
+  background: var(--pg-muted);
+  border-radius: 8px;
+  padding: 0 5px;
+}
+.pg-badge.pg-has-err { background: var(--pg-err); }
+.pg-badge:empty { display: none; }
+
+.pg-tab-body { flex: 1 1 auto; position: relative; min-height: 0; }
+.pg-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 12px 14px;
+}
+.pg-panel-active { display: block; }
+
+/* Problems list */
+.pg-problems { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.pg-problems li {
+  display: flex;
+  gap: 8px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--pg-border);
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.pg-problems li:hover { background: var(--pg-panel); }
+.pg-problems .pg-loc { color: var(--pg-muted); white-space: nowrap; }
+.pg-problems .pg-sev-error .pg-dot { color: var(--pg-err); }
+.pg-problems .pg-sev-warning .pg-dot { color: var(--pg-warn); }
+.pg-empty { color: var(--pg-muted); font-size: 13px; padding: 6px 4px; }
+
+/* Events table */
+.pg-events table { border-collapse: collapse; width: 100%; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+.pg-events th, .pg-events td { text-align: left; padding: 3px 8px; border-bottom: 1px solid var(--pg-border); white-space: nowrap; }
+.pg-events th { position: sticky; top: 0; background: var(--pg-panel); color: var(--pg-muted); }
+
+/* LilyPond source */
+.pg-lilypond { margin: 0; font-size: 12px; font-family: ui-monospace, Menlo, monospace; white-space: pre; color: var(--pg-fg); }
+
+/* Sheet music (VexFlow draws SVG here) */
+.pg-sheet { background: #fff; border-radius: 6px; padding: 8px; }
+.pg-sheet svg { max-width: 100%; }
+.pg-sheet-note { color: var(--pg-muted); font-size: 12px; padding: 6px 0; }
+
+/* ---- Responsive ------------------------------------------------------- */
+@media (max-width: 820px) {
+  .pg-main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .pg-editor-pane { border-right: 0; border-bottom: 1px solid var(--pg-border); }
+  .pg-title { display: none; }
+}

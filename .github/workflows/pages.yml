@@ -58,6 +58,16 @@ jobs:
           fi
           ls -lh "$out"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Vendor playground assets (Monaco, VexFlow) + examples
+        run: |
+          set -eux
+          bash website/scripts/playground-assets.sh
+          bash website/scripts/playground-examples.sh
+
       - name: Install Hugo
         run: |
           curl -sSL -o hugo.deb \

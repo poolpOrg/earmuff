@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="{{ default .Site.Language.Name .Site.Language.Locale }}" dir="ltr">
+<head>
+  {{ partial "docs/html-head" . }}
+  {{ partial "docs/inject/head" . }}
+  <link rel="stylesheet" href="{{ "playground/playground.css" | relURL }}">
+  <title>earmuff playground</title>
+</head>
+<body class="book-kind-{{ .Kind }} pg-body">
+  <div id="pg-app" data-base="{{ "playground" | relURL }}">
+    <header class="pg-topbar">
+      <a class="pg-brand" href="{{ "/" | relURL }}">earmuff</a>
+      <span class="pg-title">playground</span>
+
+      <label class="pg-field">
+        <span>example</span>
+        <select id="pg-examples" aria-label="Load an example"></select>
+      </label>
+
+      <div class="pg-spacer"></div>
+
+      <button id="pg-play" class="pg-btn pg-btn-primary" disabled>▶ Play</button>
+      <button id="pg-stop" class="pg-btn" disabled>■ Stop</button>
+      <button id="pg-share" class="pg-btn" title="Copy a shareable link">Share</button>
+
+      <div class="pg-menu">
+        <button id="pg-download" class="pg-btn">Download ▾</button>
+        <div class="pg-menu-list" id="pg-download-menu" hidden>
+          <button data-dl="mid">Standard MIDI (.mid)</button>
+          <button data-dl="ly">LilyPond source (.ly)</button>
+          <button data-dl="ear">earmuff source (.ear)</button>
+        </div>
+      </div>
+
+      <a class="pg-btn pg-ghost" href="{{ "/docs/" | relURL }}">Docs</a>
+    </header>
+
+    <main class="pg-main">
+      <section class="pg-editor-pane">
+        <div id="pg-editor" class="pg-editor"></div>
+        <div id="pg-status" class="pg-status">loading the compiler…</div>
+      </section>
+
+      <section class="pg-output-pane">
+        <nav class="pg-tabs" role="tablist">
+          <button class="pg-tab pg-tab-active" data-tab="problems" role="tab">Problems <span id="pg-problem-count" class="pg-badge"></span></button>
+          <button class="pg-tab" data-tab="sheet" role="tab">Sheet</button>
+          <button class="pg-tab" data-tab="events" role="tab">Events</button>
+          <button class="pg-tab" data-tab="lilypond" role="tab">LilyPond</button>
+        </nav>
+        <div class="pg-tab-body">
+          <div class="pg-panel pg-panel-active" data-panel="problems">
+            <ul id="pg-problems" class="pg-problems"></ul>
+          </div>
+          <div class="pg-panel" data-panel="sheet">
+            <div id="pg-sheet" class="pg-sheet"></div>
+          </div>
+          <div class="pg-panel" data-panel="events">
+            <div id="pg-events" class="pg-events"></div>
+          </div>
+          <div class="pg-panel" data-panel="lilypond">
+            <pre id="pg-lilypond" class="pg-lilypond"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Monaco AMD loader (self-hosted; no CDN, CSP-safe). -->
+  <script src="{{ "playground/monaco/vs/loader.js" | relURL }}"></script>
+  <!-- Go's wasm runtime shim, version-matched to earmuff.wasm. -->
+  <script src="{{ "playground/wasm_exec.js" | relURL }}"></script>
+  <!-- VexFlow for in-browser engraving (loaded lazily by the app). -->
+  <script defer src="{{ "playground/playground.js" | relURL }}"></script>
+</body>
+</html>
