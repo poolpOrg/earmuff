@@ -33,6 +33,7 @@ import (
 	"github.com/poolpOrg/earmuff/analyzer"
 	"github.com/poolpOrg/earmuff/elaborator"
 	"github.com/poolpOrg/earmuff/lilypond"
+	"github.com/poolpOrg/earmuff/midiimport"
 	"github.com/poolpOrg/earmuff/parser"
 	"github.com/poolpOrg/earmuff/smfwriter"
 )
@@ -187,8 +188,39 @@ func main() {
 		}
 		return compile(args[0].String())
 	}))
+
+	// earmuffImport(base64Midi, faithful) -> JSON {ok, source, error}.
+	js.Global().Set("earmuffImport", js.FuncOf(func(_ js.Value, args []js.Value) any {
+		if len(args) < 1 || args[0].Type() != js.TypeString {
+			return `{"ok":false,"error":"earmuffImport expects a base64 MIDI string"}`
+		}
+		faithful := len(args) >= 2 && args[1].Truthy()
+		return importMIDI(args[0].String(), faithful)
+	}))
+
 	// Signal readiness to the page, then block forever so the exported function
 	// stays alive (a wasm main that returns tears down the instance).
 	js.Global().Set("earmuffReady", js.ValueOf(true))
 	select {}
+}
+
+// importMIDI decodes base64 SMF bytes and returns earmuff source as JSON.
+func importMIDI(b64 string, faithful bool) string {
+	data, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return `{"ok":false,"error":"invalid base64 MIDI data"}`
+	}
+	src, err := midiimport.Import(data, midiimport.Options{Faithful: faithful, Name: "imported"})
+	if err != nil {
+		b, _ := json.Marshal(struct {
+			OK    bool   `json:"ok"`
+			Error string `json:"error"`
+		}{false, err.Error()})
+		return string(b)
+	}
+	b, _ := json.Marshal(struct {
+		OK     bool   `json:"ok"`
+		Source string `json:"source"`
+	}{true, src})
+	return string(b)
 }

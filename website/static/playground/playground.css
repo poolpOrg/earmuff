@@ -28,6 +28,22 @@
 
 * { box-sizing: border-box; }
 
+/* Drag-and-drop overlay for importing a .mid file. */
+.pg-drop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 22, 30, 0.82);
+  color: #fff;
+  font-size: 20px;
+  border: 4px dashed var(--pg-accent);
+  pointer-events: none;
+}
+.pg-drop strong { color: var(--pg-accent); }
+
 .pg-body {
   margin: 0;
   height: 100vh;

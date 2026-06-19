@@ -753,6 +753,77 @@
     });
   }
 
+  // =======================================================================
+  // Import: a .mid -> .ear (via the WASM earmuffImport)
+  // =======================================================================
+  function wireImport() {
+    var input = $("pg-import-input");
+    var drop = $("pg-drop");
+
+    $("pg-import").addEventListener("click", function () { input.click(); });
+    input.addEventListener("change", function () {
+      if (input.files && input.files[0]) importFile(input.files[0]);
+      input.value = ""; // allow re-importing the same file
+    });
+
+    // Full-window drag-and-drop.
+    var depth = 0;
+    window.addEventListener("dragenter", function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth++; drop.hidden = false;
+    });
+    window.addEventListener("dragover", function (e) {
+      if (hasFiles(e)) e.preventDefault();
+    });
+    window.addEventListener("dragleave", function () {
+      if (--depth <= 0) { depth = 0; drop.hidden = true; }
+    });
+    window.addEventListener("drop", function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth = 0; drop.hidden = true;
+      var f = e.dataTransfer.files[0];
+      if (f) importFile(f);
+    });
+  }
+
+  function hasFiles(e) {
+    return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") >= 0;
+  }
+
+  function importFile(file) {
+    if (!wasmReady) { setStatus("the compiler is still loading…", "err"); return; }
+    setStatus("importing " + file.name + "…");
+    var reader = new FileReader();
+    reader.onload = function () {
+      var bytes = new Uint8Array(reader.result);
+      var b64 = bytesToB64(bytes);
+      // Honor the faithful toggle if present; default to readable.
+      var faithful = false;
+      var res;
+      try {
+        res = JSON.parse(window.earmuffImport(b64, faithful));
+      } catch (err) {
+        setStatus("import failed: " + err, "err");
+        return;
+      }
+      if (!res.ok) {
+        setStatus("import failed: " + (res.error || "unknown error"), "err");
+        return;
+      }
+      editor.setValue(res.source);
+      setStatus("imported " + file.name, "ok");
+      // compileNow fires via the editor change handler.
+    };
+    reader.onerror = function () { setStatus("could not read " + file.name, "err"); };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function bytesToB64(bytes) {
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
   // ---- WASM bootstrap ----------------------------------------------------
   function bootWasm(onReady) {
     var go = new window.Go();
@@ -772,6 +843,7 @@
   function start() {
     initTabs();
     wireToolbar();
+    wireImport();
     bootMonaco(function () {
       var initial = loadFromHash() || DEFAULT_SOURCE;
       createEditor(initial);

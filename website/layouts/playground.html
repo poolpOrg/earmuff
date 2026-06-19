@@ -7,6 +7,7 @@
   <title>earmuff playground</title>
 </head>
 <body class="book-kind-{{ .Kind }} pg-body">
+  <div id="pg-drop" class="pg-drop" hidden>Drop a <strong>.mid</strong> file to import it as earmuff source</div>
   <div id="pg-app" data-base="{{ "playground" | relURL }}">
     <header class="pg-topbar">
       <a class="pg-brand" href="{{ "/" | relURL }}">earmuff</a>
@@ -21,6 +22,8 @@
 
       <button id="pg-play" class="pg-btn pg-btn-primary" disabled>▶ Play</button>
       <button id="pg-stop" class="pg-btn" disabled>■ Stop</button>
+      <button id="pg-import" class="pg-btn" title="Import a MIDI file as earmuff source">Import .mid</button>
+      <input id="pg-import-input" type="file" accept=".mid,.midi,audio/midi" hidden>
       <button id="pg-share" class="pg-btn" title="Copy a shareable link">Share</button>
 
       <div class="pg-menu">
