@@ -505,10 +505,14 @@
   }
 
   // =======================================================================
-  // Playback — WebAudio synth driven by the event stream
+  // Playback — WebAudioTinySynth, a General MIDI synth driven by the event
+  // stream. It gives every GM program its own timbre (so a piano track and a
+  // violin track actually sound different) and a proper drum kit on channel 10.
+  // The synth shares our AudioContext and is loaded lazily on first Play.
   // =======================================================================
   var audioCtx = null;
-  var activeVoices = [];
+  var synth = null;
+  var synthLoading = false;
   var stopTimer = null;
 
   function ticksToSeconds(ticks, bpm) {
@@ -516,102 +520,80 @@
     return (ticks / ppq) * (60 / (bpm || 120));
   }
 
-  function play() {
-    if (!lastResult) return;
-    stop();
+  function ensureAudio() {
     if (!audioCtx) {
       var AC = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AC();
     }
     if (audioCtx.state === "suspended") audioCtx.resume();
+  }
 
-    var res = lastResult;
-    var ppq = res.ppq || 960;
-    var secPerTick = (60 / (res.bpm || 120)) / ppq;
-    var t0 = audioCtx.currentTime + 0.06;
-
-    // Pair NoteOn/NoteOff per (track, channel, key) to get gated durations.
-    var pending = {};
-    var maxEnd = 0;
-    var perc = {}; // channel 10 (index 9) -> percussion: short click
-    res.events.forEach(function (e) {
-      if (e.kind === 0 && e.vel > 0) {
-        // NoteOn
-        var k = e.track + ":" + e.ch + ":" + e.key;
-        (pending[k] = pending[k] || []).push(e.t);
-      } else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) {
-        // NoteOff (or zero-velocity NoteOn)
-        var k2 = e.track + ":" + e.ch + ":" + e.key;
-        var q = pending[k2];
-        if (q && q.length) {
-          var onTick = q.shift();
-          var start = t0 + onTick * secPerTick;
-          var dur = Math.max(0.05, (e.t - onTick) * secPerTick);
-          scheduleVoice(e.key, e.ch, start, dur, e.vel || 80);
-          if (start + dur > maxEnd) maxEnd = start + dur;
-        }
-      }
+  // ensureSynth loads tinysynth (AMD, via Monaco's loader to avoid its UMD
+  // taking the define branch) and binds it to our AudioContext, then calls cb.
+  function ensureSynth(cb) {
+    if (synth) return cb(synth);
+    if (synthLoading) return;
+    synthLoading = true;
+    ensureAudio();
+    window.require.config({ paths: { tinysynth: BASE + "/tinysynth" } });
+    window.require(["tinysynth"], function (TinySynth) {
+      var ctor = TinySynth || window.WebAudioTinySynth;
+      synth = new ctor({ internalContext: 0, useReverb: 1, voices: 64 });
+      synth.setAudioContext(audioCtx, audioCtx.destination);
+      synthLoading = false;
+      cb(synth);
+    }, function () {
+      synthLoading = false;
+      setStatus("could not load the synth", "err");
     });
-
-    playBtn.disabled = true;
-    stopBtn.disabled = false;
-    var ms = Math.max(200, (maxEnd - audioCtx.currentTime) * 1000 + 150);
-    stopTimer = setTimeout(stop, ms);
   }
 
-  // A small subtractive voice: drums (ch 10 == index 9) get a noise burst,
-  // pitched notes get a triangle+sine blend with a short ADSR. This is the
-  // built-in fallback synth; a SoundFont can replace scheduleVoice later.
-  function scheduleVoice(key, ch, start, dur, vel) {
-    var gainPeak = Math.min(0.28, (vel / 127) * 0.32);
-    if (ch === 9) {
-      // Percussion: filtered noise burst.
-      var buf = noiseBuffer();
-      var src = audioCtx.createBufferSource();
-      src.buffer = buf;
-      var bp = audioCtx.createBiquadFilter();
-      bp.type = key < 45 ? "lowpass" : "highpass";
-      bp.frequency.value = key < 45 ? 220 : 5000;
-      var g = audioCtx.createGain();
-      g.gain.setValueAtTime(gainPeak, start);
-      g.gain.exponentialRampToValueAtTime(0.001, start + Math.min(dur, 0.18));
-      src.connect(bp); bp.connect(g); g.connect(audioCtx.destination);
-      src.start(start); src.stop(start + 0.2);
-      activeVoices.push(src);
-      return;
-    }
-    var freq = 440 * Math.pow(2, (key - 69) / 12);
-    var osc1 = audioCtx.createOscillator();
-    var osc2 = audioCtx.createOscillator();
-    osc1.type = "triangle"; osc2.type = "sine";
-    osc1.frequency.value = freq; osc2.frequency.value = freq;
-    var g = audioCtx.createGain();
-    var a = 0.008, r = Math.min(0.12, dur * 0.5);
-    g.gain.setValueAtTime(0, start);
-    g.gain.linearRampToValueAtTime(gainPeak, start + a);
-    g.gain.setValueAtTime(gainPeak, start + Math.max(a, dur - r));
-    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
-    osc1.connect(g); osc2.connect(g); g.connect(audioCtx.destination);
-    osc1.start(start); osc2.start(start);
-    osc1.stop(start + dur + 0.02); osc2.stop(start + dur + 0.02);
-    activeVoices.push(osc1, osc2);
-  }
+  function play() {
+    if (!lastResult) return;
+    stop();
+    ensureAudio();
+    ensureSynth(function (sy) {
+      var res = lastResult;
+      var ppq = res.ppq || 960;
+      var secPerTick = (60 / (res.bpm || 120)) / ppq;
+      var t0 = audioCtx.currentTime + 0.08;
 
-  var _noise = null;
-  function noiseBuffer() {
-    if (_noise) return _noise;
-    var n = audioCtx.sampleRate * 0.3;
-    var b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-    var d = b.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    _noise = b;
-    return b;
+      // Give each track's channel its General MIDI program up front, so timbres
+      // differ. Percussion (channel 9) is the GM drum kit and needs no program.
+      (res.tracks || []).forEach(function (tr) {
+        if (tr.channel !== 9) sy.send([0xc0 | (tr.channel & 0x0f), tr.program & 0x7f], t0);
+      });
+
+      var maxTick = res.durationTicks || 0;
+      res.events.forEach(function (e) {
+        var t = t0 + e.t * secPerTick;
+        var ch = e.ch & 0x0f;
+        if (e.kind === 0 && e.vel > 0) {
+          sy.send([0x90 | ch, e.key & 0x7f, e.vel & 0x7f], t);
+        } else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) {
+          sy.send([0x80 | ch, e.key & 0x7f, 0], t);
+        } else if (e.kind === 5) {
+          sy.send([0xc0 | ch, e.prog & 0x7f], t); // in-stream program change
+        }
+        if (e.t > maxTick) maxTick = e.t;
+      });
+
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+      var ms = Math.max(300, maxTick * secPerTick * 1000 + 400);
+      stopTimer = setTimeout(stop, ms);
+    });
   }
 
   function stop() {
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
-    activeVoices.forEach(function (v) { try { v.stop(); } catch (e) {} });
-    activeVoices = [];
+    if (synth) {
+      // All-sound-off + all-notes-off on every channel, immediately.
+      for (var ch = 0; ch < 16; ch++) {
+        synth.send([0xb0 | ch, 120, 0]);
+        synth.send([0xb0 | ch, 123, 0]);
+      }
+    }
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
   }

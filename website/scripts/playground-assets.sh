@@ -9,6 +9,7 @@ set -euo pipefail
 
 MONACO_VERSION="0.52.2"   # last release with the classic self-hostable min/vs AMD layout
 VEXFLOW_VERSION="4.2.3"
+TINYSYNTH_VERSION="1.1.3" # WebAudio GM synth (asset-free playback)
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 dest="$repo_root/website/static/playground"
@@ -29,5 +30,9 @@ echo "==> VexFlow $VEXFLOW_VERSION"
 ( cd "$work" && npm pack "vexflow@$VEXFLOW_VERSION" >/dev/null 2>&1 && tar xzf vexflow-*.tgz )
 cp "$work/package/build/cjs/vexflow-bravura.js" "$dest/vexflow.js"
 
+echo "==> webaudio-tinysynth $TINYSYNTH_VERSION"
+( cd "$work" && npm pack "webaudio-tinysynth@$TINYSYNTH_VERSION" >/dev/null 2>&1 && tar xzf webaudio-tinysynth-*.tgz )
+cp "$work/package/webaudio-tinysynth.min.js" "$dest/tinysynth.js"
+
 echo "==> done"
-du -sh "$dest/monaco" "$dest/vexflow.js"
+du -sh "$dest/monaco" "$dest/vexflow.js" "$dest/tinysynth.js"
