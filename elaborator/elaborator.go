@@ -854,7 +854,51 @@ func resolvePitch(text string) ([]uint8, bool) {
 	if ch, err := chords.Parse(text); err == nil {
 		return chordKeys(ch), true
 	}
+	// Slash-chord fallback: go-harmony rejects a slash whose bass is not already
+	// a chord tone (e.g. "Dm7/G", "Bm7b5/E"), but those are valid voicings. Parse
+	// the chord and the bass separately and put the bass below the chord.
+	if keys, ok := resolveSlashChord(text); ok {
+		return keys, true
+	}
 	return nil, false
+}
+
+// resolveSlashChord handles "Chord/Bass" tokens whose bass note is not a chord
+// tone (which go-harmony's chords.Parse refuses). It returns the chord's notes
+// plus the bass note placed an octave below the chord root.
+func resolveSlashChord(text string) ([]uint8, bool) {
+	i := strings.IndexByte(text, '/')
+	if i <= 0 || i == len(text)-1 {
+		return nil, false
+	}
+	chordPart, bassPart := text[:i], text[i+1:]
+	ch, err := chords.Parse(chordPart)
+	if err != nil {
+		return nil, false
+	}
+	keys := chordKeys(ch)
+	if len(keys) == 0 {
+		return nil, false
+	}
+	// The bass is a pitch class (e.g. "E", "Bb"); parse it at a fixed octave and
+	// drop it just below the lowest chord tone.
+	bn, err := notes.Parse(bassPart + "3")
+	if err != nil {
+		return nil, false
+	}
+	bassPC := bn.MIDI() % 12
+	low := keys[0]
+	for _, k := range keys {
+		if k < low {
+			low = k
+		}
+	}
+	// Highest bass pitch that is at or below the lowest chord tone.
+	bass := bassPC
+	for int(bass)+12 <= int(low) {
+		bass += 12
+	}
+	return append([]uint8{bass}, keys...), true
 }
 
 // isBarePitch reports whether text is a letter A-G followed only by accidentals

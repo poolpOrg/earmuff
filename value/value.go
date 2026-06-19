@@ -294,6 +294,28 @@ func parsePitch(text string) (Value, bool) {
 	if c, err := chords.Parse(text); err == nil {
 		return ChordVal(chordKeys(c), text), true
 	}
+	// Slash chord with a non-chord-tone bass (e.g. "Dm7/G"): go-harmony refuses
+	// it, so build the chord plus the bass note placed below it.
+	if i := strings.IndexByte(text, '/'); i > 0 && i < len(text)-1 {
+		if c, err := chords.Parse(text[:i]); err == nil {
+			if bn, err := notes.Parse(text[i+1:] + "3"); err == nil {
+				keys := chordKeys(c)
+				if len(keys) > 0 {
+					low := keys[0]
+					for _, k := range keys {
+						if k < low {
+							low = k
+						}
+					}
+					bass := bn.MIDI() % 12
+					for int(bass)+12 <= int(low) {
+						bass += 12
+					}
+					return ChordVal(append([]uint8{bass}, keys...), text), true
+				}
+			}
+		}
+	}
 	return Value{}, false
 }
 

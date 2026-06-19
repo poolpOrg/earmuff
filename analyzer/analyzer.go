@@ -567,6 +567,16 @@ func (a *analysis) analyzeNoteRef(n *ast.NoteRef, sc *scope) {
 	if _, err := chords.Parse(text); err == nil {
 		return
 	}
+	// Slash chord whose bass is not a chord tone (e.g. "Dm7/G"): valid, but
+	// go-harmony refuses it, so the elaborator handles it specially. Accept a
+	// "Chord/Bass" spelling where the chord part parses and the bass is a note.
+	if i := strings.IndexByte(text, '/'); i > 0 && i < len(text)-1 {
+		if _, err := chords.Parse(text[:i]); err == nil {
+			if _, err := notes.Parse(text[i+1:] + "3"); err == nil {
+				return
+			}
+		}
+	}
 
 	// Unresolved. Distinguish a chord-shaped spelling (warning, #10) from a
 	// fully unknown playable (error, #5).
