@@ -34,6 +34,7 @@ import (
 	"github.com/poolpOrg/earmuff/ast"
 	"github.com/poolpOrg/earmuff/elaborator"
 	"github.com/poolpOrg/earmuff/lilypond"
+	"github.com/poolpOrg/earmuff/midiimport"
 	"github.com/poolpOrg/earmuff/parser"
 	"github.com/poolpOrg/earmuff/player"
 	"github.com/poolpOrg/earmuff/smfwriter"
@@ -49,6 +50,9 @@ func main() {
 		optPDF      string
 		optSVG      string
 		optLilypond string
+		optImport   bool
+		optFaithful bool
+		optGrid     int
 	)
 	flag.StringVar(&optOut, "out", "", "output file (.mid)")
 	flag.BoolVar(&optQuiet, "quiet", false, "suppress summary and playback")
@@ -58,10 +62,13 @@ func main() {
 	flag.StringVar(&optPDF, "pdf", "", "render a sheet-music PDF to this file (requires lilypond)")
 	flag.StringVar(&optSVG, "svg", "", "render sheet-music SVG to this file (requires lilypond)")
 	flag.StringVar(&optLilypond, "lilypond", "lilypond", "path to the lilypond binary (for -pdf/-svg)")
+	flag.BoolVar(&optImport, "import", false, "read a .mid and emit .ear source (to -out or stdout)")
+	flag.BoolVar(&optFaithful, "faithful", false, "with -import: exact `on beat` timing instead of a quantized grid")
+	flag.IntVar(&optGrid, "grid", 16, "with -import: quantization grid as a note value (16 = sixteenth)")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: earmuff [flags] source.ear")
+		fmt.Fprintln(os.Stderr, "usage: earmuff [flags] source.ear  |  earmuff -import [flags] source.mid")
 		os.Exit(2)
 	}
 
@@ -70,6 +77,28 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "earmuff: %v\n", err)
 		os.Exit(1)
+	}
+
+	// Import mode: .mid -> .ear, short-circuiting the compile path.
+	if optImport {
+		out, ierr := midiimport.Import(src, midiimport.Options{
+			Faithful: optFaithful,
+			Grid:     optGrid,
+			Name:     strings.TrimSuffix(filepath.Base(file), filepath.Ext(file)),
+		})
+		if ierr != nil {
+			fmt.Fprintf(os.Stderr, "earmuff: import %s: %v\n", file, ierr)
+			os.Exit(1)
+		}
+		if optOut != "" {
+			if werr := os.WriteFile(optOut, []byte(out), 0o644); werr != nil {
+				fmt.Fprintf(os.Stderr, "earmuff: %v\n", werr)
+				os.Exit(1)
+			}
+		} else {
+			fmt.Print(out)
+		}
+		return
 	}
 
 	// Parse: report diagnostics, abort on any.

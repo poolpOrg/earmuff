@@ -88,6 +88,10 @@ earmuff -out song.mid song.ear
 # engrave sheet music
 earmuff -pdf song.pdf song.ear
 earmuff -svg song.svg song.ear
+
+# go the other way: turn a MIDI file into editable earmuff source
+earmuff -import song.mid > song.ear          # readable, quantized to a grid
+earmuff -import -faithful song.mid > song.ear # exact timing via `on beat`
 ```
 
 Browse the [`examples/`](examples/) directory for complete pieces.
@@ -160,6 +164,10 @@ earmuff [flags] source.ear
   -lilypond <path> path to the lilypond binary (for -pdf/-svg)
   -quiet           suppress the summary and skip playback
   -verbose         dump the elaborated event stream
+
+  -import          read a .mid and emit .ear source (reverse direction)
+  -faithful        with -import: exact `on beat` timing, not a quantized grid
+  -grid N          with -import: quantization grid as a note value (default 16)
 ```
 
 With no `-out`/`-pdf`/`-svg` and not `-quiet`, earmuff plays the piece.

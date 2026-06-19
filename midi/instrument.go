@@ -267,3 +267,25 @@ func PercussionKeyMap(percussionName string) (uint8, error) {
 	}
 	return 0, fmt.Errorf("unknown percussion %s", percussionName)
 }
+
+// PCToInstrument is the inverse of InstrumentToPC: it maps a 1-based General
+// MIDI program number to its instrument name. (InstrumentToPC returns index+1,
+// so the name lives at pc-1.)
+func PCToInstrument(pc uint8) (string, error) {
+	instruments := GetInstruments()
+	if pc < 1 || int(pc) > len(instruments) {
+		return "", fmt.Errorf("program change %d out of General MIDI range", pc)
+	}
+	return instruments[pc-1], nil
+}
+
+// KeyToPercussion is the inverse of PercussionKeyMap: it maps a MIDI note key
+// on the percussion channel to its percussion name. (PercussionKeyMap returns
+// index+35, so the name lives at key-35.)
+func KeyToPercussion(key uint8) (string, error) {
+	percussions := GetPercussions()
+	if int(key) < 35 || int(key)-35 >= len(percussions) {
+		return "", fmt.Errorf("percussion key %d out of General MIDI range", key)
+	}
+	return percussions[key-35], nil
+}
