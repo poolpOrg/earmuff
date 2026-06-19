@@ -1,0 +1,14 @@
+project "demo" {
+    bpm 96; time 4 4;
+
+    track "piano" instrument "piano" {
+        // let changes = [Cmaj7, Am7, Dm7, G7];
+        for ch in [Cmaj7, Am7, Dm7, G7] {
+            bar quarter { ch ch ch ch }
+        }
+    }
+
+    track "lead" instrument "piano" {
+        bar quarter { E5 G5 B5 (E5 + octave) }
+    }
+}

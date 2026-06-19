@@ -6,7 +6,7 @@ project "lofi study session" {
     bpm 78; time 4 4;
 
     track "keys" instrument "electric piano 1" v mp {
-        let changes = [Fmaj7, Em7, Am7, Dm7, Fmaj7, Em7, Am7, G7];
+        let changes = [Cmaj7, Em7, Am7, Dm7, Fmaj7, Em7, Am7, G7];
 
         for ch in changes {
             // off-beat stabs on the "and"s, accent on beat 3

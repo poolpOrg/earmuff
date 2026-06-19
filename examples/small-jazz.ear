@@ -52,11 +52,11 @@ project "sidewalk session" {
             rd = "ride cymbal 1";
         }
         // feathered kick, snare on 2 & 4, ride time
-        pattern swing {
+        pattern ride {
             bar 8 { rd _ hh sn _ hh sn _ }
             bar 8 { bd _ hh sn _ hh sn _ }
         }
 
-        for _ in 1..8 { swing() }
+        for _ in 1..8 { ride() }
     }
 }

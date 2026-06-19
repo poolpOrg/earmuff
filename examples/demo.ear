@@ -1,0 +1,97 @@
+// Jazz quartet — earmuff v2.
+// A medium-swing 8-bar ii-V-I in C, played three times: piano comps the changes,
+// guitar adds light four-to-the-bar chords, the drums keep ride-driven swing
+// time, and a lead violin states the head then trades a freer second/third pass
+// while the tenor sax answers underneath.
+project "blue corner quartet" {
+    bpm 132; time 4 4;
+
+    track "violin" instrument "violin" v f {
+        // 8-bar head over the ii-V-I form
+        pattern head {
+            bar 8 { _ E5:4 _ D5:4 C5:4 _ _ _ }      // Dm7
+            bar 8 { B4:4 _ A4:4 _ G4:4 _ _ _ }      // G7
+            bar 8 { C5:2 _ _ E5:4 _ G5:4 _ _ }      // Cmaj7
+            bar 8 { E5:4 _ _ _ _ _ _ _ }            // Cmaj7
+            bar 8 { _ A4:4 _ B4:4 C5:4 _ _ _ }      // Am7
+            bar 8 { D5:4 _ C5:4 _ B4:4 _ _ _ }      // D7
+            bar 8 { A4:2 _ _ C5:4 _ E5:4 _ _ }      // Dm7
+            bar 8 { D5:4 _ _ _ _ _ _ _ }            // G7
+        }
+        // a looser, higher answer for the repeats
+        pattern solo {
+            bar 8 { G5:4 _ F5:4 E5:4 _ D5:4 _ _ }   // Dm7
+            bar 8 { _ F5:4 D5:4 _ B4:4 _ _ _ }      // G7
+            bar 8 { C5:4 _ E5:4 G5:4 _ _ A5:4 _ }   // Cmaj7
+            bar 8 { G5:2 _ _ _ E5:4 _ _ _ }         // Cmaj7
+            bar 8 { _ C5:4 _ E5:4 _ A4:4 _ _ }      // Am7
+            bar 8 { F#5:4 _ E5:4 _ C5:4 _ _ _ }     // D7
+            bar 8 { D5:4 _ F5:4 _ A5:4 _ _ _ }      // Dm7
+            bar 8 { G4:2 _ _ _ _ _ _ _ }            // G7
+        }
+
+        head()
+        for _ in 1..2 { solo() }
+    }
+
+    track "sax" instrument "tenor sax" v mp {
+        // sits out the head, then weaves a counter-line under the violin solos
+        pattern counter {
+            bar 8 { _ _ A5:4 _ F5:4 _ _ _ }        // Dm7
+            bar 8 { G5:4 _ _ B5:4 _ D6:4 _ _ }     // G7
+            bar 8 { E6:2 _ _ _ G5:4 _ _ _ }        // Cmaj7
+            bar 8 { _ _ E5:4 _ C5:4 _ _ _ }        // Cmaj7
+            bar 8 { E5:4 _ G5:4 _ A5:4 _ _ _ }     // Am7
+            bar 8 { _ A5:4 _ F#5:4 _ D5:4 _ _ }    // D7
+            bar 8 { F5:2 _ _ A5:4 _ _ _ _ }        // Dm7
+            bar 8 { B5:4 _ _ _ _ _ _ _ }           // G7
+        }
+
+        for _ in 1..8 { bar 1 { _ } }     // tacet through the head
+        for _ in 1..2 { counter() }
+    }
+
+    track "piano" instrument "piano" v mp {
+        let form = [Dm7, G7, Cmaj7, Cmaj7, Am7, D7, Dm7, G7];
+
+        // off-beat comping: stab on the "and" of 1 and on 3
+        pattern comp(ch) { bar 8 v mf { _ ch _ _ ch:v f _ _ } }
+
+        for _ in 1..3 {
+            for ch in form { comp(ch) }
+        }
+    }
+
+    track "guitar" instrument "guitar" v p {
+        let form = [Dm7, G7, Cmaj7, Cmaj7, Am7, D7, Dm7, G7];
+
+        // gentle four-to-the-bar "freddie green" chord strokes
+        pattern chunk(ch) { bar quarter { ch ch ch ch } }
+
+        for _ in 1..3 {
+            for ch in form { chunk(ch) }
+        }
+    }
+
+    track "drums" instrument "synth drum" channel 10 v mf {
+        kit {
+            rd = "ride cymbal 1";
+            hh = "pedal hi-hat";
+            sn = "acoustic snare";
+            bd = "acoustic bass drum";
+        }
+        // ride swing pattern, hi-hat on 2 & 4, feathered kick
+        pattern ride {
+            bar 8 { (rd, bd) _ rd (rd, hh) _ rd (rd, hh) _ }
+        }
+        // turnaround fill: snare pickups into the next chorus
+        pattern fill {
+            bar 8 { rd _ rd sn _ sn (sn, bd) sn }
+        }
+
+        for _ in 1..3 {
+            for _ in 1..7 { ride() }
+            fill()
+        }
+    }
+}

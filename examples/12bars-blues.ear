@@ -5,11 +5,11 @@
 project "12 bars blues" {
     bpm 120; time 4 4;
 
-    track "lead piano" instrument "piano" {
-        pattern I  { bar quarter { C E G _ } }
-        pattern IV { bar quarter { F A C _ } }
-        pattern V  { bar quarter { G B D _ } }
+    pattern I  { bar quarter { C E G _ } }
+    pattern IV { bar quarter { F A C _ } }
+    pattern V  { bar quarter { G B D _ } }
 
+    track "lead piano" instrument "piano" {
         I() IV()
         for _ in 1..2 { I() }
         for _ in 1..2 { IV() }

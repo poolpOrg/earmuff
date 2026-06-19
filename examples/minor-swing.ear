@@ -1,8 +1,33 @@
-// Minor Swing — earmuff v2.
-// One rhythm-guitar part comping four chords to the bar. The whole 16-bar form
-// repeats twice, so the body lives in `for _ in 1..2`.
+// Minor Swing -- earmuff v2.
+// Django Reinhardt / Stephane Grappelli, 1937. The head is built on descending
+// chord arpeggios; the rhythm guitar comps four-to-the-bar ("la pompe") and the
+// bass walks root-fifth. All three parts share the same 16-bar form, which
+// repeats twice, so each body lives in `for _ in 1..2`.
 project "Minor Swing" {
     bpm 120; time 4 4;
+
+    track "lead violin" instrument "violin" v mf {
+        // a 2-bar phrase: descending arpeggio in swung 8ths, then a held answer
+        pattern head(hi, mid, lo) {
+            bar 8 { hi _ mid _ lo _ mid _ }   // descending arpeggio
+            bar 2 { lo _ }                    // sustain the low tone (half + rest)
+        }
+
+        for _ in 1..2 {
+            head(E5, C5, A4)        // Am6
+            head(A5, F5, D5)        // Dm6
+            head(D5, B4, G#4)       // E7  (D = the b7 color)
+            head(E5, C5, A4)        // Am6
+            head(A5, F5, D5)        // Dm6
+            head(E5, C5, A4)        // Am6
+            // turnaround: one bar each
+            bar 8 { F5 _ D5 _ A#4 _ D5 _ }    // A#6 (Bb)
+            bar 8 { D5 _ B4 _ G#4 _ B4 _ }    // E7
+            bar 8 { E5 _ C5 _ A4 _ C5 _ }     // Am6
+            // last bar: Cm6 then E9, a descending line resolving home
+            bar quarter { Eb5 C5 B4 G#4 }
+        }
+    }
 
     track "rythm guitar" instrument "guitar" {
         // four down-strokes of one chord per bar
@@ -20,6 +45,25 @@ project "Minor Swing" {
             comp(Am6)
             // last bar: two beats of Cm6, two of E9
             bar quarter { Cm6 Cm6 E9 E9 }
+        }
+    }
+
+    track "bass" instrument "acoustic bass" v mf {
+        // walking root-fifth, two beats apart
+        pattern walk(root, fifth) { bar quarter { root fifth root fifth } }
+
+        for _ in 1..2 {
+            for _ in 1..2 { walk(A2, E3) }    // Am6
+            for _ in 1..2 { walk(D2, A2) }    // Dm6
+            for _ in 1..2 { walk(E2, B2) }    // E7
+            for _ in 1..2 { walk(A2, E3) }    // Am6
+            for _ in 1..2 { walk(D2, A2) }    // Dm6
+            for _ in 1..2 { walk(A2, E3) }    // Am6
+            walk(A#2, F3)                     // A#6
+            walk(E2, B2)                      // E7
+            walk(A2, E3)                      // Am6
+            // last bar: Cm6 then E9
+            bar quarter { C2 G2 E2 B2 }
         }
     }
 }

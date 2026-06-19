@@ -198,9 +198,11 @@ preview and `-pdf`/`-svg` need LilyPond.
 | File | Shows |
 | --- | --- |
 | [`12bars-blues.ear`](examples/12bars-blues.ear) | patterns, loops, drums |
-| [`minor-swing.ear`](examples/minor-swing.ear) | nested loops, comping |
+| [`minor-swing.ear`](examples/minor-swing.ear) | lead, comping, walking bass |
+| [`demo.ear`](examples/demo.ear) | a jazz quartet over a ii-V-I |
 | [`nuages.ear`](examples/nuages.ear) | syncopation on a fine grid |
 | [`lofi.ear`](examples/lofi.ear) | lists, dynamics, off-beats |
+| [`lofi-bminor.ear`](examples/lofi-bminor.ear) | a minor turnaround, Rhodes comping |
 | [`small-jazz.ear`](examples/small-jazz.ear) | a small swing arrangement |
 | [`bach-prelude.ear`](examples/bach-prelude.ear) | a classical fragment |
 | [`mozart-nachtmusik.ear`](examples/mozart-nachtmusik.ear) | a classical fragment |
