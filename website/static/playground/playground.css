@@ -224,6 +224,15 @@
 .pg-sheet { background: #fff; border-radius: 6px; padding: 8px; }
 .pg-sheet svg { max-width: 100%; }
 .pg-sheet-note { color: var(--pg-muted); font-size: 12px; padding: 6px 0; }
+/* The sheet panel is always a white page, so part labels use a fixed dark
+   ink regardless of the site's light/dark theme. */
+.pg-sheet-part {
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+  padding-left: 4px;
+}
 
 /* ---- Responsive ------------------------------------------------------- */
 @media (max-width: 820px) {

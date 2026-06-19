@@ -296,69 +296,100 @@
     }, function () { vexLoaded = true; cb(false); });
   }
 
-  // Draw track 0 from the event stream: simultaneous notes become chords,
-  // durations come from each note's gate, and the line is broken into
-  // measures so a passage reads as notation rather than a flat melody.
+  // Draw every pitched track from the event stream as its own row of staves:
+  // simultaneous notes become chords, durations come from each note's gate,
+  // each track gets a clef chosen from its register, and the line is broken
+  // into measures. Channel-10 percussion tracks are skipped (not pitched).
   function drawSheet(res) {
     sheetEl.innerHTML = "";
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) return;
 
-    var groups = chordGroupsForTrack(res, 0);
-    if (!groups.length) {
-      sheetEl.innerHTML = '<div class="pg-sheet-note">Track 1 has no pitched notes to engrave.</div>';
-      return;
-    }
-
     var ppq = res.ppq || 960;
     var beats = res.timeBeats || 4;
     var unit = res.timeUnit || 4;
-    var ticksPerBeat = ppq * (4 / unit);
-    var ticksPerBar = ticksPerBeat * beats;
+    var ticksPerBar = ppq * (4 / unit) * beats;
+    var MAX_BARS = 8;
 
-    // Slice the groups into bars by onset, capping at a readable length.
-    var measures = groupsToMeasures(groups, ticksPerBar, 8 /* max bars */);
+    // Collect the pitched tracks that actually have notes.
+    var parts = [];
+    var trackCount = (res.tracks && res.tracks.length) || 0;
+    for (var t = 0; t < trackCount; t++) {
+      var info = res.tracks[t] || {};
+      if (info.channel === 9) continue; // GM percussion (0-based ch 9 == MIDI 10)
+      var groups = chordGroupsForTrack(res, t);
+      if (!groups.length) continue;
+      parts.push({
+        index: t,
+        name: info.name || "track " + (t + 1),
+        clef: clefForGroups(groups),
+        measures: groupsToMeasures(groups, ticksPerBar, MAX_BARS),
+      });
+    }
 
-    var div = document.createElement("div");
-    sheetEl.appendChild(div);
-    var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+    if (!parts.length) {
+      sheetEl.innerHTML = '<div class="pg-sheet-note">No pitched tracks to engrave (percussion is omitted).</div>';
+      return;
+    }
+
     var width = Math.max(560, sheetEl.clientWidth - 24);
     var perRow = width < 700 ? 2 : 4;
     var barW = Math.floor((width - 16) / perRow);
-    var rows = Math.ceil(measures.length / perRow);
-    renderer.resize(width, 40 + rows * 130);
-    var ctx = renderer.getContext();
+    var rowH = 120;
+    var labelH = 22;
 
     try {
-      measures.forEach(function (m, i) {
-        var col = i % perRow, row = Math.floor(i / perRow);
-        var x = 8 + col * barW;
-        var y = 16 + row * 130;
-        var stave = new VF.Stave(x, y, barW);
-        if (col === 0 && row === 0) {
-          stave.addClef("treble").addTimeSignature(beats + "/" + unit);
-        } else if (col === 0) {
-          stave.addClef("treble");
-        }
-        stave.setContext(ctx).draw();
-        var vfNotes = m.map(function (g) {
-          return new VF.StaveNote({
-            clef: "treble",
-            keys: g.keys.map(keyToVexKey),
-            duration: g.duration,
+      parts.forEach(function (part) {
+        var label = document.createElement("div");
+        label.className = "pg-sheet-part";
+        label.textContent = part.name;
+        sheetEl.appendChild(label);
+
+        var div = document.createElement("div");
+        sheetEl.appendChild(div);
+        var rows = Math.ceil(part.measures.length / perRow);
+        var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+        renderer.resize(width, 16 + rows * rowH);
+        var ctx = renderer.getContext();
+
+        part.measures.forEach(function (m, i) {
+          var col = i % perRow, row = Math.floor(i / perRow);
+          var stave = new VF.Stave(8 + col * barW, 8 + row * rowH, barW);
+          if (col === 0 && row === 0) {
+            stave.addClef(part.clef).addTimeSignature(beats + "/" + unit);
+          } else if (col === 0) {
+            stave.addClef(part.clef);
+          }
+          stave.setContext(ctx).draw();
+          var vfNotes = m.map(function (g) {
+            return new VF.StaveNote({
+              clef: part.clef,
+              keys: g.keys.map(keyToVexKey),
+              duration: g.duration,
+            });
           });
+          if (vfNotes.length) VF.Formatter.FormatAndDraw(ctx, stave, vfNotes);
         });
-        if (vfNotes.length) VF.Formatter.FormatAndDraw(ctx, stave, vfNotes);
       });
       sheetEl.insertAdjacentHTML(
         "beforeend",
-        '<div class="pg-sheet-note">Track 1, with simultaneous notes engraved as ' +
-        "chords (durations quantized). Download the LilyPond source for the full, " +
-        "multi-track score.</div>"
+        '<div class="pg-sheet-note">All pitched tracks, simultaneous notes as ' +
+        "chords (durations quantized; percussion omitted). Download the LilyPond " +
+        "source for the full score.</div>"
       );
     } catch (e) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Could not engrave this passage.</div>';
     }
+  }
+
+  // clefForGroups mirrors the LilyPond emitter: bass clef when the average
+  // pitch sits below ~G#3 (MIDI 56), treble otherwise.
+  function clefForGroups(groups) {
+    var sum = 0, n = 0;
+    groups.forEach(function (g) {
+      g.keys.forEach(function (k) { sum += k; n++; });
+    });
+    return n && sum / n < 56 ? "bass" : "treble";
   }
 
   // chordGroupsForTrack pairs NoteOn/NoteOff for a track and groups notes that
