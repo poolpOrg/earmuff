@@ -27,6 +27,13 @@
   var examplesSel = $("pg-examples");
   var monitorEl = $("pg-monitor");
   var errorsEl = $("pg-errors");
+  var tRewind = $("pg-t-rewind");
+  var tBack = $("pg-t-back");
+  var tPlay = $("pg-t-play");
+  var tFwd = $("pg-t-fwd");
+  var tCur = $("pg-t-cur");
+  var tDur = $("pg-t-dur");
+  var tSeek = $("pg-t-seek");
 
   // ---- State -------------------------------------------------------------
   var editor = null;
@@ -508,6 +515,35 @@
     return q;
   }
 
+  // posMs returns the current playback position in ms (works while paused).
+  function posMs() {
+    if (!live) return 0;
+    return live.paused ? live.pausedAt : nowMs() - live.startMs;
+  }
+
+  function queueDuration(q) { return q.length ? q[q.length - 1].ms : 0; }
+
+  // runLoop drives the scheduler; callable to (re)start after a seek/resume.
+  function runLoop(myToken) {
+    if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
+    function tick() {
+      if (!live || live.token !== myToken || live.paused) return;
+      var now = nowMs() - live.startMs;
+      while (live.i < live.queue.length && live.queue[live.i].ms <= now + LOOKAHEAD) {
+        dispatch(live.sy, live.queue[live.i++].e);
+      }
+      if (live.i < live.queue.length) {
+        schedTimer = setTimeout(tick, 10);
+      } else {
+        // Done: let tails ring, then reset the UI if still our turn.
+        schedTimer = setTimeout(function () {
+          if (live && live.token === myToken) finishPlayback();
+        }, 400);
+      }
+    }
+    tick();
+  }
+
   function play() {
     stop();                 // cancel any current playback first
     // Flush any pending debounced compile so we play the CURRENT editor
@@ -525,36 +561,26 @@
       if (myToken !== playToken) return; // superseded while loading
       var res = lastResult;
       var secPerTick = (60 / (res.bpm || 120)) / res.ppq;
+      var queue = queueFromResult(res, secPerTick);
 
       live = {
         token: myToken,
         sy: sy,
         startMs: nowMs(),
         secPerTick: secPerTick,
-        queue: queueFromResult(res, secPerTick),
+        queue: queue,
+        duration: queueDuration(queue),
         i: 0,
+        paused: false,
+        pausedAt: 0,
       };
       sendPrograms(sy, res);   // set each track's instrument up front
 
-      function tick() {
-        if (!live || live.token !== myToken) return; // stopped or superseded
-        var now = nowMs() - live.startMs;
-        while (live.i < live.queue.length && live.queue[live.i].ms <= now + LOOKAHEAD) {
-          dispatch(live.sy, live.queue[live.i++].e);
-        }
-        if (live.i < live.queue.length) {
-          schedTimer = setTimeout(tick, 10);
-        } else {
-          // Done: let tails ring, then reset the UI if still our turn.
-          schedTimer = setTimeout(function () {
-            if (live && live.token === myToken) finishPlayback();
-          }, 400);
-        }
-      }
-
       monitorReset();
       setStatus("playing…", "ok");
-      tick();
+      transportEnable(true);
+      startTransportUI();
+      runLoop(myToken);
     });
   }
 
@@ -566,18 +592,58 @@
 
   // relinkLive swaps a freshly compiled result into the running playback
   // without restarting: it rebuilds the queue, re-sends instruments, and skips
-  // the cursor past events already due, keeping the wall-clock position. A BPM
+  // the cursor past events already due, keeping the current position. A BPM
   // change retimes the remainder from where we are now.
   function relinkLive(res) {
     if (!live) return;
     live.secPerTick = (60 / (res.bpm || 120)) / res.ppq;
     live.queue = queueFromResult(res, live.secPerTick);
-    var elapsed = nowMs() - live.startMs;
-    // Resume at the first event still in the future (don't re-fire the past).
+    live.duration = queueDuration(live.queue);
+    var at = posMs();
     var i = 0;
-    while (i < live.queue.length && live.queue[i].ms <= elapsed) i++;
+    while (i < live.queue.length && live.queue[i].ms <= at) i++;
     live.i = i;
     sendPrograms(live.sy, res); // apply instrument changes immediately
+    updateTransport();
+  }
+
+  // ---- Transport: pause / resume / seek ---------------------------------
+  function pauseToggle() {
+    if (!live) { play(); return; } // nothing playing -> start
+    if (live.paused) {
+      // resume: re-anchor the clock so position continues from pausedAt.
+      live.startMs = nowMs() - live.pausedAt;
+      live.paused = false;
+      if (live.sy) sendPrograms(live.sy, lastResult); // restore instruments
+      tPlay.textContent = "⏸";
+      startTransportUI();
+      runLoop(live.token);
+    } else {
+      live.pausedAt = nowMs() - live.startMs;
+      live.paused = true;
+      if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
+      if (live.sy) live.sy.allOff(); // silence held notes while paused
+      clearHighlights();
+      tPlay.textContent = "▶";
+    }
+  }
+
+  function seekTo(ms) {
+    if (!live) return;
+    ms = Math.max(0, Math.min(ms, live.duration));
+    if (live.sy) live.sy.allOff();       // kill anything ringing
+    clearHighlights();
+    var i = 0;
+    while (i < live.queue.length && live.queue[i].ms < ms) i++;
+    live.i = i;
+    if (live.paused) {
+      live.pausedAt = ms;
+    } else {
+      live.startMs = nowMs() - ms;
+      if (live.sy) sendPrograms(live.sy, lastResult); // right instruments after a jump
+      runLoop(live.token);
+    }
+    updateTransport();
   }
 
   function dispatch(sy, e) {
@@ -598,6 +664,8 @@
     live = null;
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
+    stopTransportUI();
+    transportEnable(false);
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
     if (lastResult) setStatus(statusLine(lastResult), "ok");
@@ -609,9 +677,69 @@
     if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
+    stopTransportUI();
+    transportEnable(false);
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
     if (lastResult) setStatus(statusLine(lastResult), "ok");
+  }
+
+  // ---- Transport UI -----------------------------------------------------
+  var transportRAF = null;
+  var seeking = false; // true while the user drags the slider
+
+  function fmtTime(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+  }
+
+  function transportEnable(on) {
+    [tRewind, tBack, tPlay, tFwd, tSeek].forEach(function (el) { el.disabled = !on; });
+    tPlay.textContent = on ? "⏸" : "▶";
+    if (!on) {
+      tSeek.value = 0; tCur.textContent = "0:00"; tDur.textContent = "0:00";
+    }
+  }
+
+  function updateTransport() {
+    if (!live) return;
+    tDur.textContent = fmtTime(live.duration);
+    if (!seeking) {
+      var p = live.duration ? (posMs() / live.duration) * 1000 : 0;
+      tSeek.value = String(Math.max(0, Math.min(1000, p)));
+    }
+    tCur.textContent = fmtTime(posMs());
+    tPlay.textContent = live.paused ? "▶" : "⏸";
+  }
+
+  function startTransportUI() {
+    stopTransportUI();
+    (function frame() {
+      if (!live) return;
+      updateTransport();
+      transportRAF = requestAnimationFrame(frame);
+    })();
+  }
+  function stopTransportUI() {
+    if (transportRAF) { cancelAnimationFrame(transportRAF); transportRAF = null; }
+  }
+
+  function wireTransport() {
+    tPlay.addEventListener("click", pauseToggle);
+    tRewind.addEventListener("click", function () { if (live) seekTo(0); });
+    tBack.addEventListener("click", function () { if (live) seekTo(posMs() - 5000); });
+    tFwd.addEventListener("click", function () { if (live) seekTo(posMs() + 5000); });
+    // Slider: scrub live; the rAF updater won't fight while seeking is true.
+    tSeek.addEventListener("input", function () {
+      if (!live) return;
+      seeking = true;
+      tCur.textContent = fmtTime((+tSeek.value / 1000) * live.duration);
+    });
+    tSeek.addEventListener("change", function () {
+      if (!live) { seeking = false; return; }
+      seekTo((+tSeek.value / 1000) * live.duration);
+      seeking = false;
+    });
   }
 
   // ---- Live event monitor -----------------------------------------------
@@ -915,6 +1043,7 @@
     initTabs();
     wireToolbar();
     wireImport();
+    wireTransport();
     bootMonaco(function () {
       var initial = loadFromHash() || DEFAULT_SOURCE;
       createEditor(initial);

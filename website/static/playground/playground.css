@@ -172,6 +172,33 @@
 .pg-status.pg-ok { color: #2c9f5a; }
 .pg-status.pg-err { color: var(--pg-err); }
 
+/* Transport bar: playback controls + seek, above the status line. */
+.pg-transport {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-top: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+}
+.pg-t-btn {
+  border: 0;
+  background: transparent;
+  color: var(--pg-fg);
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.pg-t-btn:hover:not(:disabled) { background: var(--pg-border); }
+.pg-t-btn:disabled { opacity: 0.4; cursor: default; }
+.pg-t-play { font-size: 16px; color: var(--pg-accent); }
+.pg-t-time { color: var(--pg-muted); font-size: 11px; font-variant-numeric: tabular-nums; min-width: 34px; text-align: center; }
+.pg-t-seek { flex: 1 1 auto; accent-color: var(--pg-accent); cursor: pointer; }
+.pg-t-seek:disabled { cursor: default; }
+
 /* Inline error buffer: sits between the status line and the monitor, hidden
    while the source is clean, expanding to list errors right beside the code. */
 .pg-errors {

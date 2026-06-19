@@ -41,6 +41,15 @@
     <main class="pg-main">
       <section class="pg-editor-pane">
         <div id="pg-editor" class="pg-editor"></div>
+        <div id="pg-transport" class="pg-transport" aria-label="Transport">
+          <button id="pg-t-rewind" class="pg-t-btn" title="Rewind to start" disabled>⏮</button>
+          <button id="pg-t-back" class="pg-t-btn" title="Back 5 seconds" disabled>⏪</button>
+          <button id="pg-t-play" class="pg-t-btn pg-t-play" title="Play / Pause" disabled>▶</button>
+          <button id="pg-t-fwd" class="pg-t-btn" title="Forward 5 seconds" disabled>⏩</button>
+          <span id="pg-t-cur" class="pg-t-time">0:00</span>
+          <input id="pg-t-seek" class="pg-t-seek" type="range" min="0" max="1000" value="0" step="1" disabled aria-label="Seek">
+          <span id="pg-t-dur" class="pg-t-time">0:00</span>
+        </div>
         <div id="pg-status" class="pg-status">loading the compiler…</div>
         <!-- Inline error buffer: collapsed (hidden) when there are no errors. -->
         <div id="pg-errors" class="pg-errors" hidden aria-label="Errors"></div>
