@@ -183,13 +183,7 @@
       renderEvents(res);
       lilypondEl.textContent = res.lilypond || "";
       if (activeTab() === "sheet") renderSheet();
-      var secs = ticksToSeconds(res.durationTicks, res.bpm);
-      setStatus(
-        '"' + res.project + '" — ' + res.trackCount + " track" +
-        (res.trackCount === 1 ? "" : "s") + ", " + res.eventCount +
-        " events, " + secs.toFixed(1) + "s",
-        "ok"
-      );
+      setStatus(statusLine(res), "ok");
       playBtn.disabled = false;
     } else {
       lastResult = null;
@@ -521,6 +515,13 @@
     return (ticks / ppq) * (60 / (bpm || 120));
   }
 
+  function statusLine(res) {
+    var secs = ticksToSeconds(res.durationTicks, res.bpm);
+    return '"' + res.project + '" — ' + res.trackCount + " track" +
+      (res.trackCount === 1 ? "" : "s") + ", " + res.eventCount +
+      " events, " + secs.toFixed(1) + "s";
+  }
+
   function ensureAudio() {
     if (!audioCtx) {
       var AC = window.AudioContext || window.webkitAudioContext;
@@ -565,70 +566,110 @@
     });
   }
 
-  // spessasynth adapter: typed API with absolute-time {time} scheduling.
+  // Both adapters expose IMMEDIATE (play-now) operations. We do NOT pre-schedule
+  // the whole song into the synth — that can't be cancelled, which broke Stop
+  // and let an old play bleed into a new one. Instead a JS scheduler (below)
+  // dispatches each event when its time arrives, so Stop truly stops.
   function spessaAdapter(synth) {
     return {
-      program: function (ch, pc, t) { synth.programChange(ch, pc & 0x7f, { time: t }); },
-      noteOn: function (ch, key, vel, t) { synth.noteOn(ch, key & 0x7f, vel & 0x7f, { time: t }); },
-      noteOff: function (ch, key, t) { synth.noteOff(ch, key & 0x7f, { time: t }); },
+      program: function (ch, pc) { synth.programChange(ch, pc & 0x7f); },
+      noteOn: function (ch, key, vel) { synth.noteOn(ch, key & 0x7f, vel & 0x7f); },
+      noteOff: function (ch, key) { synth.noteOff(ch, key & 0x7f); },
       allOff: function () { for (var c = 0; c < 16; c++) synth.controllerChange(c, 120, 0); },
     };
   }
 
-  // tinysynth adapter: raw MIDI bytes via send([status,d1,d2], time).
   function tinyAdapter(synth) {
     return {
-      program: function (ch, pc, t) { synth.send([0xc0 | ch, pc & 0x7f], t); },
-      noteOn: function (ch, key, vel, t) { synth.send([0x90 | ch, key & 0x7f, vel & 0x7f], t); },
-      noteOff: function (ch, key, t) { synth.send([0x80 | ch, key & 0x7f, 0], t); },
+      program: function (ch, pc) { synth.send([0xc0 | ch, pc & 0x7f]); },
+      noteOn: function (ch, key, vel) { synth.send([0x90 | ch, key & 0x7f, vel & 0x7f]); },
+      noteOff: function (ch, key) { synth.send([0x80 | ch, key & 0x7f, 0]); },
       allOff: function () {
         for (var c = 0; c < 16; c++) { synth.send([0xb0 | c, 120, 0]); synth.send([0xb0 | c, 123, 0]); }
       },
     };
   }
 
+  // ---- JS scheduler -----------------------------------------------------
+  // A monotonically increasing token: every play() bumps it, and the running
+  // loop bails the instant the token changes, so a new play (or stop) cancels
+  // the old one cleanly even across the async synth-load.
+  var playToken = 0;
+  var schedTimer = null;
+
   function play() {
+    stop();                 // cancel any current playback first
     if (!lastResult) return;
-    stop();
     ensureAudio();
+    var myToken = ++playToken;
+
+    playBtn.disabled = true;
+    stopBtn.disabled = false;
+    setStatus("loading instruments…");
+
     ensureSynth(function (sy) {
+      if (myToken !== playToken) return; // superseded while loading
       var res = lastResult;
       var ppq = res.ppq || 960;
       var secPerTick = (60 / (res.bpm || 120)) / ppq;
-      var t0 = audioCtx.currentTime + 0.12;
 
-      // Program per track up front so timbres differ; channel 9 is GM drums.
+      // Set each track's program immediately so timbres differ; ch 9 = GM drums.
       (res.tracks || []).forEach(function (tr) {
-        if (tr.channel !== 9) sy.program(tr.channel & 0x0f, tr.program, t0);
+        if (tr.channel !== 9) sy.program(tr.channel & 0x0f, tr.program);
       });
 
-      var maxTick = res.durationTicks || 0;
-      res.events.forEach(function (e) {
-        var t = t0 + e.t * secPerTick;
-        var ch = e.ch & 0x0f;
-        if (e.kind === 0 && e.vel > 0) {
-          sy.noteOn(ch, e.key, e.vel, t);
-        } else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) {
-          sy.noteOff(ch, e.key, t);
-        } else if (e.kind === 5) {
-          sy.program(ch, e.prog, t); // in-stream program change
-        }
-        if (e.t > maxTick) maxTick = e.t;
+      // Build a flat, time-sorted dispatch list in ms from start.
+      var queue = res.events.map(function (e) {
+        return { ms: e.t * secPerTick * 1000, e: e };
       });
+      queue.sort(function (a, b) { return a.ms - b.ms; });
+
+      var startMs = (window.performance && performance.now()) || Date.now();
+      var i = 0;
+      var LOOKAHEAD = 25; // ms; dispatch slightly ahead so timing stays tight
+
+      function tick() {
+        if (myToken !== playToken) return; // stopped or superseded
+        var now = ((window.performance && performance.now()) || Date.now()) - startMs;
+        while (i < queue.length && queue[i].ms <= now + LOOKAHEAD) {
+          dispatch(sy, queue[i++].e);
+        }
+        if (i < queue.length) {
+          schedTimer = setTimeout(tick, 10);
+        } else {
+          // Done: let tails ring, then reset the UI if still our turn.
+          schedTimer = setTimeout(function () {
+            if (myToken === playToken) finishPlayback();
+          }, 400);
+        }
+      }
 
       setStatus("playing…", "ok");
-      playBtn.disabled = true;
-      stopBtn.disabled = false;
-      var ms = Math.max(300, maxTick * secPerTick * 1000 + 600);
-      stopTimer = setTimeout(stop, ms);
+      tick();
     });
   }
 
-  function stop() {
-    if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  function dispatch(sy, e) {
+    var ch = e.ch & 0x0f;
+    if (e.kind === 0 && e.vel > 0) sy.noteOn(ch, e.key, e.vel);
+    else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) sy.noteOff(ch, e.key);
+    else if (e.kind === 5) sy.program(ch, e.prog);
+  }
+
+  function finishPlayback() {
     if (synthAdapter) synthAdapter.allOff();
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
+    if (lastResult) setStatus(statusLine(lastResult), "ok");
+  }
+
+  function stop() {
+    playToken++;            // invalidate any running loop
+    if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
+    if (synthAdapter) synthAdapter.allOff();
+    stopBtn.disabled = true;
+    playBtn.disabled = !lastResult;
+    if (lastResult) setStatus(statusLine(lastResult), "ok");
   }
 
   // =======================================================================
