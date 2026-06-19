@@ -599,6 +599,9 @@
 
   function play() {
     stop();                 // cancel any current playback first
+    // Flush any pending debounced compile so we play the CURRENT editor
+    // content, not the previously compiled piece (e.g. just-switched example).
+    if (compileTimer) { clearTimeout(compileTimer); compileTimer = null; compileNow(); }
     if (!lastResult) return;
     ensureAudio();
     var myToken = ++playToken;
@@ -849,17 +852,29 @@
   }
 
   function importFile(file) {
+    var name = file.name || "";
+    // .ear is source — load it straight into the editor. Everything else is
+    // treated as a MIDI file and run through the importer.
+    if (/\.ear$/i.test(name)) {
+      var tr = new FileReader();
+      tr.onload = function () {
+        editor.setValue(String(tr.result));
+        setStatus("loaded " + name, "ok");
+      };
+      tr.onerror = function () { setStatus("could not read " + name, "err"); };
+      tr.readAsText(file);
+      return;
+    }
+
     if (!wasmReady) { setStatus("the compiler is still loading…", "err"); return; }
-    setStatus("importing " + file.name + "…");
+    setStatus("importing " + name + "…");
     var reader = new FileReader();
     reader.onload = function () {
       var bytes = new Uint8Array(reader.result);
       var b64 = bytesToB64(bytes);
-      // Honor the faithful toggle if present; default to readable.
-      var faithful = false;
       var res;
       try {
-        res = JSON.parse(window.earmuffImport(b64, faithful));
+        res = JSON.parse(window.earmuffImport(b64, false /* readable */));
       } catch (err) {
         setStatus("import failed: " + err, "err");
         return;
@@ -869,10 +884,10 @@
         return;
       }
       editor.setValue(res.source);
-      setStatus("imported " + file.name, "ok");
+      setStatus("imported " + name, "ok");
       // compileNow fires via the editor change handler.
     };
-    reader.onerror = function () { setStatus("could not read " + file.name, "err"); };
+    reader.onerror = function () { setStatus("could not read " + name, "err"); };
     reader.readAsArrayBuffer(file);
   }
 
