@@ -5,9 +5,9 @@ project "loop if" {
     track "rythm guitar" instrument "guitar" {
         for i in 1..2 {
             if i == 2 {
-                bar whole { C7/G }      // last pass: voice the fifth in the bass
+                bar whole { C^7/G }      // last pass: voice the fifth in the bass
             } else {
-                bar whole { C7/E }
+                bar whole { C^7/E }
             }
         }
     }

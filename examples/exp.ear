@@ -16,9 +16,9 @@ project "v2 showcase" {
     track "bass" instrument "bass" {
         for i in 1..4 {
             if i == 4 {
-                bar quarter { C2 (C2 + fifth) (C2 + octave) (C2 + fifth) }
+                bar quarter { C^2 (C^2 + fifth) (C^2 + octave) (C^2 + fifth) }
             } else {
-                bar quarter { C2 _ (C2 + fifth) _ }
+                bar quarter { C^2 _ (C^2 + fifth) _ }
             }
         }
     }

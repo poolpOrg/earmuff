@@ -14,7 +14,7 @@ project "comp demo" {
     }
 
     track "riff" instrument "acoustic bass" {
-        for root in [C2, F2, G2] {
+        for root in [C^2, F^2, G^2] {
             bar quarter { root (root + fifth) (root + octave) _ }
         }
     }

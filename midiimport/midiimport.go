@@ -441,11 +441,13 @@ func faithfulTokens(tr *track, g chordGroup) []string {
 
 var pcNames = []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 
-// noteName renders a MIDI key as an earmuff note with octave (C4 == 60).
+// noteName renders a MIDI key as an earmuff note in caret form (C^4 == 60).
+// The caret marks a note and carries its octave, so it is never confused with a
+// chord (a bare "C4" would now read as a chord).
 func noteName(key uint8) string {
 	pc := pcNames[key%12]
 	oct := int(key)/12 - 1
-	return fmt.Sprintf("%s%d", pc, oct)
+	return fmt.Sprintf("%s^%d", pc, oct)
 }
 
 // chordName tries to name a pitch set with go-harmony, returning "" unless the
@@ -457,7 +459,9 @@ func chordName(keys []uint8) string {
 	}
 	var ns []notes.Note
 	for _, k := range keys {
-		n, err := notes.Parse(noteName(k))
+		// go-harmony wants the bare "C4" spelling, not the caret output form.
+		pc := pcNames[k%12]
+		n, err := notes.Parse(fmt.Sprintf("%s%d", pc, int(k)/12-1))
 		if err != nil {
 			return ""
 		}

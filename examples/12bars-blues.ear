@@ -29,11 +29,11 @@ project "12 bars blues" {
         // a quarter on beat 1 and beat 3 (root then third)
         pattern walk(root, third) { bar quarter { root _ third _ } }
 
-        walk(C2, E2) walk(F2, A2)
-        for _ in 1..2 { walk(C2, E2) }
-        for _ in 1..2 { walk(F2, G2) }
-        for _ in 1..2 { walk(C2, E2) }
-        walk(G2, B2) walk(F2, G2) walk(C2, E2) walk(G2, B2)
+        walk(C^2, E^2) walk(F^2, A^2)
+        for _ in 1..2 { walk(C^2, E^2) }
+        for _ in 1..2 { walk(F^2, G^2) }
+        for _ in 1..2 { walk(C^2, E^2) }
+        walk(G^2, B^2) walk(F^2, G^2) walk(C^2, E^2) walk(G^2, B^2)
     }
 
     track "drums" instrument "synth drum" channel 10 {

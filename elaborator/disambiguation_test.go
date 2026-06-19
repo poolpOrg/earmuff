@@ -29,21 +29,40 @@ func TestDisambig_NoteVsChord(t *testing.T) {
 	tr := func(body string) string {
 		return `project "t"{time 4 4;track "g" instrument "guitar"{` + body + `}}`
 	}
-	// C7 is ambiguous (note C8ve7 vs C dominant-7 chord); the chord wins.
+	// Without a caret, an ambiguous spelling is a CHORD: C7 = C dominant-7.
 	if got := disambigKeys(t, tr(`bar 1 { C7 }`)); len(got) != 4 {
 		t.Fatalf("C7 -> %v, want a 4-note chord", got)
 	}
-	// A trailing ^ forces the note reading (MIDI 96 = C7 pitch).
-	if got := disambigKeys(t, tr(`bar 1 { C7^ }`)); len(got) != 1 || got[0] != 96 {
-		t.Fatalf("C7^ -> %v, want [96]", got)
+	// A caret marks a NOTE and carries its octave: C^7 = C in octave 7 (MIDI 96).
+	if got := disambigKeys(t, tr(`bar 1 { C^7 }`)); len(got) != 1 || got[0] != 96 {
+		t.Fatalf("C^7 -> %v, want [96]", got)
 	}
-	// Low octave digits (0-4) are never chord names, so C4 is a note.
-	if got := disambigKeys(t, tr(`bar 1 { C4 }`)); len(got) != 1 || got[0] != 60 {
-		t.Fatalf("C4 -> %v, want [60]", got)
+	// A bare caret defaults to octave 4: C^ = middle C (MIDI 60).
+	if got := disambigKeys(t, tr(`bar 1 { C^ }`)); len(got) != 1 || got[0] != 60 {
+		t.Fatalf("C^ -> %v, want [60]", got)
 	}
-	// A bare letter is a single note, not a major triad.
-	if got := disambigKeys(t, tr(`bar quarter { C _ _ _ }`)); len(got) != 1 {
-		t.Fatalf("bare C -> %v, want 1 note", got)
+	// Accidentals work with the caret: Eb^3.
+	if got := disambigKeys(t, tr(`bar 1 { Eb^3 }`)); len(got) != 1 || got[0] != 51 {
+		t.Fatalf("Eb^3 -> %v, want [51]", got)
+	}
+	// A bare letter is a NOTE at the default octave 4 (C^ and C are the same).
+	if got := disambigKeys(t, tr(`bar 1 { C }`)); len(got) != 1 || got[0] != 60 {
+		t.Fatalf("bare C -> %v, want [60] (note, octave 4)", got)
+	}
+	// "C^4" is the explicit octave-4 note (same as bare C).
+	if got := disambigKeys(t, tr(`bar 1 { C^4 }`)); len(got) != 1 || got[0] != 60 {
+		t.Fatalf("C^4 -> %v, want [60]", got)
+	}
+	// E5 (bare digit = chord quality, power chord); E^5 is the note (MIDI 76).
+	if got := disambigKeys(t, tr(`bar 1 { E5 }`)); len(got) < 2 {
+		t.Fatalf("E5 -> %v, want a chord", got)
+	}
+	if got := disambigKeys(t, tr(`bar 1 { E^5 }`)); len(got) != 1 || got[0] != 76 {
+		t.Fatalf("E^5 -> %v, want [76]", got)
+	}
+	// Accidental note at default octave: Eb = Eb4 (MIDI 63).
+	if got := disambigKeys(t, tr(`bar 1 { Eb }`)); len(got) != 1 || got[0] != 63 {
+		t.Fatalf("Eb -> %v, want [63]", got)
 	}
 	// Explicit qualities are unaffected.
 	if got := disambigKeys(t, tr(`bar 1 { Am7 }`)); len(got) != 4 {

@@ -39,7 +39,7 @@ func TestRender_Skeleton(t *testing.T) {
 func TestRender_OneStaffPerTrack(t *testing.T) {
 	ly := render(t, `project "p" { time 4 4;
 		track "a" instrument "piano" { bar quarter { C E G _ } }
-		track "b" instrument "bass"  { bar quarter { C2 _ _ _ } }
+		track "b" instrument "bass"  { bar quarter { C^2 _ _ _ } }
 	}`)
 	if n := strings.Count(ly, "\\new Staff"); n != 2 {
 		t.Fatalf("got %d staves, want 2", n)
@@ -48,7 +48,7 @@ func TestRender_OneStaffPerTrack(t *testing.T) {
 
 func TestRender_BassClefForLowTrack(t *testing.T) {
 	ly := render(t, `project "p" { time 4 4;
-		track "bass" instrument "bass" { bar quarter { C2 E2 G2 _ } }
+		track "bass" instrument "bass" { bar quarter { C^2 E^2 G^2 _ } }
 	}`)
 	if !strings.Contains(ly, "\\clef bass") {
 		t.Fatalf("low track should use bass clef:\n%s", ly)

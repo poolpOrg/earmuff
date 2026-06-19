@@ -25,6 +25,7 @@ package analyzer
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/poolpOrg/earmuff/ast"
 	"github.com/poolpOrg/earmuff/midi"
@@ -133,6 +134,21 @@ func newScope(parent *scope) *scope {
 		kits:     map[string]string{},
 		beats:    beats,
 	}
+}
+
+// isBarePitch reports whether text is a letter A-G followed only by accidentals
+// (# or b) — no octave digit, no chord quality — i.e. a plain note at the
+// default octave. Mirrors the elaborator's classification.
+func isBarePitch(text string) bool {
+	if text == "" || text[0] < 'A' || text[0] > 'G' {
+		return false
+	}
+	for i := 1; i < len(text); i++ {
+		if text[i] != '#' && text[i] != 'b' {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *scope) hasBinding(name string) bool {
@@ -527,14 +543,27 @@ func (a *analysis) analyzeNoteRef(n *ast.NoteRef, sc *scope) {
 	if sc.hasBinding(text) {
 		return
 	}
-	if note, err := notes.Parse(text); err == nil {
-		// Check #9: resolved note out of MIDI range.
-		m := note.MIDI()
-		if m > 127 {
-			a.warnf(n.Position, "note %q resolves to MIDI %d, out of range (0..127)", text, m)
+	// "^" forces a note and carries its octave (defaulting to 4): C^, C^5.
+	if i := strings.IndexByte(text, '^'); i >= 0 {
+		head, oct := text[:i], text[i+1:]
+		if oct == "" {
+			oct = "4"
 		}
+		if note, err := notes.Parse(head + oct); err == nil {
+			if m := note.MIDI(); m > 127 {
+				a.warnf(n.Position, "note %q resolves to MIDI %d, out of range (0..127)", text, m)
+			}
+			return
+		}
+		a.errorf(n.Position, "%q is not a valid note (a '^' marks a note: C^, C^5)", text)
 		return
 	}
+	// A bare pitch (letter + accidentals only) is a note at the default octave.
+	if isBarePitch(text) {
+		return
+	}
+	// Otherwise a quality/octave digit makes it a chord. (No note fallback: a
+	// bare octave like "C4" is a chord; the note is written "C^4".)
 	if _, err := chords.Parse(text); err == nil {
 		return
 	}

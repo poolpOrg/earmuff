@@ -39,9 +39,13 @@
     'project "playground" {\n' +
     "    bpm 120; time 4 4;\n\n" +
     '    track "lead" instrument "piano" {\n' +
-    "        pattern hook { bar quarter { C E G E } }\n" +
+    "        // notes carry their octave after a caret: C^5 is C in octave 5\n" +
+    "        pattern hook { bar quarter { C^5 E^5 G^5 E^5 } }\n" +
     "        repeat 2 { hook }\n" +
-    "        for each Am7 Dm7 G7 Cmaj7 { bar quarter { C } }\n" +
+    "    }\n\n" +
+    '    track "chords" instrument "string ensemble 1" {\n' +
+    "        // a bare name with a quality is a chord\n" +
+    "        for ch in Am7 Dm7 G7 Cmaj7 { bar 1 { ch } }\n" +
     "    }\n\n" +
     '    track "drums" instrument "synth drum" channel 10 {\n' +
     '        kit { hh = "closed hi-hat"; sn = "acoustic snare"; }\n' +
@@ -94,8 +98,13 @@
           [/\/\*/, "comment", "@comment"],
           [/"([^"\\]|\\.)*"/, "string"],
           [/'([^'\\]|\\.)*'/, "string"],
-          // Chords/notes: a capital A-G with accidentals/quality/octave.
-          [/\b[A-G](#|b)*\d?(maj|min|dim|aug|sus|add|m|M)?\d*(b\d+|#\d+)*(\/[A-G](#|b)*\d?)?\b/, "type.identifier"],
+          // Note with a caret octave marker (C^, C^5, Eb^3) — never a chord.
+          [/[A-G](#|b)*\^\d*/, "string.note"],
+          // Chord: a root + quality or bare-digit quality (Cmaj7, Am7, C5, G7),
+          // optional slash bass. Matched before the bare-note rule below.
+          [/[A-G](#|b)*(maj|min|dim|aug|sus|add|m|M|\d)\w*(\/[A-G](#|b)*\d*)?/, "type.identifier"],
+          // Bare note: letter + accidentals only (no caret, no quality).
+          [/[A-G](#|b)*(?![A-Za-z0-9^])/, "string.note"],
           [/\b\d+\.\d+\b/, "number.float"],
           [/\b\d+\b/, "number"],
           [/[a-zA-Z_][\w]*/, {

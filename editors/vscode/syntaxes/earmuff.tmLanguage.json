@@ -81,16 +81,23 @@
     "chords": {
       "patterns": [
         {
-          "name": "constant.other.note.earmuff",
-          "match": "\\b[A-G](#|b)*\\d?(maj|min|dim|aug|sus|add|m|M)?\\d*(b\\d+|#\\d+)*(/[A-G](#|b)*\\d?)?\\b"
+          "comment": "A chord: a root with a quality or bare-digit quality (Cmaj7, Am7, C5, G7), optional slash bass. No caret.",
+          "name": "entity.name.type.chord.earmuff",
+          "match": "\\b[A-G](#|b)*(maj|min|dim|aug|sus|add|m|M|\\d)\\w*(/[A-G](#|b)*\\d*)?\\b"
         }
       ]
     },
     "notes": {
       "patterns": [
         {
+          "comment": "A note: a pitch with a caret octave marker (C^, C^5, Eb^3) — never a chord.",
           "name": "constant.other.note.earmuff",
-          "match": "\\b[A-G](#|b)*\\d?(/[A-G](#|b)*\\d?)?\\b"
+          "match": "\\b[A-G](#|b)*\\^\\d*"
+        },
+        {
+          "comment": "A bare note (letter + accidentals, no caret, no quality) at the default octave.",
+          "name": "constant.other.note.earmuff",
+          "match": "\\b[A-G](#|b)*(?![A-Za-z0-9^])"
         }
       ]
     },

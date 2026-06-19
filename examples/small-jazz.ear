@@ -6,14 +6,14 @@ project "sidewalk session" {
 
     track "trumpet" instrument "trumpet" v mf {
         pattern head {
-            bar 8 { _ E5:4 _ D5:4 C5:4 _ _ _ }     // Am7
-            bar 8 { B4:4 _ A4:4 _ G4:4 _ _ _ }       // D7
-            bar 8 { A4:2 _ _ C5:4 _ E5:4 _ _ }       // Gmaj7
-            bar 8 { G4:4 _ _ _ _ _ _ _ }             // Gmaj7
-            bar 8 { _ G4:4 _ F4:4 E4:4 _ _ _ }       // Em7
-            bar 8 { D4:4 _ C4:4 _ B3:4 _ _ _ }       // A7
-            bar 8 { A3:2 _ _ D4:4 _ F4:4 _ _ }       // Dm7
-            bar 8 { G3:4 _ _ _ _ _ _ _ }             // G7
+            bar 8 { _ E^5:4 _ D^5:4 C^5:4 _ _ _ }     // Am7
+            bar 8 { B^4:4 _ A^4:4 _ G^4:4 _ _ _ }       // D7
+            bar 8 { A^4:2 _ _ C^5:4 _ E^5:4 _ _ }       // Gmaj7
+            bar 8 { G^4:4 _ _ _ _ _ _ _ }             // Gmaj7
+            bar 8 { _ G^4:4 _ F^4:4 E^4:4 _ _ _ }       // Em7
+            bar 8 { D^4:4 _ C^4:4 _ B^3:4 _ _ _ }       // A7
+            bar 8 { A^3:2 _ _ D^4:4 _ F^4:4 _ _ }       // Dm7
+            bar 8 { G^3:4 _ _ _ _ _ _ _ }             // G7
         }
 
         for _ in 1..2 { head() }
@@ -33,14 +33,14 @@ project "sidewalk session" {
         pattern walk(n1, n2, n3, n4) { bar quarter { n1 n2 n3 n4 } }
 
         for _ in 1..2 {
-            walk(A2, C3, E3, G3)
-            walk(F#2, A2, C3, E3)
-            walk(G2, B2, D3, F#3)
-            walk(G2, B2, D3, F#3)
-            walk(E2, G2, B2, D3)
-            walk(A2, C#3, E3, G3)
-            walk(D2, F2, A2, C3)
-            walk(G2, B2, D2, F2)
+            walk(A^2, C^3, E^3, G^3)
+            walk(F#^2, A^2, C^3, E^3)
+            walk(G^2, B^2, D^3, F#^3)
+            walk(G^2, B^2, D^3, F#^3)
+            walk(E^2, G^2, B^2, D^3)
+            walk(A^2, C#^3, E^3, G^3)
+            walk(D^2, F^2, A^2, C^3)
+            walk(G^2, B^2, D^2, F^2)
         }
     }
 

@@ -23,23 +23,23 @@ project "lofi study session" {
         pattern root(root) { bar quarter { root _ _ _ } }
         pattern walk(root, fifth) { bar quarter { root _ fifth _ } }
 
-        root(F2) root(E2) root(A2) walk(D2, A2)
-        root(F2) root(E2) root(A2) root(G2)
+        root(F^2) root(E^2) root(A^2) walk(D^2, A^2)
+        root(F^2) root(E^2) root(A^2) root(G^2)
         for _ in 1..3 {
-            root(F2) root(E2) root(A2) walk(D2, A2)
-            root(F2) root(E2) root(A2) root(G2)
+            root(F^2) root(E^2) root(A^2) walk(D^2, A^2)
+            root(F^2) root(E^2) root(A^2) root(G^2)
         }
     }
 
     track "melody" instrument "vibraphone" v p {
         // sparse, legato phrases over the changes
         pattern phrase {
-            bar 8 { C5:4 _ A4:4 _ _ _ _ }
-            bar 8 { G4:2 _ _ F4:4 _ _ _ _ }
+            bar 8 { C^5:4 _ A^4:4 _ _ _ _ }
+            bar 8 { G^4:2 _ _ F^4:4 _ _ _ _ }
         }
         pattern answer {
-            bar 8 { E5:4 _ D5:4 _ _ _ _ }
-            bar 8 { C5:2 _ _ A4:4 _ _ _ _ }
+            bar 8 { E^5:4 _ D^5:4 _ _ _ _ }
+            bar 8 { C^5:2 _ _ A^4:4 _ _ _ _ }
         }
 
         for _ in 1..8 { phrase() answer() }
@@ -48,14 +48,14 @@ project "lofi study session" {
     track "sax" instrument "tenor sax" v ff {
         // one lazy line per chord change; sits out the first 8 bars
         pattern line {
-            bar 8 { _ _ _ _ A4:2 C5:2 _ _ }       // Fmaj7
-            bar 8 { B4:4 _ G4:4 _ _ _ _ }         // Em7
-            bar 8 { _ _ E5:4 _ C5:4 _ _ }         // Am7
-            bar 8 { F4:4 _ _ A4:4 _ _ _ _ }       // Dm7
-            bar 8 { _ _ _ C5:4 E5:4 _ _ _ }       // Fmaj7
-            bar 8 { D5:4 _ B4:4 _ _ _ _ }         // Em7
-            bar 8 { _ _ C5:4 _ A4:4 _ _ }         // Am7
-            bar 8 { B4:2 _ D5:4 _ F4:4 _ _ }      // G7
+            bar 8 { _ _ _ _ A^4:2 C^5:2 _ _ }       // Fmaj7
+            bar 8 { B^4:4 _ G^4:4 _ _ _ _ }         // Em7
+            bar 8 { _ _ E^5:4 _ C^5:4 _ _ }         // Am7
+            bar 8 { F^4:4 _ _ A^4:4 _ _ _ _ }       // Dm7
+            bar 8 { _ _ _ C^5:4 E^5:4 _ _ _ }       // Fmaj7
+            bar 8 { D^5:4 _ B^4:4 _ _ _ _ }         // Em7
+            bar 8 { _ _ C^5:4 _ A^4:4 _ _ }         // Am7
+            bar 8 { B^4:2 _ D^5:4 _ F^4:4 _ _ }      // G7
         }
 
         for _ in 1..8 { bar 1 { _ } }

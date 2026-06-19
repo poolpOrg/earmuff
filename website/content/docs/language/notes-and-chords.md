@@ -10,36 +10,50 @@ Notes and chords are written by name, directly in musical position — the
 
 ## Notes
 
-A note is a letter `A`–`G`, an optional accidental (`#` or `b`), and an optional
-octave number:
+A note is a letter `A`–`G` with optional accidentals (`#` or `b`). On its own it
+sounds at the default octave (4, middle C's octave):
 
 ```text
-C  C#  Eb  F#3  Cb
+C  C#  Eb  Cb
 ```
 
-Without an octave, a default register is used; an explicit number (`C5`, `F#3`,
-`E2`) pins the octave.
+To set the octave, add a caret `^` and the octave number. The octave **only**
+ever appears after the caret:
+
+```text
+C^4   // middle C (the same as bare C)
+C^5   // C an octave up
+F#^3  Eb^2  G^7
+```
+
+`C^` with no number is the same as `C` — the default octave.
 
 ## Chords
 
-Chords are written by name:
+A chord is a root followed by a quality. The quality can be a word (`maj`, `m`,
+`dim`, `sus`, `add`, …) or a bare number (`5`, `7`, `9`, …):
 
 ```text
-Am7  Gmaj7  C7  Dm7b5  C7/E
+Am7  Gmaj7  C7  Dm7b5  C5  C7/E
 ```
 
 Slash chords (`C7/E`) specify the bass note.
 
-## The note-vs-chord rule
+## Notes vs. chords — no ambiguity
 
-A token like `C7` is ambiguous: it could be the chord *C dominant 7th* or the
-note *C* in octave 7. **The chord reading wins.** If you mean the note, append a
-trailing `^` to force the note interpretation:
+The caret is what separates the two, so there is never any guessing:
 
 ```text
-C7     // the chord C7
-C7^    // the note C in octave 7
+C      // NOTE  — C at the default octave
+C^5    // NOTE  — C in octave 5
+C5     // CHORD — C power chord (the 5 is a quality)
+C7     // CHORD — C dominant 7th
+Cmaj7  // CHORD
 ```
+
+Rule of thumb: **a bare letter is a note; add a quality for a chord; add `^` for
+a note's octave.** A digit straight after the letter (no caret) is always a
+chord quality, so the note "C in octave 7" is written `C^7`, never `C7`.
 
 ## Interval transposition
 

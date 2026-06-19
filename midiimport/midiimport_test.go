@@ -48,7 +48,7 @@ func TestImport_FaithfulRoundTrip(t *testing.T) {
 	src := `project "p" { bpm 120; time 4 4;
         track "lead" instrument "piano" {
             bar quarter { Cmaj7 G7 Am7 Dm7 }
-            bar quarter { C4 E4 G4 C5 }
+            bar quarter { C^4 E^4 G^4 C^5 }
         }
     }`
 	orig := compile(t, src)
@@ -76,7 +76,7 @@ func TestImport_FaithfulRoundTrip(t *testing.T) {
 
 func TestImport_ReadableCompiles(t *testing.T) {
 	src := `project "p" { bpm 100; time 4 4;
-        track "lead" instrument "piano" { bar 8 { C E G C E G C E } }
+        track "lead" instrument "piano" { bar 8 { C^ E^ G^ C^ E^ G^ C^ E^ } }
     }`
 	mid := smfwriter.Write(compile(t, src))
 	out, err := Import(mid, Options{}) // readable

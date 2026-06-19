@@ -163,8 +163,8 @@ program      = "program" (string|number) ;
 sysex        = "sysex" { hexbyte } ;
 meta         = "text" string | "lyric" string | "marker" string | "cue" string ;
 
-note         = NOTE_LITERAL ;                  (* C, C#, Eb, C5, F#3 ... *)
-chord        = CHORD_LITERAL ;                 (* Am7, C7, Gmaj7, C7/E ... *)
+note         = NOTE_LITERAL ;                  (* C, Eb, C^5, F#^3 — caret = octave *)
+chord        = CHORD_LITERAL ;                 (* Am7, C7, Gmaj7, C5, C7/E ... *)
 
 (* velocity: a value usable as a per-note suffix, a bar/block default, or a
    track default. precedence per-note > block > track > built-in 64 (see §3b) *)

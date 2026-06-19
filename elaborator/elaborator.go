@@ -808,76 +808,58 @@ func (e *elab) resolveNoteRef(n *ast.NoteRef, sc *scope) ([]uint8, bool) {
 	return nil, false
 }
 
-// resolvePitch turns a text token into MIDI keys, resolving the note-vs-chord
-// ambiguity. Tokens like "C7" are valid as both a note (C in octave 7) and a
-// chord (C dominant 7); the chord reading wins, matching musical intent. A
-// "plain note" — a letter, accidentals, and an optional low octave digit (0-4),
-// which is never a chord name — stays a note. A trailing "^" forces the note
-// reading as an escape hatch for high-octave pitches (e.g. "C7^").
+// resolvePitch turns a text token into MIDI keys. Notes and chords are
+// distinguished structurally, with no ambiguity:
+//
+//   - A bare pitch — a letter plus optional accidentals and NOTHING else — is a
+//     NOTE at the default octave: "C", "Eb", "F#" (octave 4).
+//   - A "^" marks a NOTE and carries its octave: "C^" is C at the default
+//     octave 4, "C^5" / "Eb^3" / "G^7" set the octave explicitly. The octave
+//     ONLY ever appears after the caret.
+//   - Anything else after the letter — a digit or a quality word — is a CHORD:
+//     "Cmaj", "Cm7", "Am7", and the bare-digit qualities "C5" (power chord),
+//     "G7" (dominant 7). To get those pitches as notes, use "C^5" / "G^7".
 func resolvePitch(text string) ([]uint8, bool) {
-	// Escape hatch: trailing '^' forces the note interpretation.
-	if strings.HasSuffix(text, "^") {
-		forced := strings.TrimSuffix(text, "^")
-		if note, err := notes.Parse(forced); err == nil {
+	// "^" forces the note reading: <letter><accidentals>^[octave]. The octave
+	// after the caret defaults to 4 when omitted ("C^" == "C4").
+	if i := strings.IndexByte(text, '^'); i >= 0 {
+		head, oct := text[:i], text[i+1:]
+		if oct == "" {
+			oct = "4"
+		}
+		if note, err := notes.Parse(head + oct); err == nil {
 			return []uint8{note.MIDI()}, true
 		}
 		return nil, false
 	}
 
-	noteOK := false
-	var noteKey uint8
-	if note, err := notes.Parse(text); err == nil {
-		noteOK = true
-		noteKey = note.MIDI()
-	}
-	chordOK := false
-	var chordVal *chords.Chord
-	if ch, err := chords.Parse(text); err == nil {
-		chordOK = true
-		chordVal = ch
-	}
-
-	switch {
-	case noteOK && chordOK:
-		// Ambiguous (e.g. C, C5, C6, C7). Prefer the note only when it is a
-		// "plain pitch": a bare letter+accidentals, or with a low octave digit
-		// (0-4) that is never also a chord quality. Otherwise the chord wins.
-		if isPlainNote(text) {
-			return []uint8{noteKey}, true
+	// A bare pitch (letter + accidentals only) is a note at the default octave.
+	if isBarePitch(text) {
+		if note, err := notes.Parse(text + "4"); err == nil {
+			return []uint8{note.MIDI()}, true
 		}
-		return chordKeys(chordVal), true
-	case chordOK:
-		return chordKeys(chordVal), true
-	case noteOK:
-		return []uint8{noteKey}, true
+	}
+	// Anything else with a quality or octave digit is a chord. (There is no
+	// note fallback: a bare octave like "C4" is the chord; the note is "C^4".)
+	if ch, err := chords.Parse(text); err == nil {
+		return chordKeys(ch), true
 	}
 	return nil, false
 }
 
-// isPlainNote reports whether text is unambiguously a pitch: a note letter,
-// optional accidentals (# or b), and at most a single octave digit 0-4. The
-// bare-number chord qualities (5, 6, 7) and multi-digit forms (9, 11, 13) are
-// excluded, so "C"/"Eb"/"C4" are notes but "C7"/"C13" fall through to a chord.
-func isPlainNote(text string) bool {
-	if text == "" {
+// isBarePitch reports whether text is a letter A-G followed only by accidentals
+// (# or b) — no octave digit and no chord quality. Such a token is a plain note
+// at the default octave.
+func isBarePitch(text string) bool {
+	if text == "" || text[0] < 'A' || text[0] > 'G' {
 		return false
 	}
-	i := 0
-	if text[0] < 'A' || text[0] > 'G' {
-		return false
+	for i := 1; i < len(text); i++ {
+		if text[i] != '#' && text[i] != 'b' {
+			return false
+		}
 	}
-	i++
-	for i < len(text) && (text[i] == '#' || text[i] == 'b') {
-		i++
-	}
-	switch len(text) - i {
-	case 0:
-		return true // bare letter, e.g. C, Eb
-	case 1:
-		return text[i] >= '0' && text[i] <= '4' // low octave, never a chord
-	default:
-		return false
-	}
+	return true
 }
 
 func chordKeys(c *chords.Chord) []uint8 {

@@ -10,28 +10,28 @@ project "super mario bros - overworld theme" {
 
         // — intro riff —
         pattern intro {
-            bar 8 { E5 E5 _ E5 _ C5 E5 _ }
-            bar 8 { G5 _ _ _ G4 _ _ _ }
+            bar 8 { E^5 E^5 _ E^5 _ C^5 E^5 _ }
+            bar 8 { G^5 _ _ _ G^4 _ _ _ }
         }
 
         // — main melody (the part everyone hums) —
         pattern main {
-            bar 8 { C5 _ _ G4 _ _ E4 _ }
-            bar 8 { _ A4 _ B4 _ Bb4 A4 _ }
-            bar 8 { G4 E5 G5 A5 _ F5 G5 _ }
-            bar 8 { E5 _ C5 D5 B4 _ _ _ }
+            bar 8 { C^5 _ _ G^4 _ _ E^4 _ }
+            bar 8 { _ A^4 _ B^4 _ Bb^4 A^4 _ }
+            bar 8 { G^4 E^5 G^5 A^5 _ F^5 G^5 _ }
+            bar 8 { E^5 _ C^5 D^5 B^4 _ _ _ }
         }
 
         // — bridge / B section ("ding ding ding") —
         pattern bridge {
-            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
-            bar 8 { _ G#4 A4 C5 _ A4 C5 D5 }
-            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
-            bar 8 { _ C6 _ C6 C6 _ _ _ }
-            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
-            bar 8 { _ G#4 A4 C5 _ A4 C5 D5 }
-            bar 8 { _ _ Eb5 _ _ D5 _ _ }
-            bar 8 { C5 _ _ _ _ _ _ _ }
+            bar 8 { _ _ G^5 F#^5 F^5 Eb^5 _ E^5 }
+            bar 8 { _ G#^4 A^4 C^5 _ A^4 C^5 D^5 }
+            bar 8 { _ _ G^5 F#^5 F^5 Eb^5 _ E^5 }
+            bar 8 { _ C^6 _ C^6 C^6 _ _ _ }
+            bar 8 { _ _ G^5 F#^5 F^5 Eb^5 _ E^5 }
+            bar 8 { _ G#^4 A^4 C^5 _ A^4 C^5 D^5 }
+            bar 8 { _ _ Eb^5 _ _ D^5 _ _ }
+            bar 8 { C^5 _ _ _ _ _ _ _ }
         }
 
         intro()
@@ -46,23 +46,23 @@ project "super mario bros - overworld theme" {
         pattern boom(low, high) { bar 8 { low _ high _ low _ high _ } }
 
         // intro: lock onto C
-        boom(C2, C3) boom(C2, C3)
+        boom(C^2, C^3) boom(C^2, C^3)
 
         // main A (×2): C tonic, lean to G under the cadence
         for _ in 1..2 {
-            boom(C2, C3) boom(C2, C3)
-            boom(G2, G3) boom(C2, C3)
+            boom(C^2, C^3) boom(C^2, C^3)
+            boom(G^2, G^3) boom(C^2, C^3)
         }
 
         // bridge B: walk the roots G - F - C
-        boom(G2, G3) boom(F2, F3)
-        boom(G2, G3) boom(C2, C3)
-        boom(G2, G3) boom(F2, F3)
-        boom(G2, G3) boom(C2, C3)
+        boom(G^2, G^3) boom(F^2, F^3)
+        boom(G^2, G^3) boom(C^2, C^3)
+        boom(G^2, G^3) boom(F^2, F^3)
+        boom(G^2, G^3) boom(C^2, C^3)
 
         // back to intro + one more A
-        boom(C2, C3) boom(C2, C3)
-        boom(C2, C3) boom(C2, C3)
-        boom(G2, G3) boom(C2, C3)
+        boom(C^2, C^3) boom(C^2, C^3)
+        boom(C^2, C^3) boom(C^2, C^3)
+        boom(G^2, G^3) boom(C^2, C^3)
     }
 }

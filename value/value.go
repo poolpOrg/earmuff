@@ -9,6 +9,7 @@ package value
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/poolpOrg/earmuff/ast"
 	"github.com/poolpOrg/earmuff/token"
@@ -270,12 +271,48 @@ func Iterate(ex ast.Expr, env *Env) ([]Value, error) {
 	}
 }
 
-func parseMusic(text string, pos token.Position) (Value, error) {
-	if n, err := notes.Parse(text); err == nil {
-		return NotePitch(n), nil
+// parsePitch resolves a pitch token to a note or chord Value using the same
+// rule as the elaborator: a "^" marks a note and carries its octave (default
+// 4); a bare letter+accidentals is a note at octave 4; anything else with a
+// quality or octave digit is a chord.
+func parsePitch(text string) (Value, bool) {
+	if i := strings.IndexByte(text, '^'); i >= 0 {
+		head, oct := text[:i], text[i+1:]
+		if oct == "" {
+			oct = "4"
+		}
+		if n, err := notes.Parse(head + oct); err == nil {
+			return NotePitch(n), true
+		}
+		return Value{}, false
+	}
+	if isBarePitch(text) {
+		if n, err := notes.Parse(text + "4"); err == nil {
+			return NotePitch(n), true
+		}
 	}
 	if c, err := chords.Parse(text); err == nil {
-		return ChordVal(chordKeys(c), text), nil
+		return ChordVal(chordKeys(c), text), true
+	}
+	return Value{}, false
+}
+
+// isBarePitch reports whether text is a letter A-G plus only accidentals.
+func isBarePitch(text string) bool {
+	if text == "" || text[0] < 'A' || text[0] > 'G' {
+		return false
+	}
+	for i := 1; i < len(text); i++ {
+		if text[i] != '#' && text[i] != 'b' {
+			return false
+		}
+	}
+	return true
+}
+
+func parseMusic(text string, pos token.Position) (Value, error) {
+	if v, ok := parsePitch(text); ok {
+		return v, nil
 	}
 	return Value{}, posErr(pos, "%q is not a valid note or chord", text)
 }
@@ -290,11 +327,8 @@ func evalIdent(name string, pos token.Position, env *Env) (Value, error) {
 	if dv, ok := DynamicVelocity[name]; ok {
 		return Number(float64(dv)), nil
 	}
-	if n, err := notes.Parse(name); err == nil {
-		return NotePitch(n), nil
-	}
-	if c, err := chords.Parse(name); err == nil {
-		return ChordVal(chordKeys(c), name), nil
+	if v, ok := parsePitch(name); ok {
+		return v, nil
 	}
 	return Value{}, posErr(pos, "undefined identifier %q", name)
 }

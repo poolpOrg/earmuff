@@ -6,14 +6,14 @@ project "prelude in c major" {
 
     track "harpsichord" instrument "piano" v mf {
         pattern prelude {
-            bar 16 { C4 E4 G4 C5 E5 G4 C5 E4 G4 C5 E5 G4 C5 E4 G4 C5 }
-            bar 16 { G4 C5 E5 G4 C5 E5 G4 C5 G4 C5 E5 G4 C5 E5 G4 C5 }
-            bar 16 { A3 C4 E4 A4 C5 E4 A4 C5 A3 C4 E4 A4 C5 E4 A4 C5 }
-            bar 16 { E3 A3 C4 E4 A4 C5 E4 A4 E3 A3 C4 E4 A4 C5 E4 A4 }
-            bar 16 { F3 C4 F4 A4 C5 F4 A4 C5 F3 C4 F4 A4 C5 F4 A4 C5 }
-            bar 16 { D3 F3 A3 D4 F4 A4 D4 F4 D3 F3 A3 D4 F4 A4 D4 F4 }
-            bar 16 { G3 B3 D4 G4 B4 D4 G4 B4 G3 B3 D4 G4 B4 D4 G4 B4 }
-            bar 16 { C4 E4 G4 C5 E4 G4 C5 E4 C4 E4 G4 C5 E4 G4 C5 E4 }
+            bar 16 { C^4 E^4 G^4 C^5 E^5 G^4 C^5 E^4 G^4 C^5 E^5 G^4 C^5 E^4 G^4 C^5 }
+            bar 16 { G^4 C^5 E^5 G^4 C^5 E^5 G^4 C^5 G^4 C^5 E^5 G^4 C^5 E^5 G^4 C^5 }
+            bar 16 { A^3 C^4 E^4 A^4 C^5 E^4 A^4 C^5 A^3 C^4 E^4 A^4 C^5 E^4 A^4 C^5 }
+            bar 16 { E^3 A^3 C^4 E^4 A^4 C^5 E^4 A^4 E^3 A^3 C^4 E^4 A^4 C^5 E^4 A^4 }
+            bar 16 { F^3 C^4 F^4 A^4 C^5 F^4 A^4 C^5 F^3 C^4 F^4 A^4 C^5 F^4 A^4 C^5 }
+            bar 16 { D^3 F^3 A^3 D^4 F^4 A^4 D^4 F^4 D^3 F^3 A^3 D^4 F^4 A^4 D^4 F^4 }
+            bar 16 { G^3 B^3 D^4 G^4 B^4 D^4 G^4 B^4 G^3 B^3 D^4 G^4 B^4 D^4 G^4 B^4 }
+            bar 16 { C^4 E^4 G^4 C^5 E^4 G^4 C^5 E^4 C^4 E^4 G^4 C^5 E^4 G^4 C^5 E^4 }
         }
 
         prelude()

@@ -14,18 +14,18 @@ project "Minor Swing" {
         }
 
         for _ in 1..2 {
-            head(E5, C5, A4)        // Am6
-            head(A5, F5, D5)        // Dm6
-            head(D5, B4, G#4)       // E7  (D = the b7 color)
-            head(E5, C5, A4)        // Am6
-            head(A5, F5, D5)        // Dm6
-            head(E5, C5, A4)        // Am6
+            head(E^5, C^5, A^4)        // Am6
+            head(A^5, F^5, D^5)        // Dm6
+            head(D^5, B^4, G#^4)       // E7  (D = the b7 color)
+            head(E^5, C^5, A^4)        // Am6
+            head(A^5, F^5, D^5)        // Dm6
+            head(E^5, C^5, A^4)        // Am6
             // turnaround: one bar each
-            bar 8 { F5 _ D5 _ A#4 _ D5 _ }    // A#6 (Bb)
-            bar 8 { D5 _ B4 _ G#4 _ B4 _ }    // E7
-            bar 8 { E5 _ C5 _ A4 _ C5 _ }     // Am6
+            bar 8 { F^5 _ D^5 _ A#^4 _ D^5 _ }    // A#6 (Bb)
+            bar 8 { D^5 _ B^4 _ G#^4 _ B^4 _ }    // E7
+            bar 8 { E^5 _ C^5 _ A^4 _ C^5 _ }     // Am6
             // last bar: Cm6 then E9, a descending line resolving home
-            bar quarter { Eb5 C5 B4 G#4 }
+            bar quarter { Eb^5 C^5 B^4 G#^4 }
         }
     }
 
@@ -36,12 +36,12 @@ project "Minor Swing" {
         for _ in 1..2 {
             for _ in 1..2 { comp(Am6) }
             for _ in 1..2 { comp(Dm6) }
-            for _ in 1..2 { comp(E7)  }
+            for _ in 1..2 { comp(E^7)  }
             for _ in 1..2 { comp(Am6) }
             for _ in 1..2 { comp(Dm6) }
             for _ in 1..2 { comp(Am6) }
-            comp(A#6)
-            comp(E7)
+            comp(A#^6)
+            comp(E^7)
             comp(Am6)
             // last bar: two beats of Cm6, two of E9
             bar quarter { Cm6 Cm6 E9 E9 }
@@ -53,17 +53,17 @@ project "Minor Swing" {
         pattern walk(root, fifth) { bar quarter { root fifth root fifth } }
 
         for _ in 1..2 {
-            for _ in 1..2 { walk(A2, E3) }    // Am6
-            for _ in 1..2 { walk(D2, A2) }    // Dm6
-            for _ in 1..2 { walk(E2, B2) }    // E7
-            for _ in 1..2 { walk(A2, E3) }    // Am6
-            for _ in 1..2 { walk(D2, A2) }    // Dm6
-            for _ in 1..2 { walk(A2, E3) }    // Am6
-            walk(A#2, F3)                     // A#6
-            walk(E2, B2)                      // E7
-            walk(A2, E3)                      // Am6
+            for _ in 1..2 { walk(A^2, E^3) }    // Am6
+            for _ in 1..2 { walk(D^2, A^2) }    // Dm6
+            for _ in 1..2 { walk(E^2, B^2) }    // E7
+            for _ in 1..2 { walk(A^2, E^3) }    // Am6
+            for _ in 1..2 { walk(D^2, A^2) }    // Dm6
+            for _ in 1..2 { walk(A^2, E^3) }    // Am6
+            walk(A#^2, F^3)                     // A#6
+            walk(E^2, B^2)                      // E7
+            walk(A^2, E^3)                      // Am6
             // last bar: Cm6 then E9
-            bar quarter { C2 G2 E2 B2 }
+            bar quarter { C^2 G^2 E^2 B^2 }
         }
     }
 }

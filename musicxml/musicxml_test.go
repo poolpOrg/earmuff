@@ -26,9 +26,9 @@ func TestRender_WellFormed(t *testing.T) {
 	src := `project "p" { bpm 120; time 4 4;
 		track "lead" instrument "piano" {
 			bar quarter { Cmaj7 _ G7 _ }
-			bar quarter { C4 E4 G4 C5 }
+			bar quarter { C^4 E^4 G^4 C^5 }
 		}
-		track "bass" instrument "bass" { bar quarter { C2 G2 C2 G2 } }
+		track "bass" instrument "bass" { bar quarter { C^2 G^2 C^2 G^2 } }
 	}`
 	xmlOut := Render(compile(t, src))
 	// Must be well-formed XML.

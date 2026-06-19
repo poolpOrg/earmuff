@@ -114,10 +114,14 @@ bar quarter { C:2 _ E _ }      // C rings a half note
 **Notes and chords** are written by name and transposed with intervals:
 
 ```
-C  C#  Eb  F#3  Cb            // notes (optional octave)
-Am7  Gmaj7  C7  Dm7b5         // chords
+C  C#  Eb  C^5  F#^3          // notes — a caret carries the octave (C = octave 4)
+Am7  Gmaj7  C7  Dm7b5  C5     // chords — a quality (word or bare digit)
 C + fifth                    // transposition
 ```
+
+A bare letter is a note; a quality (`maj7`, `m`, or a bare digit like `7`/`5`)
+makes it a chord. So `C7` is the C dominant chord, while the note C in octave 7
+is `C^7`.
 
 **Patterns and control flow** run at compile time:
 

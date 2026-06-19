@@ -9,6 +9,6 @@ project "demo" {
     }
 
     track "lead" instrument "piano" {
-        bar quarter { E5 G5 B5 (E5 + octave) }
+        bar quarter { E^5 G^5 B^5 (E^5 + octave) }
     }
 }

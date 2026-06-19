@@ -23,18 +23,18 @@ project "blues in b minor" {
     track "guitar" instrument "acoustic guitar (nylon)" v mf {
         // a bluesy head over the B-minor blues scale (B D E F F# A)
         pattern head {
-            bar 8 { D4 F#4 A4 B4 A4 F#4 D4 _ }       // Bm7
-            bar 8 { F#4:4 _ _ _ D4:4 _ _ _ }         // Bm7  (held answer)
-            bar 8 { B4 A4 F#4 D4 E4 F#4 D4 _ }       // Bm7
-            bar 8 { D4:2 _ _ _ _ _ A3 B3 }           // Bm7  (hold, pickup to Em)
-            bar 8 { E4 G4 B4 A4 G4 E4 G4 _ }         // Em7
-            bar 8 { B4:4 _ _ _ G4 E4 G4 _ }          // Em7
-            bar 8 { D4 F#4 A4 B4 A4 F#4 D4 _ }       // Bm7
-            bar 8 { D4:2 _ _ _ F#4 A4 B4 _ }         // Bm7
-            bar 8 { G4 B4 D5 G5 D5 B4 G4 _ }         // Gmaj7
-            bar 8 { F#4 A#4 C#5 E5 C#5 A#4 F#4 _ }   // F#7  (A# = the major 3rd)
-            bar 8 { B4:4 _ _ _ A4 F#4 D4 _ }         // Bm7
-            bar 8 { C#5 A#4 F#4 A#4 C#5 _ _ _ }      // F#7  (turnaround)
+            bar 8 { D^4 F#^4 A^4 B^4 A^4 F#^4 D^4 _ }       // Bm7
+            bar 8 { F#^4:4 _ _ _ D^4:4 _ _ _ }         // Bm7  (held answer)
+            bar 8 { B^4 A^4 F#^4 D^4 E^4 F#^4 D^4 _ }       // Bm7
+            bar 8 { D^4:2 _ _ _ _ _ A^3 B^3 }           // Bm7  (hold, pickup to Em)
+            bar 8 { E^4 G^4 B^4 A^4 G^4 E^4 G^4 _ }         // Em7
+            bar 8 { B^4:4 _ _ _ G^4 E^4 G^4 _ }          // Em7
+            bar 8 { D^4 F#^4 A^4 B^4 A^4 F#^4 D^4 _ }       // Bm7
+            bar 8 { D^4:2 _ _ _ F#^4 A^4 B^4 _ }         // Bm7
+            bar 8 { G^4 B^4 D^5 G^5 D^5 B^4 G^4 _ }         // Gmaj7
+            bar 8 { F#^4 A#^4 C#^5 E^5 C#^5 A#^4 F#^4 _ }   // F#7  (A# = the major 3rd)
+            bar 8 { B^4:4 _ _ _ A^4 F#^4 D^4 _ }         // Bm7
+            bar 8 { C#^5 A#^4 F#^4 A#^4 C#^5 _ _ _ }      // F#7  (turnaround)
         }
 
         //swing 67;
@@ -46,18 +46,18 @@ project "blues in b minor" {
         pattern walk(n1, n2, n3, n4) { bar quarter { n1 n2 n3 n4 } }
 
         for _ in 1..2 {
-            walk(B2, D3, F#3, A3)     // Bm7
-            walk(B2, A2, F#2, D2)     // Bm7
-            walk(B2, D3, F#3, A3)     // Bm7
-            walk(B2, A2, G2, F#2)     // Bm7  -> lead to Em
-            walk(E2, G2, B2, D3)      // Em7
-            walk(E3, D3, B2, G2)      // Em7
-            walk(B2, D3, F#3, A3)     // Bm7
-            walk(B2, A2, F#2, D2)     // Bm7
-            walk(G2, A2, B2, D3)      // Gmaj7
-            walk(F#2, A#2, C#3, E3)   // F#7
-            walk(B2, D3, F#3, A3)     // Bm7
-            walk(F#2, C#3, A#2, G2)   // F#7  -> turnaround back to B
+            walk(B^2, D^3, F#^3, A^3)     // Bm7
+            walk(B^2, A^2, F#^2, D^2)     // Bm7
+            walk(B^2, D^3, F#^3, A^3)     // Bm7
+            walk(B^2, A^2, G^2, F#^2)     // Bm7  -> lead to Em
+            walk(E^2, G^2, B^2, D^3)      // Em7
+            walk(E^3, D^3, B^2, G^2)      // Em7
+            walk(B^2, D^3, F#^3, A^3)     // Bm7
+            walk(B^2, A^2, F#^2, D^2)     // Bm7
+            walk(G^2, A^2, B^2, D^3)      // Gmaj7
+            walk(F#^2, A#^2, C#^3, E^3)   // F#7
+            walk(B^2, D^3, F#^3, A^3)     // Bm7
+            walk(F#^2, C#^3, A#^2, G^2)   // F#7  -> turnaround back to B
         }
     }
 
