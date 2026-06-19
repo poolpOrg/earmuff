@@ -296,49 +296,128 @@
     }, function () { vexLoaded = true; cb(false); });
   }
 
-  // Draw a single-staff melodic reduction of track 0 from the event stream.
+  // Draw track 0 from the event stream: simultaneous notes become chords,
+  // durations come from each note's gate, and the line is broken into
+  // measures so a passage reads as notation rather than a flat melody.
   function drawSheet(res) {
     sheetEl.innerHTML = "";
     var VF = window.Vex && window.Vex.Flow;
     if (!VF) return;
-    var notes = noteEventsForTrack(res, 0);
-    if (!notes.length) {
+
+    var groups = chordGroupsForTrack(res, 0);
+    if (!groups.length) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Track 1 has no pitched notes to engrave.</div>';
       return;
     }
-    // A lightweight, readable reduction: render up to ~32 quarter slots.
+
+    var ppq = res.ppq || 960;
+    var beats = res.timeBeats || 4;
+    var unit = res.timeUnit || 4;
+    var ticksPerBeat = ppq * (4 / unit);
+    var ticksPerBar = ticksPerBeat * beats;
+
+    // Slice the groups into bars by onset, capping at a readable length.
+    var measures = groupsToMeasures(groups, ticksPerBar, 8 /* max bars */);
+
     var div = document.createElement("div");
     sheetEl.appendChild(div);
     var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
     var width = Math.max(560, sheetEl.clientWidth - 24);
-    renderer.resize(width, 160);
+    var perRow = width < 700 ? 2 : 4;
+    var barW = Math.floor((width - 16) / perRow);
+    var rows = Math.ceil(measures.length / perRow);
+    renderer.resize(width, 40 + rows * 130);
     var ctx = renderer.getContext();
-    var stave = new VF.Stave(8, 16, width - 24);
-    stave.addClef("treble").addTimeSignature(res.timeBeats + "/" + res.timeUnit);
-    stave.setContext(ctx).draw();
 
-    var vfNotes = notes.slice(0, 16).map(function (n) {
-      return new VF.StaveNote({
-        keys: [keyToVexKey(n.key)],
-        duration: "q",
-      });
-    });
     try {
-      VF.Formatter.FormatAndDraw(ctx, stave, vfNotes);
+      measures.forEach(function (m, i) {
+        var col = i % perRow, row = Math.floor(i / perRow);
+        var x = 8 + col * barW;
+        var y = 16 + row * 130;
+        var stave = new VF.Stave(x, y, barW);
+        if (col === 0 && row === 0) {
+          stave.addClef("treble").addTimeSignature(beats + "/" + unit);
+        } else if (col === 0) {
+          stave.addClef("treble");
+        }
+        stave.setContext(ctx).draw();
+        var vfNotes = m.map(function (g) {
+          return new VF.StaveNote({
+            clef: "treble",
+            keys: g.keys.map(keyToVexKey),
+            duration: g.duration,
+          });
+        });
+        if (vfNotes.length) VF.Formatter.FormatAndDraw(ctx, stave, vfNotes);
+      });
       sheetEl.insertAdjacentHTML(
         "beforeend",
-        '<div class="pg-sheet-note">A melodic reduction of track 1 ' +
-        "(quarter-note approximation). Download the LilyPond source for the full score.</div>"
+        '<div class="pg-sheet-note">Track 1, with simultaneous notes engraved as ' +
+        "chords (durations quantized). Download the LilyPond source for the full, " +
+        "multi-track score.</div>"
       );
     } catch (e) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Could not engrave this passage.</div>';
     }
   }
 
-  function noteEventsForTrack(res, track) {
-    return (res.events || []).filter(function (e) {
-      return e.kind === 0 && e.track === track && e.vel > 0;
+  // chordGroupsForTrack pairs NoteOn/NoteOff for a track and groups notes that
+  // share an onset tick into a chord, returning {tick, keys[], durTicks}.
+  function chordGroupsForTrack(res, track) {
+    var open = {}; // key -> onset tick
+    var groupsByTick = {};
+    (res.events || []).forEach(function (e) {
+      if (e.track !== track) return;
+      var isOn = e.kind === 0 && e.vel > 0;
+      var isOff = e.kind === 1 || (e.kind === 0 && e.vel === 0);
+      if (isOn) {
+        open[e.key] = e.t;
+        var g = groupsByTick[e.t] || (groupsByTick[e.t] = { tick: e.t, keys: [], durTicks: 0 });
+        if (g.keys.indexOf(e.key) < 0) g.keys.push(e.key);
+      } else if (isOff && open[e.key] != null) {
+        var onset = open[e.key];
+        delete open[e.key];
+        var g2 = groupsByTick[onset];
+        if (g2) {
+          var d = e.t - onset;
+          if (d > g2.durTicks) g2.durTicks = d; // chord rings as long as its longest voice
+        }
+      }
     });
+    return Object.keys(groupsByTick)
+      .map(function (k) { return groupsByTick[k]; })
+      .sort(function (a, b) { return a.tick - b.tick; });
+  }
+
+  // groupsToMeasures buckets chord groups into bars and assigns each group a
+  // VexFlow duration string quantized from its tick length.
+  function groupsToMeasures(groups, ticksPerBar, maxBars) {
+    var measures = [];
+    groups.forEach(function (g) {
+      var bar = Math.floor(g.tick / ticksPerBar);
+      if (bar >= maxBars) return;
+      (measures[bar] || (measures[bar] = [])).push({
+        keys: g.keys.slice().sort(function (a, b) { return a - b; }),
+        duration: ticksToVexDuration(g.durTicks, ticksPerBar),
+      });
+    });
+    // Drop empty leading/trailing holes, keep order.
+    return measures.filter(function (m) { return m && m.length; });
+  }
+
+  // Map a tick length to the nearest plain VexFlow duration (no tuplets/dots).
+  function ticksToVexDuration(ticks, ticksPerBar) {
+    var whole = ticksPerBar; // assumes 4/4-ish; good enough for a reduction
+    var table = [
+      [whole, "w"], [whole / 2, "h"], [whole / 4, "q"],
+      [whole / 8, "8"], [whole / 16, "16"],
+    ];
+    var best = "q", bestDiff = Infinity;
+    for (var i = 0; i < table.length; i++) {
+      var diff = Math.abs(ticks - table[i][0]);
+      if (diff < bestDiff) { bestDiff = diff; best = table[i][1]; }
+    }
+    return best;
   }
 
   var PCNAMES = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
