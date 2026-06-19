@@ -69,6 +69,35 @@
     </main>
   </div>
 
+  <!-- spessasynth is an ES module with a bare import; map it to the vendored
+       core (self-hosted, CSP-safe). The map must precede any module script. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "spessasynth_core": "{{ "playground/spessa/spessasynth_core.js" | relURL }}",
+      "spessasynth_lib": "{{ "playground/spessa/spessasynth_lib.js" | relURL }}"
+    }
+  }
+  </script>
+  <!-- Module bridge: exposes a spessasynth factory to the classic-script app.
+       playground.js calls window.__spessaCreate(audioContext) and gets back a
+       synth wired to the vendored worklet + soundfont. -->
+  <script type="module">
+    import { WorkletSynthesizer } from "spessasynth_lib";
+    const PROCESSOR = "{{ "playground/spessa/spessasynth_processor.min.js" | relURL }}";
+    const SOUNDFONT = "{{ "playground/spessa/GeneralUserGS.sf3" | relURL }}";
+    window.__spessaCreate = async function (audioContext) {
+      await audioContext.audioWorklet.addModule(PROCESSOR);
+      const synth = new WorkletSynthesizer(audioContext);
+      synth.connect(audioContext.destination);
+      const sf = await (await fetch(SOUNDFONT)).arrayBuffer();
+      await synth.soundBankManager.addSoundBank(sf, "main");
+      await synth.isReady;
+      return synth;
+    };
+    window.__spessaReady = true;
+  </script>
+
   <!-- Monaco AMD loader (self-hosted; no CDN, CSP-safe). -->
   <script src="{{ "playground/monaco/vs/loader.js" | relURL }}"></script>
   <!-- Go's wasm runtime shim, version-matched to earmuff.wasm. -->

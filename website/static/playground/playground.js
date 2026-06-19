@@ -505,13 +505,14 @@
   }
 
   // =======================================================================
-  // Playback — WebAudioTinySynth, a General MIDI synth driven by the event
-  // stream. It gives every GM program its own timbre (so a piano track and a
-  // violin track actually sound different) and a proper drum kit on channel 10.
-  // The synth shares our AudioContext and is loaded lazily on first Play.
+  // Playback. Primary synth is spessasynth (sample-based General MIDI via a
+  // soundfont, loaded through the module bridge in the page). If that fails to
+  // load we fall back to webaudio-tinysynth (synthesized GM, no assets). Both
+  // are wrapped in a small adapter exposing noteOn/noteOff/program/allOff with
+  // absolute-time scheduling, so play() doesn't care which is in use.
   // =======================================================================
   var audioCtx = null;
-  var synth = null;
+  var synthAdapter = null;
   var synthLoading = false;
   var stopTimer = null;
 
@@ -528,24 +529,62 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
   }
 
-  // ensureSynth loads tinysynth (AMD, via Monaco's loader to avoid its UMD
-  // taking the define branch) and binds it to our AudioContext, then calls cb.
+  // ensureSynth resolves an adapter, trying spessasynth first then tinysynth.
   function ensureSynth(cb) {
-    if (synth) return cb(synth);
+    if (synthAdapter) return cb(synthAdapter);
     if (synthLoading) return;
     synthLoading = true;
     ensureAudio();
+
+    function done(a) { synthAdapter = a; synthLoading = false; cb(a); }
+
+    if (window.__spessaReady && typeof window.__spessaCreate === "function") {
+      setStatus("loading instruments…");
+      window.__spessaCreate(audioCtx).then(function (synth) {
+        done(spessaAdapter(synth));
+      }).catch(function (err) {
+        // Soundfont/worklet failed — fall back to the asset-free synth.
+        console.warn("spessasynth unavailable, falling back to tinysynth:", err);
+        loadTiny(done);
+      });
+    } else {
+      loadTiny(done);
+    }
+  }
+
+  function loadTiny(done) {
     window.require.config({ paths: { tinysynth: BASE + "/tinysynth" } });
     window.require(["tinysynth"], function (TinySynth) {
       var ctor = TinySynth || window.WebAudioTinySynth;
-      synth = new ctor({ internalContext: 0, useReverb: 1, voices: 64 });
-      synth.setAudioContext(audioCtx, audioCtx.destination);
-      synthLoading = false;
-      cb(synth);
+      var s = new ctor({ internalContext: 0, useReverb: 1, voices: 64 });
+      s.setAudioContext(audioCtx, audioCtx.destination);
+      done(tinyAdapter(s));
     }, function () {
       synthLoading = false;
-      setStatus("could not load the synth", "err");
+      setStatus("could not load a synth", "err");
     });
+  }
+
+  // spessasynth adapter: typed API with absolute-time {time} scheduling.
+  function spessaAdapter(synth) {
+    return {
+      program: function (ch, pc, t) { synth.programChange(ch, pc & 0x7f, { time: t }); },
+      noteOn: function (ch, key, vel, t) { synth.noteOn(ch, key & 0x7f, vel & 0x7f, { time: t }); },
+      noteOff: function (ch, key, t) { synth.noteOff(ch, key & 0x7f, { time: t }); },
+      allOff: function () { for (var c = 0; c < 16; c++) synth.controllerChange(c, 120, 0); },
+    };
+  }
+
+  // tinysynth adapter: raw MIDI bytes via send([status,d1,d2], time).
+  function tinyAdapter(synth) {
+    return {
+      program: function (ch, pc, t) { synth.send([0xc0 | ch, pc & 0x7f], t); },
+      noteOn: function (ch, key, vel, t) { synth.send([0x90 | ch, key & 0x7f, vel & 0x7f], t); },
+      noteOff: function (ch, key, t) { synth.send([0x80 | ch, key & 0x7f, 0], t); },
+      allOff: function () {
+        for (var c = 0; c < 16; c++) { synth.send([0xb0 | c, 120, 0]); synth.send([0xb0 | c, 123, 0]); }
+      },
+    };
   }
 
   function play() {
@@ -556,12 +595,11 @@
       var res = lastResult;
       var ppq = res.ppq || 960;
       var secPerTick = (60 / (res.bpm || 120)) / ppq;
-      var t0 = audioCtx.currentTime + 0.08;
+      var t0 = audioCtx.currentTime + 0.12;
 
-      // Give each track's channel its General MIDI program up front, so timbres
-      // differ. Percussion (channel 9) is the GM drum kit and needs no program.
+      // Program per track up front so timbres differ; channel 9 is GM drums.
       (res.tracks || []).forEach(function (tr) {
-        if (tr.channel !== 9) sy.send([0xc0 | (tr.channel & 0x0f), tr.program & 0x7f], t0);
+        if (tr.channel !== 9) sy.program(tr.channel & 0x0f, tr.program, t0);
       });
 
       var maxTick = res.durationTicks || 0;
@@ -569,31 +607,26 @@
         var t = t0 + e.t * secPerTick;
         var ch = e.ch & 0x0f;
         if (e.kind === 0 && e.vel > 0) {
-          sy.send([0x90 | ch, e.key & 0x7f, e.vel & 0x7f], t);
+          sy.noteOn(ch, e.key, e.vel, t);
         } else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) {
-          sy.send([0x80 | ch, e.key & 0x7f, 0], t);
+          sy.noteOff(ch, e.key, t);
         } else if (e.kind === 5) {
-          sy.send([0xc0 | ch, e.prog & 0x7f], t); // in-stream program change
+          sy.program(ch, e.prog, t); // in-stream program change
         }
         if (e.t > maxTick) maxTick = e.t;
       });
 
+      setStatus("playing…", "ok");
       playBtn.disabled = true;
       stopBtn.disabled = false;
-      var ms = Math.max(300, maxTick * secPerTick * 1000 + 400);
+      var ms = Math.max(300, maxTick * secPerTick * 1000 + 600);
       stopTimer = setTimeout(stop, ms);
     });
   }
 
   function stop() {
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
-    if (synth) {
-      // All-sound-off + all-notes-off on every channel, immediately.
-      for (var ch = 0; ch < 16; ch++) {
-        synth.send([0xb0 | ch, 120, 0]);
-        synth.send([0xb0 | ch, 123, 0]);
-      }
-    }
+    if (synthAdapter) synthAdapter.allOff();
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
   }
