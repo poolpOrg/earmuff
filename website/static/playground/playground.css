@@ -172,6 +172,29 @@
 .pg-status.pg-ok { color: #2c9f5a; }
 .pg-status.pg-err { color: var(--pg-err); }
 
+/* Inline error buffer: sits between the status line and the monitor, hidden
+   while the source is clean, expanding to list errors right beside the code. */
+.pg-errors {
+  flex: 0 0 auto;
+  max-height: 120px;
+  overflow-y: auto;
+  border-top: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+.pg-errors[hidden] { display: none; }
+.pg-errors .pg-err-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  color: var(--pg-err);
+  cursor: pointer;
+}
+.pg-errors .pg-err-row:hover { text-decoration: underline; }
+.pg-errors .pg-err-loc { color: var(--pg-muted); white-space: nowrap; }
+
 /* Live event monitor: a scrolling strip of the notes triggered as they play. */
 .pg-monitor {
   flex: 0 0 auto;

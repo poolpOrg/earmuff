@@ -42,28 +42,26 @@
       <section class="pg-editor-pane">
         <div id="pg-editor" class="pg-editor"></div>
         <div id="pg-status" class="pg-status">loading the compiler…</div>
+        <!-- Inline error buffer: collapsed (hidden) when there are no errors. -->
+        <div id="pg-errors" class="pg-errors" hidden aria-label="Errors"></div>
         <div id="pg-monitor" class="pg-monitor" hidden aria-label="Live events"></div>
       </section>
 
       <section class="pg-output-pane">
         <nav class="pg-tabs" role="tablist">
-          <button class="pg-tab pg-tab-active" data-tab="problems" role="tab">Problems <span id="pg-problem-count" class="pg-badge"></span></button>
-          <button class="pg-tab" data-tab="sheet" role="tab">Sheet</button>
+          <button class="pg-tab pg-tab-active" data-tab="sheet" role="tab">Sheet</button>
           <button class="pg-tab" data-tab="events" role="tab">Events</button>
-          <button class="pg-tab" data-tab="lilypond" role="tab">LilyPond</button>
+          <button class="pg-tab" data-tab="problems" role="tab">Problems <span id="pg-problem-count" class="pg-badge"></span></button>
         </nav>
         <div class="pg-tab-body">
-          <div class="pg-panel pg-panel-active" data-panel="problems">
-            <ul id="pg-problems" class="pg-problems"></ul>
-          </div>
-          <div class="pg-panel" data-panel="sheet">
+          <div class="pg-panel pg-panel-active" data-panel="sheet">
             <div id="pg-sheet" class="pg-sheet"></div>
           </div>
           <div class="pg-panel" data-panel="events">
             <div id="pg-events" class="pg-events"></div>
           </div>
-          <div class="pg-panel" data-panel="lilypond">
-            <pre id="pg-lilypond" class="pg-lilypond"></pre>
+          <div class="pg-panel" data-panel="problems">
+            <ul id="pg-problems" class="pg-problems"></ul>
           </div>
         </div>
       </section>

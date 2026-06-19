@@ -21,12 +21,12 @@
   var problemsEl = $("pg-problems");
   var problemCountEl = $("pg-problem-count");
   var eventsEl = $("pg-events");
-  var lilypondEl = $("pg-lilypond");
   var sheetEl = $("pg-sheet");
   var playBtn = $("pg-play");
   var stopBtn = $("pg-stop");
   var examplesSel = $("pg-examples");
   var monitorEl = $("pg-monitor");
+  var errorsEl = $("pg-errors");
 
   // ---- State -------------------------------------------------------------
   var editor = null;
@@ -155,16 +155,18 @@
     });
     editor.onDidChangeModelContent(scheduleCompile);
 
-    // Clicking a problem jumps the cursor there.
-    problemsEl.addEventListener("click", function (e) {
-      var li = e.target.closest("li[data-line]");
-      if (!li) return;
-      var line = +li.getAttribute("data-line");
-      var col = +li.getAttribute("data-col") || 1;
+    // Clicking a problem (panel) or an inline error jumps the cursor there.
+    var jumpOnClick = function (e) {
+      var el = e.target.closest("[data-line]");
+      if (!el) return;
+      var line = +el.getAttribute("data-line");
+      var col = +el.getAttribute("data-col") || 1;
       editor.revealLineInCenter(line);
       editor.setPosition({ lineNumber: line, column: col });
       editor.focus();
-    });
+    };
+    problemsEl.addEventListener("click", jumpOnClick);
+    errorsEl.addEventListener("click", jumpOnClick);
   }
 
   // =======================================================================
@@ -190,7 +192,6 @@
       lastResult = res;
       sheetRendered = false; // re-render sheet lazily on tab view
       renderEvents(res);
-      lilypondEl.textContent = res.lilypond || "";
       if (activeTab() === "sheet") renderSheet();
       setStatus(statusLine(res), "ok");
       playBtn.disabled = false;
@@ -247,6 +248,29 @@
     var errs = errorCount(res);
     problemCountEl.textContent = diags.length ? String(diags.length) : "";
     problemCountEl.className = "pg-badge" + (errs ? " pg-has-err" : "");
+
+    // Inline error buffer (errors only): collapsed when the source is clean.
+    var errorDiags = diags.filter(function (d) { return d.severity === "error"; });
+    if (!errorDiags.length) {
+      errorsEl.hidden = true;
+      errorsEl.innerHTML = "";
+    } else {
+      errorsEl.hidden = false;
+      errorsEl.innerHTML = "";
+      errorDiags.forEach(function (d) {
+        var row = document.createElement("div");
+        row.className = "pg-err-row";
+        if (d.line) {
+          row.setAttribute("data-line", d.line);
+          row.setAttribute("data-col", d.column || 1);
+        }
+        var loc = d.line ? d.line + ":" + (d.column || 1) : "—";
+        row.innerHTML =
+          '<span class="pg-err-loc">' + loc + "</span>" +
+          "<span>" + escapeHtml(d.message) + "</span>";
+        errorsEl.appendChild(row);
+      });
+    }
   }
 
   var KIND = ["on", "off", "cc", "bend", "press", "prog", "meta", "sysex"];
@@ -637,7 +661,7 @@
   // =======================================================================
   function activeTab() {
     var t = document.querySelector(".pg-tab-active");
-    return t ? t.getAttribute("data-tab") : "problems";
+    return t ? t.getAttribute("data-tab") : "sheet";
   }
   function initTabs() {
     document.querySelector(".pg-tabs").addEventListener("click", function (e) {
