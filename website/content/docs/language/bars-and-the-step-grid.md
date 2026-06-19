@@ -72,6 +72,22 @@ _*8          // eight rests
 (C,E,G)*4    // the triad four times
 ```
 
+## Swing
+
+`swing N` gives the following bars a swung feel: each *pair* of grid steps
+becomes long–short, so the off-beat lands late. `N` is the percentage of the
+pair given to the on-beat — `50` is straight (the default), `67` is the classic
+triplet swing, up to `75`:
+
+```text
+swing 67;
+bar 8 { C C C C C C C C }   // straight eighths, played with a swing feel
+```
+
+It is a **running modifier** placed in a track body: it applies to every bar
+after it until the next `swing`, so `swing 50;` turns it back off. Swing only
+shifts onsets; the advance and bar length are unchanged, so nothing drifts.
+
 ## Bar fill
 
 The advances should sum to exactly one bar. Less, and the rest of the bar is

@@ -279,6 +279,14 @@ func (a *analysis) analyzeStmt(st ast.Stmt, sc *scope) {
 		if n.Setting.Kind == ast.SettingTime && n.Setting.TimeBeats > 0 {
 			sc.beats = n.Setting.TimeBeats
 		}
+	case *ast.Swing:
+		a.analyzeExpr(n.Percent, sc)
+		// Range-check a literal percentage; expressions are checked at elaboration.
+		if lit, ok := n.Percent.(*ast.NumberLit); ok {
+			if lit.Value < 50 || lit.Value > 75 {
+				a.errorf(n.Position, "swing %g%% out of range; expected 50 (straight) to 75", lit.Value)
+			}
+		}
 	case *ast.CC:
 		// The controller position accepts a named-CC keyword (e.g. `cutoff`),
 		// which the parser leaves as a bare Ident; it is not a let/loop binding,

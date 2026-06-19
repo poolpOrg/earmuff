@@ -213,6 +213,8 @@ type elab struct {
 
 	trackOffset uint32 // running tick offset where the next bar starts
 	orderCtr    int
+
+	swing float64 // current swing ratio (0.5 = straight); a running modifier
 }
 
 func (e *elab) errorf(pos token.Position, format string, args ...interface{}) {
@@ -286,6 +288,7 @@ func (e *elab) elabTrack(tr *ast.Track, parent *scope, nextChan *uint8) {
 	e.trackOffset = 0
 	e.bendRangeRP = false
 	e.bendRange = 2
+	e.swing = 0.5 // straight until a `swing` statement says otherwise
 
 	sc := newScope(parent)
 
@@ -436,6 +439,13 @@ func (e *elab) elabStmt(st ast.Stmt, sc *scope, vel int) {
 		e.elabPatternCall(n, sc, vel)
 	case *ast.SettingStmt:
 		e.applyTrackSetting(n.Setting)
+	case *ast.Swing:
+		pct, err := value.EvalNumber(n.Percent, sc.env)
+		if err != nil {
+			e.errs = append(e.errs, err)
+			return
+		}
+		e.swing = pct / 100.0
 	case *ast.Meta:
 		e.emitMeta(e.trackOffset, n)
 	case *ast.PatternDef:
@@ -565,6 +575,7 @@ func (e *elab) elabBar(bar *ast.Bar, sc *scope, parentVel int) {
 		curStep:  baseGrid,
 		baseGrid: baseGrid,
 		barVel:   barVel,
+		swing:    e.swing,
 	}
 	bc.run(bar.Items)
 
@@ -585,6 +596,7 @@ type barCtx struct {
 	curStep  int    // current grid step note-value
 	baseGrid int    // bar's base grid (BarSep / "|" resets to this)
 	barVel   int
+	swing    float64 // swing ratio (0.5 = straight) for this bar
 
 	// lastNoteOffs holds the NoteOff events of the previous sounding step so a
 	// tilde can extend their gate.
@@ -654,11 +666,27 @@ func (bc *barCtx) oneStep(st *ast.Step) {
 		vel = 64
 	}
 
-	onTick := bc.start + bc.cursor
+	onTick := bc.start + bc.cursor + bc.swingDelay(stepLen)
 	offTick := onTick + gate
 
 	bc.lastNoteOffs = bc.e.playNote(st.Play, bc.sc, onTick, offTick, uint8(vel))
 	bc.cursor += stepLen
+}
+
+// swingDelay returns how far to push this step's onset for swing feel. With a
+// swing ratio s, each pair of steps becomes long+short: the on-beat (even step
+// index at the current grid) keeps its place, and the off-beat (odd index) is
+// delayed by (2s-1)*stepLen so it lands later in the pair. s=0.5 is straight,
+// so the delay is zero. Only whole, aligned grid steps swing; the offset never
+// pushes a step past the on-beat that follows it.
+func (bc *barCtx) swingDelay(stepLen uint32) uint32 {
+	if bc.swing == 0.5 || stepLen == 0 {
+		return 0
+	}
+	if (bc.cursor/stepLen)%2 == 0 {
+		return 0 // on-beat
+	}
+	return uint32((2*bc.swing - 1) * float64(stepLen))
 }
 
 func (bc *barCtx) absolute(n *ast.Absolute) {

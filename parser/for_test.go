@@ -79,3 +79,27 @@ func TestFor_BoundBindingName(t *testing.T) {
 		t.Fatalf("iterable = %T, want Ident (binding name)", f.Iterable)
 	}
 }
+
+func TestRepeat_DesugarsToForEach(t *testing.T) {
+	f := parseForStmt(t, `repeat 12 { bar 1 { C } }`)
+	if f.Var != "" {
+		t.Fatalf("repeat Var = %q, want empty (unbound)", f.Var)
+	}
+	r, ok := f.Iterable.(*ast.Range)
+	if !ok {
+		t.Fatalf("repeat iterable = %T, want Range", f.Iterable)
+	}
+	lo, ok := r.Lo.(*ast.NumberLit)
+	if !ok || lo.Value != 1 {
+		t.Fatalf("repeat range lo = %v, want 1", r.Lo)
+	}
+}
+
+func TestRepeat_ExprCount(t *testing.T) {
+	// count can be an expression (a binding), not only a literal.
+	f := parseForStmt(t, `let n = 4; repeat n { bar 1 { C } }`)
+	r := f.Iterable.(*ast.Range)
+	if _, ok := r.Hi.(*ast.Ident); !ok {
+		t.Fatalf("repeat range hi = %T, want Ident", r.Hi)
+	}
+}

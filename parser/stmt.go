@@ -43,8 +43,15 @@ func (p *Parser) parseStmt() ast.Stmt {
 	case token.PATTERN:
 		// track-local pattern definition
 		return p.parsePatternDef()
+	case token.SECTION:
+		// a named arrangement block: sugar for a zero-arg pattern
+		return p.parseSection()
 	case token.FOR:
 		return p.parseFor()
+	case token.REPEAT:
+		return p.parseRepeat()
+	case token.SWING:
+		return p.parseSwing()
 	case token.IF:
 		return p.parseIf()
 	case token.LET:
@@ -70,12 +77,15 @@ func (p *Parser) parseStmt() ast.Stmt {
 	case token.CC, token.BEND, token.PRESSURE, token.PROGRAM, token.SYSEX:
 		return p.parseEventStmt(true)
 	case token.IDENT:
-		// a pattern call:  name ( args )   — bare identifier statement
+		// A pattern/section call. With arguments: `name(a, b)`. Without: a bare
+		// `name` plays a zero-arg pattern or a section — the natural way to lay
+		// out song structure (`head head solo head`).
 		if p.peekIs(token.LPAREN) {
 			return p.parsePatternCall()
 		}
-		p.errorf(p.cur.Pos, "unexpected identifier %q (expected a statement; bare notes belong inside a bar)", p.cur.Literal)
-		return nil
+		n := &ast.PatternCall{Position: p.cur.Pos, Name: p.cur.Literal}
+		p.next()
+		return n
 	default:
 		p.errorf(p.cur.Pos, "unexpected %q in body", p.cur.Literal)
 		return nil
@@ -188,6 +198,58 @@ func (p *Parser) iterableSeqContinues() bool {
 	default:
 		return false
 	}
+}
+
+// parseRepeat parses `repeat N { ... }`, the counted-repeat sugar. It desugars
+// to an unbound `for each 1..N`, reusing the loop machinery downstream.
+func (p *Parser) parseRepeat() *ast.For {
+	pos := p.cur.Pos
+	p.next() // 'repeat'
+	count := p.parseExpr(LOWEST)
+	if count == nil {
+		return nil
+	}
+	n := &ast.For{
+		Position: pos,
+		Iterable: &ast.Range{
+			Position: pos,
+			Lo:       &ast.NumberLit{Position: pos, Value: 1},
+			Hi:       count,
+		},
+	}
+	n.Body = p.parseBlock()
+	return n
+}
+
+// parseSwing parses `swing <percent>;`, a running feel modifier for the bars
+// that follow it in the body. `swing 50` (straight) turns it off.
+func (p *Parser) parseSwing() *ast.Swing {
+	n := &ast.Swing{Position: p.cur.Pos}
+	p.next() // 'swing'
+	n.Percent = p.parseExpr(LOWEST)
+	p.expect(token.SEMICOLON)
+	return n
+}
+
+// parseSection parses `section <name> { ... }`. A section is a named block of
+// arrangement that you replay by name (`head`, `solo`, ...) — sugar for a
+// zero-parameter pattern, so it shares all of the pattern machinery.
+func (p *Parser) parseSection() *ast.PatternDef {
+	pat := &ast.PatternDef{Position: p.cur.Pos}
+	p.next() // 'section'
+	if p.curIs(token.IDENT) {
+		pat.Name = p.cur.Literal
+		p.next()
+	} else {
+		p.errorf(p.cur.Pos, "expected section name, found %q", p.cur.Literal)
+	}
+	if !p.expect(token.LBRACE) {
+		p.syncStmt()
+		return pat
+	}
+	pat.Body = p.parseStmtBlockBody()
+	p.expect(token.RBRACE)
+	return pat
 }
 
 func (p *Parser) parseIf() *ast.If {

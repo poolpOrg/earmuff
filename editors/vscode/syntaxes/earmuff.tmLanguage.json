@@ -58,11 +58,11 @@
       "patterns": [
         {
           "name": "keyword.control.earmuff",
-          "match": "\\b(for|each|in|if|else)\\b"
+          "match": "\\b(for|each|in|if|else|repeat)\\b"
         },
         {
           "name": "keyword.other.earmuff",
-          "match": "\\b(project|track|bar|pattern|kit|instrument|channel|port|bpm|time|copyright|text|lyric|marker|cue|on|beat|let|cc|bend|raw|range|pressure|program|sysex|then|over)\\b"
+          "match": "\\b(project|track|bar|pattern|section|kit|instrument|channel|port|bpm|time|copyright|text|lyric|marker|cue|on|beat|let|swing|cc|bend|raw|range|pressure|program|sysex|then|over)\\b"
         }
       ]
     },

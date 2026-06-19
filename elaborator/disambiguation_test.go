@@ -68,3 +68,51 @@ func TestFor_BareSequenceAndEach(t *testing.T) {
 		t.Fatalf("for each 1..3 -> %v, want 3", got)
 	}
 }
+
+func swingOnsets(t *testing.T, src string) []uint32 {
+	t.Helper()
+	prog, diags := parser.New(src, "<test>").Parse()
+	if len(diags) != 0 {
+		t.Fatalf("parse diagnostics: %v", diags)
+	}
+	songs, errs := Elaborate(prog)
+	if len(errs) != 0 {
+		t.Fatalf("elaborate errors: %v", errs)
+	}
+	var ticks []uint32
+	for _, ev := range songs[0].Events {
+		if ev.Msg.Kind == MsgNoteOn && ev.Msg.Velocity > 0 {
+			ticks = append(ticks, ev.Tick)
+		}
+	}
+	return ticks
+}
+
+func TestSwing_DelaysOffBeats(t *testing.T) {
+	const head = `project "p"{time 4 4;track "t" instrument "piano"{`
+	straight := swingOnsets(t, head+` bar 8 { C C C C } }}`)
+	swung := swingOnsets(t, head+` swing 67; bar 8 { C C C C } }}`)
+
+	// On-beats (indices 0,2) are unchanged; off-beats (1,3) are delayed.
+	if straight[0] != swung[0] || straight[2] != swung[2] {
+		t.Fatalf("on-beats moved: straight=%v swung=%v", straight, swung)
+	}
+	if swung[1] <= straight[1] || swung[3] <= straight[3] {
+		t.Fatalf("off-beats not delayed: straight=%v swung=%v", straight, swung)
+	}
+	// Delay should be (2*0.67-1)*480 ≈ 163 ticks.
+	if d := swung[1] - straight[1]; d < 150 || d > 175 {
+		t.Fatalf("swing delay = %d ticks, want ~163", d)
+	}
+}
+
+func TestSwing_StraightIsNoOp(t *testing.T) {
+	const head = `project "p"{time 4 4;track "t" instrument "piano"{`
+	a := swingOnsets(t, head+` bar 8 { C C C C } }}`)
+	b := swingOnsets(t, head+` swing 50; bar 8 { C C C C } }}`)
+	for i := range a {
+		if a[i] != b[i] {
+			t.Fatalf("swing 50 changed onsets: %v vs %v", a, b)
+		}
+	}
+}

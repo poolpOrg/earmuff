@@ -140,6 +140,17 @@ type If struct {
 
 func (n *If) Pos() token.Position { return n.Position }
 
+// Swing sets the swing feel for the bars that follow it in a track body. The
+// percentage is the share of each step-pair given to the on-beat: 50 is
+// straight (no swing), 67 is triplet swing, up to a sane ceiling. It is a
+// running modifier — it applies until the next `swing` in the same body.
+type Swing struct {
+	Position token.Position
+	Percent  Expr // evaluates to a number in [50, 75]
+}
+
+func (n *Swing) Pos() token.Position { return n.Position }
+
 // PatternCall invokes a defined pattern with arguments.
 type PatternCall struct {
 	Position token.Position

@@ -45,6 +45,11 @@ const (
 	IF
 	ELSE
 	LET
+	REPEAT
+
+	// arrangement
+	SECTION
+	SWING
 
 	// placement
 	ON
@@ -140,11 +145,15 @@ var keywords = map[string]Type{
 	"marker":    MARKER,
 	"cue":       CUE,
 
-	"for":  FOR,
-	"in":   IN,
-	"if":   IF,
-	"else": ELSE,
-	"let":  LET,
+	"for":    FOR,
+	"in":     IN,
+	"if":     IF,
+	"else":   ELSE,
+	"let":    LET,
+	"repeat": REPEAT,
+
+	"section": SECTION,
+	"swing":   SWING,
 
 	"on": ON,
 	// NOTE: "beat" is intentionally NOT a reserved keyword so it can be used as
@@ -188,7 +197,8 @@ var typeNames = map[Type]string{
 	KIT: "kit", INSTRUMENT: "instrument", CHANNEL: "channel", PORT: "port",
 	BPM: "bpm", TIME: "time", COPYRIGHT: "copyright", TEXT: "text",
 	LYRIC: "lyric", MARKER: "marker", CUE: "cue",
-	FOR: "for", IN: "in", IF: "if", ELSE: "else", LET: "let",
+	FOR: "for", IN: "in", IF: "if", ELSE: "else", LET: "let", REPEAT: "repeat",
+	SECTION: "section", SWING: "swing",
 	ON: "on", BEAT: "beat",
 	CC: "cc", BEND: "bend", RAW: "raw", RANGE: "range", PRESSURE: "pressure",
 	PROGRAM: "program", SYSEX: "sysex", THEN: "then", OVER: "over",
