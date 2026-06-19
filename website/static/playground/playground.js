@@ -332,11 +332,10 @@
       return;
     }
 
-    var width = Math.max(560, sheetEl.clientWidth - 24);
-    var perRow = width < 700 ? 2 : 4;
-    var barW = Math.floor((width - 16) / perRow);
-    var rowH = 120;
-    var labelH = 22;
+    // Fit the available panel width; only force a wider canvas (with the panel
+    // scrolling) when the panel is too narrow to engrave even one bar.
+    var totalW = Math.max(320, sheetEl.clientWidth - 16);
+    var rowH = 110;
 
     try {
       parts.forEach(function (part) {
@@ -347,29 +346,7 @@
 
         var div = document.createElement("div");
         sheetEl.appendChild(div);
-        var rows = Math.ceil(part.measures.length / perRow);
-        var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-        renderer.resize(width, 16 + rows * rowH);
-        var ctx = renderer.getContext();
-
-        part.measures.forEach(function (m, i) {
-          var col = i % perRow, row = Math.floor(i / perRow);
-          var stave = new VF.Stave(8 + col * barW, 8 + row * rowH, barW);
-          if (col === 0 && row === 0) {
-            stave.addClef(part.clef).addTimeSignature(beats + "/" + unit);
-          } else if (col === 0) {
-            stave.addClef(part.clef);
-          }
-          stave.setContext(ctx).draw();
-          var vfNotes = m.map(function (g) {
-            return new VF.StaveNote({
-              clef: part.clef,
-              keys: g.keys.map(keyToVexKey),
-              duration: g.duration,
-            });
-          });
-          if (vfNotes.length) VF.Formatter.FormatAndDraw(ctx, stave, vfNotes);
-        });
+        renderPart(VF, div, part, totalW, rowH, beats, unit);
       });
       sheetEl.insertAdjacentHTML(
         "beforeend",
@@ -380,6 +357,75 @@
     } catch (e) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Could not engrave this passage.</div>';
     }
+  }
+
+  // renderPart lays one track's measures across as many rows as needed, sizing
+  // each measure by its note count so dense bars are not clipped, and wrapping
+  // when a row is full. Each measure is its own non-strict Voice (tolerant of
+  // bars that don't sum to an exact measure after duration quantization).
+  function renderPart(VF, container, part, totalW, rowH, beats, unit) {
+    var leftPad = 8;
+    var clefW = 60;      // room the first measure of a row gives to clef/time
+    var noteW = 42;      // approximate width budget per note/chord
+    var minBarW = 110;
+
+    // Pre-measure each bar's preferred width from its note count.
+    var bars = part.measures.map(function (m) {
+      return { notes: m, w: Math.max(minBarW, m.length * noteW) };
+    });
+
+    // Greedy row packing: fit as many bars as the width allows.
+    var rows = [];
+    var cur = [], curW = leftPad + clefW;
+    bars.forEach(function (b) {
+      var add = b.w;
+      if (cur.length && curW + add > totalW) {
+        rows.push(cur); cur = []; curW = leftPad + clefW;
+      }
+      cur.push(b); curW += add;
+    });
+    if (cur.length) rows.push(cur);
+
+    var renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+    renderer.resize(totalW, 12 + rows.length * rowH);
+    var ctx = renderer.getContext();
+
+    rows.forEach(function (row, ri) {
+      // Distribute spare width proportionally so each row fills totalW.
+      var base = leftPad + (ri === 0 ? clefW : clefW);
+      var sumW = row.reduce(function (s, b) { return s + b.w; }, 0);
+      var avail = totalW - leftPad - clefW - 8;
+      var scale = avail / sumW;
+
+      var x = leftPad;
+      row.forEach(function (b, bi) {
+        var w = bi === 0 ? Math.max(b.w * scale + clefW, minBarW + clefW)
+                         : Math.max(b.w * scale, minBarW);
+        var stave = new VF.Stave(x, 8 + ri * rowH, w);
+        if (bi === 0) {
+          stave.addClef(part.clef);
+          if (ri === 0) stave.addTimeSignature(beats + "/" + unit);
+        }
+        stave.setContext(ctx).draw();
+
+        var vfNotes = b.notes.map(function (g) {
+          return new VF.StaveNote({
+            clef: part.clef,
+            keys: g.keys.map(keyToVexKey),
+            duration: g.duration,
+          });
+        });
+        if (vfNotes.length) {
+          var voice = new VF.Voice({ num_beats: beats, beat_value: unit })
+            .setMode(VF.Voice.Mode.SOFT);
+          voice.addTickables(vfNotes);
+          var fmtW = w - (bi === 0 ? clefW + 16 : 16);
+          new VF.Formatter().joinVoices([voice]).format([voice], Math.max(40, fmtW));
+          voice.draw(ctx, stave);
+        }
+        x += w;
+      });
+    });
   }
 
   // clefForGroups mirrors the LilyPond emitter: bass clef when the average
