@@ -766,21 +766,23 @@
       input.value = ""; // allow re-importing the same file
     });
 
-    // Full-window drag-and-drop.
-    var depth = 0;
-    window.addEventListener("dragenter", function (e) {
-      if (!hasFiles(e)) return;
-      e.preventDefault(); depth++; drop.hidden = false;
-    });
+    // Full-window drag-and-drop. Counting dragenter/dragleave is unreliable
+    // (child elements fire unbalanced events), so instead: show the overlay
+    // while dragover keeps firing, and hide it shortly after it stops — which
+    // also covers the drag leaving the window. drop always hides immediately.
+    var hideTimer = null;
     window.addEventListener("dragover", function (e) {
-      if (hasFiles(e)) e.preventDefault();
-    });
-    window.addEventListener("dragleave", function () {
-      if (--depth <= 0) { depth = 0; drop.hidden = true; }
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      drop.hidden = false;
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () { drop.hidden = true; }, 120);
     });
     window.addEventListener("drop", function (e) {
+      if (hideTimer) clearTimeout(hideTimer);
+      drop.hidden = true;
       if (!hasFiles(e)) return;
-      e.preventDefault(); depth = 0; drop.hidden = true;
+      e.preventDefault();
       var f = e.dataTransfer.files[0];
       if (f) importFile(f);
     });

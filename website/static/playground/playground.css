@@ -43,6 +43,9 @@
   pointer-events: none;
 }
 .pg-drop strong { color: var(--pg-accent); }
+/* `display: flex` above outranks the `hidden` attribute's display:none, so
+   hide it explicitly when hidden. */
+.pg-drop[hidden] { display: none; }
 
 .pg-body {
   margin: 0;
