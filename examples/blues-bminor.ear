@@ -1,0 +1,87 @@
+// Blues in B minor — earmuff v2.
+// A small swinging 12-bar minor blues: piano comps the changes, a clean
+// electric guitar plays a bluesy head, an upright bass walks the form, and
+// the kit shuffles on the ride. The feel comes from `swing 67;` (triplet
+// swing) — it pushes every off-beat eighth onto the swung "&".
+//
+// Minor-blues form (12 bars):
+//   | Bm7 | Bm7 | Bm7 | Bm7 | Em7 | Em7 | Bm7 | Bm7 | Gmaj7 | F#7 | Bm7 | F#7 |
+project "blues in b minor" {
+    bpm 85; time 4 4;
+
+    track "piano" instrument "acoustic grand piano" v mp {
+        // comp the chord as stabs on the back-beats (2 & 4)
+        pattern comp(ch) { bar 8 v mf { _ _ ch _ _ _ ch _ } }
+
+        let form = [Bm7, Bm7, Bm7, Bm7, Em7, Em7, Bm7, Bm7, Gmaj7, F#7, Bm7, F#7];
+        //swing 67;
+        for _ in 1..2 {
+            for ch in form { comp(ch) }
+        }
+    }
+
+    track "guitar" instrument "acoustic guitar (nylon)" v mf {
+        // a bluesy head over the B-minor blues scale (B D E F F# A)
+        pattern head {
+            bar 8 { D4 F#4 A4 B4 A4 F#4 D4 _ }       // Bm7
+            bar 8 { F#4:4 _ _ _ D4:4 _ _ _ }         // Bm7  (held answer)
+            bar 8 { B4 A4 F#4 D4 E4 F#4 D4 _ }       // Bm7
+            bar 8 { D4:2 _ _ _ _ _ A3 B3 }           // Bm7  (hold, pickup to Em)
+            bar 8 { E4 G4 B4 A4 G4 E4 G4 _ }         // Em7
+            bar 8 { B4:4 _ _ _ G4 E4 G4 _ }          // Em7
+            bar 8 { D4 F#4 A4 B4 A4 F#4 D4 _ }       // Bm7
+            bar 8 { D4:2 _ _ _ F#4 A4 B4 _ }         // Bm7
+            bar 8 { G4 B4 D5 G5 D5 B4 G4 _ }         // Gmaj7
+            bar 8 { F#4 A#4 C#5 E5 C#5 A#4 F#4 _ }   // F#7  (A# = the major 3rd)
+            bar 8 { B4:4 _ _ _ A4 F#4 D4 _ }         // Bm7
+            bar 8 { C#5 A#4 F#4 A#4 C#5 _ _ _ }      // F#7  (turnaround)
+        }
+
+        //swing 67;
+        for _ in 1..2 { head() }
+    }
+
+    track "bass" instrument "bass" v mf {
+        // walking quarter notes through the changes (stays straight under the ride)
+        pattern walk(n1, n2, n3, n4) { bar quarter { n1 n2 n3 n4 } }
+
+        for _ in 1..2 {
+            walk(B2, D3, F#3, A3)     // Bm7
+            walk(B2, A2, F#2, D2)     // Bm7
+            walk(B2, D3, F#3, A3)     // Bm7
+            walk(B2, A2, G2, F#2)     // Bm7  -> lead to Em
+            walk(E2, G2, B2, D3)      // Em7
+            walk(E3, D3, B2, G2)      // Em7
+            walk(B2, D3, F#3, A3)     // Bm7
+            walk(B2, A2, F#2, D2)     // Bm7
+            walk(G2, A2, B2, D3)      // Gmaj7
+            walk(F#2, A#2, C#3, E3)   // F#7
+            walk(B2, D3, F#3, A3)     // Bm7
+            walk(F#2, C#3, A#2, G2)   // F#7  -> turnaround back to B
+        }
+    }
+
+    track "drums" instrument "synth drum" channel 10 v mf {
+        kit {
+            rd = "ride cymbal 1";
+            hh = "pedal hi-hat";
+            sn = "acoustic snare";
+            bd = "acoustic bass drum";
+        }
+        // shuffle ride: ride on all four beats plus the swung "&" of 2 & 4,
+        // back-beat snare + hi-hat foot on 2 & 4, feathered kick on 1 & 3
+        pattern shuffle {
+            bar 8 { (rd, bd) _ (rd, sn, hh) rd (rd, bd) _ (rd, sn, hh) rd }
+        }
+        // a snare fill into the next chorus
+        pattern fill {
+            bar 8 { (rd, bd) _ (rd, sn, hh) _ sn sn (sn, hh) sn }
+        }
+
+        //swing 67;
+        for _ in 1..11 { shuffle() }
+        fill()
+        for _ in 1..11 { shuffle() }
+        fill()
+    }
+}

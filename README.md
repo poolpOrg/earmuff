@@ -201,11 +201,14 @@ preview and `-pdf`/`-svg` need LilyPond.
 | [`minor-swing.ear`](examples/minor-swing.ear) | lead, comping, walking bass |
 | [`demo.ear`](examples/demo.ear) | a jazz quartet over a ii-V-I |
 | [`nuages.ear`](examples/nuages.ear) | syncopation on a fine grid |
+| [`blues-bminor.ear`](examples/blues-bminor.ear) | a swinging 12-bar minor blues |
 | [`lofi.ear`](examples/lofi.ear) | lists, dynamics, off-beats |
 | [`lofi-bminor.ear`](examples/lofi-bminor.ear) | a minor turnaround, Rhodes comping |
+| [`lofi-aminor.ear`](examples/lofi-aminor.ear) | a minor turnaround in A, Rhodes comping |
 | [`small-jazz.ear`](examples/small-jazz.ear) | a small swing arrangement |
 | [`bach-prelude.ear`](examples/bach-prelude.ear) | a classical fragment |
 | [`mozart-nachtmusik.ear`](examples/mozart-nachtmusik.ear) | a classical fragment |
+| [`super-mario-bros.ear`](examples/super-mario-bros.ear) | the NES overworld theme |
 
 ## How it works
 

@@ -1,0 +1,68 @@
+// Super Mario Bros. — overworld theme (Koji Kondo, 1985), earmuff v2.
+// The iconic NES ground theme in C major, transcribed for a square-wave lead
+// and a bouncy synth bass. Eighth-note grid; the triplet run in the main
+// phrase is rendered as straight eighths (the usual chiptune simplification).
+// Form: intro · main A (×2) · bridge B · then back to the main A.
+project "super mario bros - overworld theme" {
+    bpm 200; time 4 4;
+
+    track "lead" instrument "lead 1 (square)" v f {
+
+        // — intro riff —
+        pattern intro {
+            bar 8 { E5 E5 _ E5 _ C5 E5 _ }
+            bar 8 { G5 _ _ _ G4 _ _ _ }
+        }
+
+        // — main melody (the part everyone hums) —
+        pattern main {
+            bar 8 { C5 _ _ G4 _ _ E4 _ }
+            bar 8 { _ A4 _ B4 _ Bb4 A4 _ }
+            bar 8 { G4 E5 G5 A5 _ F5 G5 _ }
+            bar 8 { E5 _ C5 D5 B4 _ _ _ }
+        }
+
+        // — bridge / B section ("ding ding ding") —
+        pattern bridge {
+            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
+            bar 8 { _ G#4 A4 C5 _ A4 C5 D5 }
+            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
+            bar 8 { _ C6 _ C6 C6 _ _ _ }
+            bar 8 { _ _ G5 F#5 F5 Eb5 _ E5 }
+            bar 8 { _ G#4 A4 C5 _ A4 C5 D5 }
+            bar 8 { _ _ Eb5 _ _ D5 _ _ }
+            bar 8 { C5 _ _ _ _ _ _ _ }
+        }
+
+        intro()
+        main() main()
+        bridge()
+        intro()
+        main()
+    }
+
+    track "bass" instrument "synth bass 1" v mf {
+        // bouncy octave-hopping root motion under the tonic-heavy A section
+        pattern boom(low, high) { bar 8 { low _ high _ low _ high _ } }
+
+        // intro: lock onto C
+        boom(C2, C3) boom(C2, C3)
+
+        // main A (×2): C tonic, lean to G under the cadence
+        for _ in 1..2 {
+            boom(C2, C3) boom(C2, C3)
+            boom(G2, G3) boom(C2, C3)
+        }
+
+        // bridge B: walk the roots G - F - C
+        boom(G2, G3) boom(F2, F3)
+        boom(G2, G3) boom(C2, C3)
+        boom(G2, G3) boom(F2, F3)
+        boom(G2, G3) boom(C2, C3)
+
+        // back to intro + one more A
+        boom(C2, C3) boom(C2, C3)
+        boom(C2, C3) boom(C2, C3)
+        boom(G2, G3) boom(C2, C3)
+    }
+}

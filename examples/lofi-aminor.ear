@@ -1,0 +1,79 @@
+// Lofi in A minor — earmuff v2.
+// A late-night study beat in Am: a gentle minor turnaround
+// (Am7 Dm7 Gmaj7 Cmaj7 Fmaj7 Bm7b5 E7 Am7), soft Rhodes comping,
+// a lazy walking bass, boom-bap drums, and a tenor sax solo on top.
+// The 8-bar form repeats four times; the sax sits out the first pass,
+// then takes a two-chorus solo.
+project "lofi in a minor" {
+    bpm 74; time 4 4;
+
+    track "keys" instrument "electric piano 1" v mp {
+        let changes = [Am7, Dm7, Gmaj7, Cmaj7, Fmaj7, Bm7b5, E7, Am7];
+
+        // off-beat stabs, a little push on beat 3
+        for ch in changes {
+            bar 8 v p { _ ch _ ch:v mf _ ch _ ch }
+        }
+        for _ in 1..3 {
+            for ch in changes {
+                bar 8 v p { _ ch _ ch:v mf _ ch _ ch }
+            }
+        }
+    }
+
+    track "bass" instrument "electric bass (finger)" v mp {
+        pattern root(root)        { bar quarter { root _ _ _ } }
+        pattern walk(root, lead)  { bar quarter { root _ lead _ } }
+
+        // root | walk into the next chord
+        root(A2) root(D3) walk(G2, B2) root(C3)
+        root(F2) root(B2) walk(E2, G#2) root(A2)
+        for _ in 1..3 {
+            root(A2) root(D3) walk(G2, B2) root(C3)
+            root(F2) root(B2) walk(E2, G#2) root(A2)
+        }
+    }
+
+    track "sax" instrument "tenor sax" v mf {
+        // the solo — bluesy, vocal phrases that lean on each chord's color tone
+        pattern phrase {
+            bar 8 { E5:4 _ A4:4 _ _ C5:2 _ }      // Am7    (b3 = C)
+            bar 8 { D5:2 _ _ F5:4 _ _ A5:4 }      // Dm7    (9 -> 11)
+            bar 8 { _ _ B4:4 _ D5:4 _ F5:2 }      // Gmaj7  (3 -> 7)
+            bar 8 { E5:2 _ _ G4:4 _ _ _ }         // Cmaj7
+        }
+        pattern answer {
+            bar 8 { A5:4 _ C6:4 _ _ _ E5:2 }      // Fmaj7  (3 -> 5)
+            bar 8 { _ F5:4 _ D5:4 _ A4:2 _ }      // Bm7b5  (b5 = F)
+            bar 8 { G#4:2 _ _ B4:4 _ _ E5:4 }     // E7     (3 = G#, leading tone)
+            bar 8 { A4:2 _ _ _ _ C5:4 _ }         // Am7    (land on the i)
+        }
+
+        for _ in 1..8 { bar 1 { _ } }   // rest through the first pass
+        for _ in 1..3 { phrase() answer() }
+    }
+
+    track "drums" instrument "synth drum" channel 10 v mf {
+        kit {
+            kk  = "acoustic bass drum";
+            sn  = "acoustic snare";
+            hh  = "closed hi-hat";
+            rim = "side stick";
+        }
+        // kick on 1 & the "and" of 3, snare on 2 & 4, lazy 8th hats
+        pattern groove {
+            bar 8 { (kk, hh) sn hh (kk, hh) sn hh hh sn }
+        }
+        // turnaround: rim on the last backbeat
+        pattern turn {
+            bar 8 { (kk, hh) sn hh (kk, hh) sn hh hh rim }
+        }
+
+        for _ in 1..3 {
+            for _ in 1..7 { groove() }
+            turn()
+        }
+        for _ in 1..7 { groove() }
+        turn()
+    }
+}
