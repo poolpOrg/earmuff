@@ -4,3 +4,8 @@ cmd/earmuff/earmuff
 earmuff
 website/.hugo_build.lock
 website/public/
+
+# Playground WASM artifacts — built in CI (see .github/workflows/pages.yml),
+# never committed.
+website/static/playground/earmuff.wasm
+website/static/playground/wasm_exec.js

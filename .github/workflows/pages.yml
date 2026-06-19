@@ -7,7 +7,15 @@ name: Pages
 on:
   push:
     branches: ["main"]
-    paths: ["landing/**", "website/**", ".github/workflows/pages.yml"]
+    # The playground bundles a WASM build of the compiler, so changes to the Go
+    # sources must redeploy the site too.
+    paths:
+      - "landing/**"
+      - "website/**"
+      - ".github/workflows/pages.yml"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +36,27 @@ jobs:
       SITE_BASE: "https://earmuff.io"
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Build the playground (Go -> WASM)
+        run: |
+          set -eux
+          out=website/static/playground
+          mkdir -p "$out"
+          GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" \
+            -o "$out/earmuff.wasm" ./cmd/earmuff-wasm
+          # wasm_exec.js MUST come from the same Go toolchain that built the
+          # module, or the runtimes mismatch. Newer Go keeps it under lib/wasm.
+          goroot="$(go env GOROOT)"
+          if [ -f "$goroot/lib/wasm/wasm_exec.js" ]; then
+            cp "$goroot/lib/wasm/wasm_exec.js" "$out/wasm_exec.js"
+          else
+            cp "$goroot/misc/wasm/wasm_exec.js" "$out/wasm_exec.js"
+          fi
+          ls -lh "$out"
 
       - name: Install Hugo
         run: |
