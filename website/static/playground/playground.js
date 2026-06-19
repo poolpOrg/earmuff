@@ -34,7 +34,6 @@
   var lastResult = null; // last successful compile result
   var compileTimer = null;
   var sheetRendered = false;
-  var vexLoaded = false;
 
   var DEFAULT_SOURCE =
     'project "playground" {\n' +
@@ -257,245 +256,98 @@
   }
 
   // =======================================================================
-  // Sheet music (VexFlow, lazy)
+  // Sheet music — real engraving via Verovio (MusicXML -> SVG), lazy-loaded.
+  // The MusicXML comes from the Go emitter (res.musicxml), so the notation
+  // (rests, ties, beaming, clefs, multi-staff) is correct, not hand-drawn.
   // =======================================================================
+  var verovioToolkit = null;
+  var verovioLoading = false;
+
   function renderSheet() {
     if (!lastResult) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Compile something first.</div>';
       return;
     }
     if (sheetRendered) return;
-    ensureVexFlow(function (ok) {
-      if (!ok) {
+    if (!lastResult.musicxml) {
+      sheetEl.innerHTML = '<div class="pg-sheet-note">Nothing to engrave.</div>';
+      return;
+    }
+    sheetEl.innerHTML = '<div class="pg-sheet-note">Engraving…</div>';
+    ensureVerovio(function (tk) {
+      if (!tk) {
         sheetEl.innerHTML =
           '<div class="pg-sheet-note">In-browser engraving unavailable. ' +
           "Download the LilyPond source and run <code>lilypond</code> for a full score.</div>";
         return;
       }
-      drawSheet(lastResult);
+      drawSheet(tk, lastResult);
       sheetRendered = true;
     });
   }
 
-  // VexFlow ships as UMD. Monaco's AMD loader is already on the page, so a
-  // plain <script> would hit the define.amd branch and never set window.Vex.
-  // Load it as an AMD module through the same loader instead.
-  function ensureVexFlow(cb) {
-    if (vexLoaded) return cb(!!window.Vex);
-    window.require.config({ paths: { vexflow: BASE + "/vexflow" } });
-    window.require(["vexflow"], function (mod) {
-      window.Vex = window.Vex || mod;
-      vexLoaded = true;
-      cb(!!window.Vex);
-    }, function () { vexLoaded = true; cb(false); });
+  // Verovio ships as UMD. Its AMD branch declares node:fs / node:crypto as
+  // dependencies, which Monaco's AMD loader can't resolve in the browser — so
+  // we must NOT load it through the loader. Inject a plain <script> with the
+  // global AMD `define` temporarily shadowed, forcing the UMD global branch
+  // (which sets window.verovio and needs no node modules). Its wasm then
+  // initializes asynchronously — wait for onRuntimeInitialized.
+  function ensureVerovio(cb) {
+    if (verovioToolkit) return cb(verovioToolkit);
+    if (verovioLoading) return;
+    verovioLoading = true;
+
+    var savedDefine = window.define;
+    window.define = undefined; // hide AMD so Verovio's UMD takes the global path
+    var s = document.createElement("script");
+    s.src = BASE + "/verovio.js";
+    s.onload = function () {
+      window.define = savedDefine; // restore Monaco's AMD loader
+      var v = window.verovio;
+      if (!v || !v.module) { verovioLoading = false; cb(null); return; }
+      var ready = function () {
+        try {
+          verovioToolkit = new v.toolkit();
+          setVerovioOptions(verovioToolkit);
+        } catch (e) { verovioToolkit = null; }
+        verovioLoading = false;
+        cb(verovioToolkit);
+      };
+      if (v.module.calledRun) ready();
+      else v.module.onRuntimeInitialized = ready;
+    };
+    s.onerror = function () {
+      window.define = savedDefine;
+      verovioLoading = false;
+      cb(null);
+    };
+    document.head.appendChild(s);
   }
 
-  // Draw every pitched track from the event stream as its own row of staves:
-  // simultaneous notes become chords, durations come from each note's gate,
-  // each track gets a clef chosen from its register, and the line is broken
-  // into measures. Channel-10 percussion tracks are skipped (not pitched).
-  function drawSheet(res) {
-    sheetEl.innerHTML = "";
-    var VF = window.Vex && window.Vex.Flow;
-    if (!VF) return;
+  function setVerovioOptions(tk) {
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    tk.setOptions({
+      pageWidth: Math.max(800, (sheetEl.clientWidth - 24) * 2),
+      pageHeight: 60000,
+      scale: 45,
+      adjustPageHeight: true,
+      breaks: "auto",
+      footer: "none",
+      header: "none",
+    });
+  }
 
-    var ppq = res.ppq || 960;
-    var beats = res.timeBeats || 4;
-    var unit = res.timeUnit || 4;
-    var ticksPerBar = ppq * (4 / unit) * beats;
-    var MAX_BARS = 8;
-
-    // Collect the pitched tracks that actually have notes.
-    var parts = [];
-    var trackCount = (res.tracks && res.tracks.length) || 0;
-    for (var t = 0; t < trackCount; t++) {
-      var info = res.tracks[t] || {};
-      if (info.channel === 9) continue; // GM percussion (0-based ch 9 == MIDI 10)
-      var groups = chordGroupsForTrack(res, t);
-      if (!groups.length) continue;
-      parts.push({
-        index: t,
-        name: info.name || "track " + (t + 1),
-        clef: clefForGroups(groups),
-        measures: groupsToMeasures(groups, ticksPerBar, MAX_BARS),
-      });
-    }
-
-    if (!parts.length) {
-      sheetEl.innerHTML = '<div class="pg-sheet-note">No pitched tracks to engrave (percussion is omitted).</div>';
-      return;
-    }
-
-    // Fit the available panel width; only force a wider canvas (with the panel
-    // scrolling) when the panel is too narrow to engrave even one bar.
-    var totalW = Math.max(320, sheetEl.clientWidth - 16);
-    var rowH = 110;
-
+  function drawSheet(tk, res) {
     try {
-      parts.forEach(function (part) {
-        var label = document.createElement("div");
-        label.className = "pg-sheet-part";
-        label.textContent = part.name;
-        sheetEl.appendChild(label);
-
-        var div = document.createElement("div");
-        sheetEl.appendChild(div);
-        renderPart(VF, div, part, totalW, rowH, beats, unit);
-      });
-      sheetEl.insertAdjacentHTML(
-        "beforeend",
-        '<div class="pg-sheet-note">All pitched tracks, simultaneous notes as ' +
-        "chords (durations quantized; percussion omitted). Download the LilyPond " +
-        "source for the full score.</div>"
-      );
+      setVerovioOptions(tk);
+      tk.loadData(res.musicxml);
+      var n = tk.getPageCount() || 1;
+      var svg = "";
+      for (var p = 1; p <= n; p++) svg += tk.renderToSVG(p);
+      sheetEl.innerHTML = svg;
     } catch (e) {
       sheetEl.innerHTML = '<div class="pg-sheet-note">Could not engrave this passage.</div>';
     }
-  }
-
-  // renderPart lays one track's measures across as many rows as needed, sizing
-  // each measure by its note count so dense bars are not clipped, and wrapping
-  // when a row is full. Each measure is its own non-strict Voice (tolerant of
-  // bars that don't sum to an exact measure after duration quantization).
-  function renderPart(VF, container, part, totalW, rowH, beats, unit) {
-    var leftPad = 8;
-    var clefW = 60;      // room the first measure of a row gives to clef/time
-    var noteW = 42;      // approximate width budget per note/chord
-    var minBarW = 110;
-
-    // Pre-measure each bar's preferred width from its note count.
-    var bars = part.measures.map(function (m) {
-      return { notes: m, w: Math.max(minBarW, m.length * noteW) };
-    });
-
-    // Greedy row packing: fit as many bars as the width allows.
-    var rows = [];
-    var cur = [], curW = leftPad + clefW;
-    bars.forEach(function (b) {
-      var add = b.w;
-      if (cur.length && curW + add > totalW) {
-        rows.push(cur); cur = []; curW = leftPad + clefW;
-      }
-      cur.push(b); curW += add;
-    });
-    if (cur.length) rows.push(cur);
-
-    var renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-    renderer.resize(totalW, 12 + rows.length * rowH);
-    var ctx = renderer.getContext();
-
-    rows.forEach(function (row, ri) {
-      // Distribute spare width proportionally so each row fills totalW.
-      var base = leftPad + (ri === 0 ? clefW : clefW);
-      var sumW = row.reduce(function (s, b) { return s + b.w; }, 0);
-      var avail = totalW - leftPad - clefW - 8;
-      var scale = avail / sumW;
-
-      var x = leftPad;
-      row.forEach(function (b, bi) {
-        var w = bi === 0 ? Math.max(b.w * scale + clefW, minBarW + clefW)
-                         : Math.max(b.w * scale, minBarW);
-        var stave = new VF.Stave(x, 8 + ri * rowH, w);
-        if (bi === 0) {
-          stave.addClef(part.clef);
-          if (ri === 0) stave.addTimeSignature(beats + "/" + unit);
-        }
-        stave.setContext(ctx).draw();
-
-        var vfNotes = b.notes.map(function (g) {
-          return new VF.StaveNote({
-            clef: part.clef,
-            keys: g.keys.map(keyToVexKey),
-            duration: g.duration,
-          });
-        });
-        if (vfNotes.length) {
-          var voice = new VF.Voice({ num_beats: beats, beat_value: unit })
-            .setMode(VF.Voice.Mode.SOFT);
-          voice.addTickables(vfNotes);
-          var fmtW = w - (bi === 0 ? clefW + 16 : 16);
-          new VF.Formatter().joinVoices([voice]).format([voice], Math.max(40, fmtW));
-          voice.draw(ctx, stave);
-        }
-        x += w;
-      });
-    });
-  }
-
-  // clefForGroups mirrors the LilyPond emitter: bass clef when the average
-  // pitch sits below ~G#3 (MIDI 56), treble otherwise.
-  function clefForGroups(groups) {
-    var sum = 0, n = 0;
-    groups.forEach(function (g) {
-      g.keys.forEach(function (k) { sum += k; n++; });
-    });
-    return n && sum / n < 56 ? "bass" : "treble";
-  }
-
-  // chordGroupsForTrack pairs NoteOn/NoteOff for a track and groups notes that
-  // share an onset tick into a chord, returning {tick, keys[], durTicks}.
-  function chordGroupsForTrack(res, track) {
-    var open = {}; // key -> onset tick
-    var groupsByTick = {};
-    (res.events || []).forEach(function (e) {
-      if (e.track !== track) return;
-      var isOn = e.kind === 0 && e.vel > 0;
-      var isOff = e.kind === 1 || (e.kind === 0 && e.vel === 0);
-      if (isOn) {
-        open[e.key] = e.t;
-        var g = groupsByTick[e.t] || (groupsByTick[e.t] = { tick: e.t, keys: [], durTicks: 0 });
-        if (g.keys.indexOf(e.key) < 0) g.keys.push(e.key);
-      } else if (isOff && open[e.key] != null) {
-        var onset = open[e.key];
-        delete open[e.key];
-        var g2 = groupsByTick[onset];
-        if (g2) {
-          var d = e.t - onset;
-          if (d > g2.durTicks) g2.durTicks = d; // chord rings as long as its longest voice
-        }
-      }
-    });
-    return Object.keys(groupsByTick)
-      .map(function (k) { return groupsByTick[k]; })
-      .sort(function (a, b) { return a.tick - b.tick; });
-  }
-
-  // groupsToMeasures buckets chord groups into bars and assigns each group a
-  // VexFlow duration string quantized from its tick length.
-  function groupsToMeasures(groups, ticksPerBar, maxBars) {
-    var measures = [];
-    groups.forEach(function (g) {
-      var bar = Math.floor(g.tick / ticksPerBar);
-      if (bar >= maxBars) return;
-      (measures[bar] || (measures[bar] = [])).push({
-        keys: g.keys.slice().sort(function (a, b) { return a - b; }),
-        duration: ticksToVexDuration(g.durTicks, ticksPerBar),
-      });
-    });
-    // Drop empty leading/trailing holes, keep order.
-    return measures.filter(function (m) { return m && m.length; });
-  }
-
-  // Map a tick length to the nearest plain VexFlow duration (no tuplets/dots).
-  function ticksToVexDuration(ticks, ticksPerBar) {
-    var whole = ticksPerBar; // assumes 4/4-ish; good enough for a reduction
-    var table = [
-      [whole, "w"], [whole / 2, "h"], [whole / 4, "q"],
-      [whole / 8, "8"], [whole / 16, "16"],
-    ];
-    var best = "q", bestDiff = Infinity;
-    for (var i = 0; i < table.length; i++) {
-      var diff = Math.abs(ticks - table[i][0]);
-      if (diff < bestDiff) { bestDiff = diff; best = table[i][1]; }
-    }
-    return best;
-  }
-
-  var PCNAMES = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
-  function keyToVexKey(key) {
-    var pc = PCNAMES[key % 12];
-    var oct = Math.floor(key / 12) - 1;
-    return pc + "/" + oct;
   }
 
   // =======================================================================

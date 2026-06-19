@@ -10,7 +10,7 @@ website/public/
 website/static/playground/earmuff.wasm
 website/static/playground/wasm_exec.js
 website/static/playground/monaco/
-website/static/playground/vexflow.js
+website/static/playground/verovio.js
 website/static/playground/tinysynth.js
 website/static/playground/spessa/
 website/static/playground/examples/

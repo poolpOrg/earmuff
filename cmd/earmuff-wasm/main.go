@@ -34,6 +34,7 @@ import (
 	"github.com/poolpOrg/earmuff/elaborator"
 	"github.com/poolpOrg/earmuff/lilypond"
 	"github.com/poolpOrg/earmuff/midiimport"
+	"github.com/poolpOrg/earmuff/musicxml"
 	"github.com/poolpOrg/earmuff/parser"
 	"github.com/poolpOrg/earmuff/smfwriter"
 )
@@ -84,6 +85,7 @@ type result struct {
 	Events        []event     `json:"events"`
 	MIDIBase64    string      `json:"midiBase64"`
 	LilyPond      string      `json:"lilypond"`
+	MusicXML      string      `json:"musicxml"`
 }
 
 // compile runs the full pipeline and returns the result as JSON. It never
@@ -168,6 +170,7 @@ func compile(source string) string {
 
 	res.MIDIBase64 = base64.StdEncoding.EncodeToString(smfwriter.Write(song))
 	res.LilyPond = lilypond.Render(song)
+	res.MusicXML = musicxml.Render(song)
 
 	return marshal(res)
 }

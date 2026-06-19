@@ -8,7 +8,7 @@
 set -euo pipefail
 
 MONACO_VERSION="0.52.2"   # last release with the classic self-hostable min/vs AMD layout
-VEXFLOW_VERSION="4.2.3"
+VEROVIO_VERSION="6.2.0"   # WASM music engraver (MusicXML -> SVG)
 TINYSYNTH_VERSION="1.1.3"      # WebAudio GM synth (asset-free fallback)
 SPESSASYNTH_LIB_VERSION="4.3.7"   # sample-based soundfont synth (primary)
 SPESSASYNTH_CORE_VERSION="4.3.10" # core that spessasynth_lib imports
@@ -30,9 +30,9 @@ cp "$vs_src/loader.js" "$vs_dst/"
 cp "$vs_src/editor/editor.main.js" "$vs_src/editor/editor.main.css" "$vs_dst/editor/"
 cp -r "$vs_src/base/." "$vs_dst/base/"
 
-echo "==> VexFlow $VEXFLOW_VERSION"
-( cd "$work" && npm pack "vexflow@$VEXFLOW_VERSION" >/dev/null 2>&1 && tar xzf vexflow-*.tgz )
-cp "$work/package/build/cjs/vexflow-bravura.js" "$dest/vexflow.js"
+echo "==> Verovio $VEROVIO_VERSION"
+( cd "$work" && npm pack "verovio@$VEROVIO_VERSION" >/dev/null 2>&1 && tar xzf verovio-*.tgz )
+cp "$work/package/dist/verovio-toolkit-wasm.js" "$dest/verovio.js"
 
 echo "==> webaudio-tinysynth $TINYSYNTH_VERSION"
 ( cd "$work" && npm pack "webaudio-tinysynth@$TINYSYNTH_VERSION" >/dev/null 2>&1 && tar xzf webaudio-tinysynth-*.tgz )
@@ -51,4 +51,4 @@ echo "==> GeneralUser GS soundfont"
 curl -sSL -o "$spessa/GeneralUserGS.sf3" "$SOUNDFONT_URL"
 
 echo "==> done"
-du -sh "$dest/monaco" "$dest/vexflow.js" "$dest/tinysynth.js" "$spessa"
+du -sh "$dest/monaco" "$dest/verovio.js" "$dest/tinysynth.js" "$spessa"
