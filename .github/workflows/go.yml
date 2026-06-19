@@ -14,19 +14,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.19
+        go-version: stable
 
     - name: Install dependencies
       run: |
-        sudo apt-get install libasound2-dev
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev
 
-    - name: Build
-      run: go build -v ./...
+    # cmd/earmuff-wasm imports syscall/js, so it only builds for GOOS=js. It is
+    # excluded from the native build/test and verified by a dedicated wasm build.
+    - name: Build (native)
+      run: go build -v $(go list ./... 2>/dev/null | grep -v /cmd/earmuff-wasm)
 
-    - name: Test
-      run: go test -v ./...
+    - name: Test (native)
+      run: go test -v $(go list ./... 2>/dev/null | grep -v /cmd/earmuff-wasm)
+
+    - name: Build (wasm)
+      run: GOOS=js GOARCH=wasm go build -v ./cmd/earmuff-wasm
