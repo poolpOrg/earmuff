@@ -26,6 +26,7 @@
   var playBtn = $("pg-play");
   var stopBtn = $("pg-stop");
   var examplesSel = $("pg-examples");
+  var monitorEl = $("pg-monitor");
 
   // ---- State -------------------------------------------------------------
   var editor = null;
@@ -508,6 +509,7 @@
         }
       }
 
+      monitorReset();
       setStatus("playing…", "ok");
       tick();
     });
@@ -515,13 +517,21 @@
 
   function dispatch(sy, e) {
     var ch = e.ch & 0x0f;
-    if (e.kind === 0 && e.vel > 0) sy.noteOn(ch, e.key, e.vel);
-    else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) sy.noteOff(ch, e.key);
-    else if (e.kind === 5) sy.program(ch, e.prog);
+    if (e.kind === 0 && e.vel > 0) {
+      sy.noteOn(ch, e.key, e.vel);
+      monitorPush(e);          // show it in the live buffer
+      lineOn(e.line);          // light its source line
+    } else if (e.kind === 1 || (e.kind === 0 && e.vel === 0)) {
+      sy.noteOff(ch, e.key);
+      lineOff(e.line);         // dim its source line when the note ends
+    } else if (e.kind === 5) {
+      sy.program(ch, e.prog);
+    }
   }
 
   function finishPlayback() {
     if (synthAdapter) synthAdapter.allOff();
+    clearHighlights();
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
     if (lastResult) setStatus(statusLine(lastResult), "ok");
@@ -531,9 +541,69 @@
     playToken++;            // invalidate any running loop
     if (schedTimer) { clearTimeout(schedTimer); schedTimer = null; }
     if (synthAdapter) synthAdapter.allOff();
+    clearHighlights();
     stopBtn.disabled = true;
     playBtn.disabled = !lastResult;
     if (lastResult) setStatus(statusLine(lastResult), "ok");
+  }
+
+  // ---- Live event monitor -----------------------------------------------
+  var KIND_PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  function pitchName(key) { return KIND_PC[key % 12] + "^" + (Math.floor(key / 12) - 1); }
+
+  function monitorReset() {
+    monitorEl.hidden = false;
+    monitorEl.innerHTML = "";
+  }
+  function monitorPush(e) {
+    var secs = ticksToSeconds(e.t, lastResult ? lastResult.bpm : 120);
+    var name = e.ch === 9 ? "drum " + e.key : pitchName(e.key);
+    var row = document.createElement("div");
+    row.className = "pg-ev";
+    row.innerHTML =
+      '<span class="pg-ev-t">' + secs.toFixed(2).padStart(6) + "s</span>  " +
+      '<span class="pg-ev-trk">trk' + e.track + "</span>  " +
+      escapeHtml(name).padEnd(6) + "  v" + (e.vel || 0);
+    monitorEl.appendChild(row);
+    // Keep it light: cap the DOM and auto-scroll to the newest line.
+    while (monitorEl.childNodes.length > 80) monitorEl.removeChild(monitorEl.firstChild);
+    monitorEl.scrollTop = monitorEl.scrollHeight;
+  }
+
+  // ---- Source-line highlighting -----------------------------------------
+  // Reference-count active notes per line so a line stays lit until all of its
+  // currently-sounding notes have ended; render the lit set as Monaco decorations.
+  var lineCounts = {};          // line -> active note count
+  var lineDecorations = [];     // current Monaco decoration ids
+
+  function lineOn(line) {
+    if (!line) return;
+    lineCounts[line] = (lineCounts[line] || 0) + 1;
+    renderHighlights();
+  }
+  function lineOff(line) {
+    if (!line || !lineCounts[line]) return;
+    if (--lineCounts[line] <= 0) delete lineCounts[line];
+    renderHighlights();
+  }
+  function clearHighlights() {
+    lineCounts = {};
+    renderHighlights();
+  }
+  function renderHighlights() {
+    if (!editor || !monacoRef) return;
+    var decos = Object.keys(lineCounts).map(function (l) {
+      var n = +l;
+      return {
+        range: new monacoRef.Range(n, 1, n, 1),
+        options: {
+          isWholeLine: true,
+          className: "pg-playing-line",
+          linesDecorationsClassName: "pg-playing-glyph",
+        },
+      };
+    });
+    lineDecorations = editor.deltaDecorations(lineDecorations, decos);
   }
 
   // =======================================================================

@@ -95,6 +95,11 @@ type Event struct {
 	Track int
 	Msg   MIDIMsg
 
+	// Line is the 1-based source line that produced this event (0 if unknown).
+	// It carries no musical meaning — it lets tools (e.g. the playground) light
+	// up the source as it plays.
+	Line int
+
 	// order disambiguates same-tick events from the same emission stream so
 	// elaboration is deterministic.
 	order int
@@ -214,7 +219,8 @@ type elab struct {
 	trackOffset uint32 // running tick offset where the next bar starts
 	orderCtr    int
 
-	swing float64 // current swing ratio (0.5 = straight); a running modifier
+	swing   float64 // current swing ratio (0.5 = straight); a running modifier
+	curLine int     // source line of the construct currently emitting (for tooling)
 }
 
 func (e *elab) errorf(pos token.Position, format string, args ...interface{}) {
@@ -227,6 +233,7 @@ func (e *elab) emit(tick uint32, msg MIDIMsg) {
 		Tick:  tick,
 		Track: e.curTrack,
 		Msg:   msg,
+		Line:  e.curLine,
 		order: e.orderCtr,
 	})
 }
@@ -725,6 +732,9 @@ func (bc *barCtx) absolute(n *ast.Absolute) {
 // at offTick. It returns the song.Events indices of the emitted NoteOffs so a
 // following tie can extend their gate.
 func (e *elab) playNote(p ast.Playable, sc *scope, onTick, offTick uint32, vel uint8) []int {
+	if p != nil {
+		e.curLine = p.Pos().Line
+	}
 	var offs []int
 	emitPitch := func(ch uint8, key uint8) {
 		e.emit(onTick, MIDIMsg{Kind: MsgNoteOn, Channel: ch, Key: key, Velocity: vel})

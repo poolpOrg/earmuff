@@ -61,6 +61,7 @@ type event struct {
 	Prog  uint8  `json:"prog,omitempty"`
 	Bend  int16  `json:"bend,omitempty"`
 	Text  string `json:"text,omitempty"`
+	Line  int    `json:"line,omitempty"` // 1-based source line, for live highlighting
 }
 
 type trackInfo struct {
@@ -164,7 +165,7 @@ func compile(source string) string {
 			T: ev.Tick, Track: ev.Track, Kind: int(m.Kind),
 			Ch: m.Channel, Key: m.Key, Vel: m.Velocity,
 			Ctrl: m.Controller, Val: m.Value, Prog: m.Program,
-			Bend: m.Bend, Text: m.Text,
+			Bend: m.Bend, Text: m.Text, Line: ev.Line,
 		})
 	}
 

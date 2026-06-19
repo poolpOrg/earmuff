@@ -172,6 +172,27 @@
 .pg-status.pg-ok { color: #2c9f5a; }
 .pg-status.pg-err { color: var(--pg-err); }
 
+/* Live event monitor: a scrolling strip of the notes triggered as they play. */
+.pg-monitor {
+  flex: 0 0 auto;
+  height: 132px;
+  overflow-y: auto;
+  border-top: 1px solid var(--pg-border);
+  background: var(--pg-panel);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 4px 12px;
+}
+.pg-monitor[hidden] { display: none; }
+.pg-monitor .pg-ev { color: var(--pg-fg); white-space: pre; }
+.pg-monitor .pg-ev .pg-ev-t { color: var(--pg-muted); }
+.pg-monitor .pg-ev .pg-ev-trk { color: var(--pg-accent); }
+
+/* The source line currently sounding. */
+.pg-playing-line { background: rgba(107, 120, 255, 0.16); }
+.pg-playing-glyph { background: var(--pg-accent); width: 3px !important; margin-left: 2px; }
+
 /* ---- Output tabs ------------------------------------------------------ */
 .pg-tabs {
   display: flex;
