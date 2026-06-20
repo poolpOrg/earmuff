@@ -22,8 +22,10 @@
   var problemCountEl = $("pg-problem-count");
   var eventsEl = $("pg-events");
   var sheetEl = $("pg-sheet");
-  var playBtn = $("pg-play");
-  var stopBtn = $("pg-stop");
+  // Playback is driven entirely by the transport bar now; these are inert
+  // stubs so the historical playBtn/stopBtn.disabled writes stay harmless.
+  var playBtn = { disabled: false };
+  var stopBtn = { disabled: false };
   var examplesSel = $("pg-examples");
   var monitorEl = $("pg-monitor");
   var errorsEl = $("pg-errors");
@@ -206,12 +208,12 @@
         relinkLive(res);
       } else {
         setStatus(statusLine(res), "ok");
-        playBtn.disabled = false;
+        transportIdle();   // enable ⏯ so playback can start
       }
     } else {
       lastResult = null;
       if (!live) {
-        playBtn.disabled = true;
+        transportIdle();   // nothing playable -> ⏯ disabled
         setStatus(errorCount(res) + " error(s)", "err");
       }
       // If a live edit broke the source, keep playing the last good version
@@ -665,9 +667,7 @@
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
     stopTransportUI();
-    transportEnable(false);
-    stopBtn.disabled = true;
-    playBtn.disabled = !lastResult;
+    transportIdle();
     if (lastResult) setStatus(statusLine(lastResult), "ok");
   }
 
@@ -678,9 +678,7 @@
     if (synthAdapter) synthAdapter.allOff();
     clearHighlights();
     stopTransportUI();
-    transportEnable(false);
-    stopBtn.disabled = true;
-    playBtn.disabled = !lastResult;
+    transportIdle();
     if (lastResult) setStatus(statusLine(lastResult), "ok");
   }
 
@@ -693,12 +691,30 @@
     return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
   }
 
+  // transportEnable: while playing, all controls are live and ⏯ shows pause.
   function transportEnable(on) {
     [tRewind, tBack, tPlay, tFwd, tSeek].forEach(function (el) { el.disabled = !on; });
     tPlay.textContent = on ? "⏸" : "▶";
     if (!on) {
       tSeek.value = 0; tCur.textContent = "0:00"; tDur.textContent = "0:00";
     }
+  }
+
+  // transportIdle: not playing. The ⏯ button stays enabled (so it can start
+  // playback) iff there's something to play; the seek/skip controls are off.
+  function transportIdle() {
+    var canPlay = !!lastResult;
+    tPlay.disabled = !canPlay;
+    tPlay.textContent = "▶";
+    [tRewind, tBack, tFwd, tSeek].forEach(function (el) { el.disabled = true; });
+    tSeek.value = 0; tCur.textContent = "0:00";
+    tDur.textContent = lastResult ? fmtTime(songDurationMs(lastResult)) : "0:00";
+  }
+
+  // songDurationMs estimates a compiled piece's length for the idle readout.
+  function songDurationMs(res) {
+    var secPerTick = (60 / (res.bpm || 120)) / (res.ppq || 960);
+    return (res.durationTicks || 0) * secPerTick * 1000;
   }
 
   function updateTransport() {
@@ -910,8 +926,7 @@
   }
 
   function wireToolbar() {
-    playBtn.addEventListener("click", play);
-    stopBtn.addEventListener("click", stop);
+    // Playback controls live in the transport bar (see wireTransport).
     $("pg-share").addEventListener("click", share);
 
     var menu = $("pg-download-menu");
